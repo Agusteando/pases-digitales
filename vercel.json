@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "framework": "nuxtjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "regions": ["iad1"], 
+  "engines": {
+    "node": "20.x"
+  }
+}

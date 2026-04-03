@@ -1,0 +1,32 @@
+{
+  "name": "pases-digitales-reimagined",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.20",
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0",
+    "jsonwebtoken": "^9.0.3",
+    "lru-cache": "^10.2.0",
+    "lucide-vue-next": "^0.577.0",
+    "mysql2": "^3.20.0",
+    "nuxt": "^3.21.2",
+    "sharp": "^0.33.2",
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.17"
+  }
+}
