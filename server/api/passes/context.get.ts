@@ -11,18 +11,17 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
 
   try {
-    // Get the last 5 passes for this specific employee to provide operational context
+    // Upgraded query fetching 'user' to distinguish ownership (Admin vs Plantel)
     const [rows] = await db.execute(
-      `SELECT id, date, time, comentarios, category_id, status 
+      `SELECT id, date, time, comentarios, category_id, status, user, plantel 
        FROM hr_entries 
        WHERE employee_name = ? 
-       ORDER BY date DESC LIMIT 5`,
+       ORDER BY date DESC LIMIT 10`,
       [employeeName]
     )
     return rows
   } catch (error) {
     console.error("Database read error:", error)
-    // Return empty array rather than failing the whole UI if DB lookup errors out
     return []
   }
 })

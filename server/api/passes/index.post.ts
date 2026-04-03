@@ -7,10 +7,16 @@ export default defineEventHandler(async (event) => {
 
   const { 
     employeeName, categoryId, date, endDate, time, comentarios, 
-    plantel, regreso, horaRegreso, imss, tipoIncapacidad 
+    plantel, regreso, horaRegreso, imss, tipoIncapacidad, sandbox 
   } = body
 
-  // We preserve the legacy database structure but populate it cleanly from our modern frontend scenarios
+  // First-Class Sandbox Mode Handler
+  if (sandbox) {
+    // Simulate real network/DB latency for authentic UX without touching DB
+    await new Promise(resolve => setTimeout(resolve, 800))
+    return { success: true, id: `sandbox-${Date.now()}`, isSandbox: true }
+  }
+
   const sql = `
     INSERT INTO hr_entries 
     (employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, sync_request, IMSS, tipo_incapacidad, user) 
@@ -32,7 +38,7 @@ export default defineEventHandler(async (event) => {
       regreso ? 1 : 0, 
       horaRegreso || null,
       imss || null,
-      categoryId === 5 ? tipoIncapacidad : null // Only apply if it's a medical scenario
+      categoryId === 5 ? tipoIncapacidad : null 
     ])
 
     return { success: true, id: result.insertId }
