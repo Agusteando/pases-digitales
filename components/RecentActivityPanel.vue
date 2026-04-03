@@ -36,11 +36,11 @@
                 </span>
               </div>
               <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <button @click="sharePass(pass)" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Compartir">
-                  <Share2 class="w-4 h-4" />
+                <button @click="printPass(pass)" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Imprimir Formato">
+                  <Printer class="w-4 h-4" />
                 </button>
-                <button @click="doAction(pass.id, 'resend')" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Reenviar Notificación">
-                  <Send class="w-4 h-4" />
+                <button @click="sharePass(pass)" class="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Compartir">
+                  <Share2 class="w-4 h-4" />
                 </button>
                 <button v-if="pass.status !== 'cancelado'" @click="doAction(pass.id, 'cancel')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Anular Pase">
                   <Ban class="w-4 h-4" />
@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { RefreshCcw, Loader2, Send, Ban, Share2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, Send, Ban, Share2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, Printer } from 'lucide-vue-next'
 
 const { data, pending, refresh } = useFetch('/api/passes/recent')
 
@@ -92,5 +92,22 @@ async function doAction(id, actionStr) {
 function sharePass(pass) {
   const text = `*Pase Digital - Folio #${String(pass.id).padStart(5, '0')}*\nColaborador: ${pass.employee_name}\nEstado: ${pass.status.toUpperCase()}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+}
+
+const printPass = async (pass) => {
+  try {
+    const blob = await $fetch(`/api/passes/${pass.id}/print`, {
+      method: 'POST',
+      responseType: 'blob'
+    })
+    const url = URL.createObjectURL(blob)
+    const newWindow = window.open(url, '_blank')
+    if (newWindow) {
+      newWindow.onload = () => newWindow.print()
+    }
+  } catch (error) {
+    console.error('Error printing pass:', error)
+    alert('Ocurrió un error al generar el PDF del pase.')
+  }
 }
 </script>

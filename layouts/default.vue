@@ -18,6 +18,15 @@
           <Plus class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
+          to="/history" 
+          class="p-3.5 w-full rounded-xl flex justify-center transition-all group outline-none"
+          active-class="bg-brand-50 text-brand-600 shadow-sm border border-brand-100"
+          :class="$route.path === '/history' ? '' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900 border border-transparent'"
+          title="Historial y Búsqueda"
+        >
+          <History class="w-6 h-6" />
+        </NuxtLink>
+        <NuxtLink 
           to="/analytics" 
           class="p-3.5 w-full rounded-xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-50 text-brand-600 shadow-sm border border-brand-100"
@@ -52,6 +61,10 @@
         <Plus class="w-6 h-6" />
         <span class="text-[10px] font-bold">Pases</span>
       </NuxtLink>
+      <NuxtLink to="/history" class="px-4 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/history' ? '' : 'text-slate-500'">
+        <History class="w-6 h-6" />
+        <span class="text-[10px] font-bold">Historial</span>
+      </NuxtLink>
       <NuxtLink to="/analytics" class="px-4 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/analytics' ? '' : 'text-slate-500'">
         <BarChart2 class="w-6 h-6" />
         <span class="text-[10px] font-bold">Métricas</span>
@@ -65,7 +78,7 @@
 </template>
 
 <script setup>
-import { Plus, BarChart2, LogOut } from 'lucide-vue-next'
+import { Plus, BarChart2, History, LogOut } from 'lucide-vue-next'
 const { logout } = useAuth()
 
 const handleLogout = async () => {

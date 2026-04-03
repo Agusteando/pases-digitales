@@ -72,6 +72,9 @@
                 </span>
               </div>
               <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                <button @click="printPass(pass)" class="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Imprimir Formato">
+                  <Printer class="w-4 h-4" />
+                </button>
                 <button @click="doAction(pass.id, 'resend')" class="p-1 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Reenviar Notificación">
                   <Send class="w-4 h-4" />
                 </button>
@@ -92,7 +95,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { AlertTriangle, RefreshCcw, Loader2, Send, Ban, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { AlertTriangle, RefreshCcw, Loader2, Send, Ban, LogIn, LogOut, UserX, Clock, Stethoscope, Printer } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const props = defineProps({ 
@@ -164,6 +167,23 @@ async function doAction(id, actionStr) {
     refreshHistory()
   } catch (error) {
     console.error(error)
+  }
+}
+
+const printPass = async (pass) => {
+  try {
+    const blob = await $fetch(`/api/passes/${pass.id}/print`, {
+      method: 'POST',
+      responseType: 'blob'
+    })
+    const url = URL.createObjectURL(blob)
+    const newWindow = window.open(url, '_blank')
+    if (newWindow) {
+      newWindow.onload = () => newWindow.print()
+    }
+  } catch (error) {
+    console.error('Error printing pass:', error)
+    alert('Ocurrió un error al generar el PDF del pase.')
   }
 }
 </script>
