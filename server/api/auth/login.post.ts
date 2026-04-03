@@ -8,25 +8,35 @@ export default defineEventHandler(async (event) => {
   const client = new OAuth2Client(config.googleClientId)
 
   try {
+    if (!body.credential) {
+      throw new Error('Credential missing')
+    }
+
     const ticket = await client.verifyIdToken({
       idToken: body.credential,
       audience: config.googleClientId
     })
-    const payload = ticket.getPayload()
     
-    // In production, you would check `payload.email` against your allowed HR list.
+    const payload = ticket.getPayload()
+    if (!payload || !payload.email) {
+      throw new Error('Invalid payload')
+    }
+
     const token = jwt.sign({ 
       email: payload.email, 
       name: payload.name, 
       picture: payload.picture 
     }, config.jwtSecret, { expiresIn: '12h' })
 
+    // Set cookie universally readable by Nuxt middleware without `httpOnly` or environment-blocking `secure` rules
     setCookie(event, 'auth-token', token, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 12
+      path: '/',
+      maxAge: 60 * 60 * 12 // 12 hours
     })
 
     return { success: true }
   } catch (error) {
-    throw createError({ statusCode: 401, message: 'Invalid credentials' })
+    console.error('Login error:', error)
+    throw createError({ statusCode: 401, message: 'Authentication failed' })
   }
 })

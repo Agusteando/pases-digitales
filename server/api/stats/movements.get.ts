@@ -6,7 +6,6 @@ export default defineEventHandler(async () => {
   const todayDate = dayjs().format('YYYY-MM-DD')
 
   try {
-    // Extract movements for today by category and location
     const [rows]: any = await db.execute(`
       SELECT category_id, plantel, COUNT(*) as count 
       FROM hr_entries 
@@ -19,21 +18,19 @@ export default defineEventHandler(async () => {
     const plantelMap: Record<string, number> = {}
 
     rows.forEach((row: any) => {
-      const c = Number(row.count)
-      totalToday += c
-      
-      catMap[row.category_id] = (catMap[row.category_id] || 0) + c
-      
+      const count = Number(row.count)
+      totalToday += count
+      catMap[row.category_id] = (catMap[row.category_id] || 0) + count
       const p = row.plantel || 'Sin Plantel'
-      plantelMap[p] = (plantelMap[p] || 0) + c
+      plantelMap[p] = (plantelMap[p] || 0) + count
     })
 
     const categoryNames: Record<number, string> = {
       1: 'Llegada Tarde',
-      2: 'Salida Temprano',
-      3: 'Faltas',
-      4: 'Cambios',
-      5: 'IMSS'
+      2: 'Salida Anticipada',
+      3: 'Ausencia',
+      4: 'Cambio de Horario',
+      5: 'Incapacidad'
     }
 
     const byCategory = Object.keys(catMap).map(k => ({
@@ -49,7 +46,7 @@ export default defineEventHandler(async () => {
     return { totalToday, byCategory, byPlantel }
 
   } catch (error) {
-    console.error("Stats DB Error:", error)
+    console.error("Stats Error:", error)
     return { totalToday: 0, byCategory: [], byPlantel: [] }
   }
 })

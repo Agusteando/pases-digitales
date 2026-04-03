@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { getSigniaEnrichment } from '~/server/utils/employee-engine'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -8,10 +9,9 @@ export default defineEventHandler(async (event) => {
   if (!id && !name) return {}
 
   const db = useDB()
-  let localCurp: string | undefined
-  let localRfc: string | undefined
+  let localCurp: string | undefined = undefined
+  let localRfc: string | undefined = undefined
 
-  // Retrieve sensitive keys securely on the server
   try {
     const [rows]: any = await db.execute(
       `SELECT curp, rfc FROM empleados WHERE id = ? OR nombre = ? LIMIT 1`, 
@@ -22,12 +22,11 @@ export default defineEventHandler(async (event) => {
       localRfc = rows[0].rfc
     }
   } catch(e) {
-    // Graceful fallback to pure fuzzy matching if table fails
+    // Graceful fallback
   }
 
   const enriched = await getSigniaEnrichment(name, localRfc, localCurp)
 
-  // STRICT RULE: Remove RFC/CURP before responding.
   return {
     picture: enriched.picture || null,
     puesto: enriched.puesto || null,

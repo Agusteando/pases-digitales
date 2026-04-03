@@ -5,17 +5,23 @@ export const useAuth = () => {
 
   const fetchUser = async () => {
     try {
-      const data = await $fetch('/api/auth/user')
-      user.value = data.user
+      // Must use $fetch here instead of useFetch to avoid Nuxt 3 context loss inside async actions
+      const data = await $fetch('/api/auth/user', {
+        headers: useRequestHeaders(['cookie']) as Record<string, string>
+      })
+      user.value = data?.user || null
     } catch (e) {
       user.value = null
     }
   }
 
   const logout = async () => {
-    await $fetch('/api/auth/logout', { method: 'POST' })
-    user.value = null
-    navigateTo('/login')
+    try {
+      await $fetch('/api/auth/logout', { method: 'POST' })
+    } finally {
+      user.value = null
+      await navigateTo('/login', { replace: true })
+    }
   }
 
   return { user, fetchUser, logout }

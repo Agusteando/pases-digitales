@@ -1,13 +1,11 @@
 <template>
-  <div class="h-full p-8 overflow-y-auto custom-scrollbar">
-    <div class="max-w-6xl mx-auto">
-      <header class="mb-8">
-        <h1 class="text-3xl font-black text-slate-800 tracking-tight">Inteligencia Operativa</h1>
-        <p class="text-slate-500 mt-1.5 font-medium text-sm">Visualización global y tendencias de movimientos por plantel.</p>
-      </header>
-      
-      <MovementDashboard />
-    </div>
+  <div class="p-6 md:p-8 max-w-5xl mx-auto font-sans">
+    <header class="mb-8">
+      <h1 class="text-2xl font-bold text-slate-900">Inteligencia Operativa</h1>
+      <p class="text-slate-500 mt-1 text-sm">Resumen de movimientos e incidencias del día.</p>
+    </header>
+    
+    <MovementDashboard />
   </div>
 </template>
 

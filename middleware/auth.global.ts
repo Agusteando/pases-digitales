@@ -1,5 +1,16 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  if (to.path === '/login') return
+  const token = useCookie('auth-token')
+  
+  if (to.path === '/login') {
+    if (token.value) {
+      return navigateTo('/', { replace: true })
+    }
+    return
+  }
+
+  if (!token.value) {
+    return navigateTo('/login', { replace: true })
+  }
 
   const { user, fetchUser } = useAuth()
   if (!user.value) {
@@ -7,6 +18,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (!user.value) {
-    return navigateTo('/login')
+    return navigateTo('/login', { replace: true })
   }
 })

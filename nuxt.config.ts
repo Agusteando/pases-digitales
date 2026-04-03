@@ -12,15 +12,22 @@ export default defineNuxtConfig({
     transpile: ['lucide-vue-next']
   },
 
+  vite: {
+    optimizeDeps: {
+      exclude: ['mysql2', 'googleapis', 'google-auth-library']
+    }
+  },
+
   nitro: {
     preset: 'vercel'
   },
 
   app: {
     head: {
-      title: 'Pases Digitales | Casita',
+      title: 'Pases Digitales',
       meta: [
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0' }
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover' },
+        { name: 'theme-color', content: '#ffffff' }
       ],
       script: [
         { src: 'https://accounts.google.com/gsi/client', async: true, defer: true }
