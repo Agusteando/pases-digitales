@@ -7,10 +7,10 @@ export const useDB = () => {
   if (!pool) {
     const config = useRuntimeConfig()
     pool = mysql.createPool({
-      host: config.mysqlHost,
-      user: config.mysqlUser,
-      password: config.mysqlPassword,
-      database: config.mysqlDatabase,
+      host: config.mysqlHost || 'localhost',
+      user: config.mysqlUser || 'root',
+      password: config.mysqlPassword || '',
+      database: config.mysqlDatabase || 'Sistemas',
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,

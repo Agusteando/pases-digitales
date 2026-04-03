@@ -1,4 +1,5 @@
 export default defineNuxtConfig({
+  compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
   
   css: ['~/assets/css/main.css'],
@@ -10,17 +11,21 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: [
-    '@nuxtjs/tailwindcss'
-  ],
+  build: {
+    transpile: ['lucide-vue-next']
+  },
 
-  // Ensure Nuxt builds perfectly for Vercel Serverless Functions
+  vite: {
+    optimizeDeps: {
+      exclude: ['mysql2', 'googleapis', 'google-auth-library']
+    }
+  },
+
   nitro: {
     preset: 'vercel'
   },
 
   runtimeConfig: {
-    // Private keys are only available on the server
     mysqlHost: process.env.MYSQL_HOST,
     mysqlUser: process.env.MYSQL_USER,
     mysqlPassword: process.env.MYSQL_PASSWORD,
@@ -30,7 +35,6 @@ export default defineNuxtConfig({
     signiaApiUrl: process.env.SIGNIA_API_URL || 'https://signia.casitaapps.com/api/export/employees',
     
     public: {
-      // Keys available on both client and server
       googleClientIdPublic: process.env.GOOGLE_CLIENT_ID,
     }
   }

@@ -1,7 +1,13 @@
 import { searchEmployees } from '~/server/utils/employee-engine'
 
 export default defineEventHandler(async (event) => {
-  const { q, plantel } = getQuery(event)
-  if (!q) return []
-  return await searchEmployees(q as string, plantel as string)
+  const query = getQuery(event)
+  const q = query.q as string
+  const plantel = query.plantel as string | undefined
+
+  if (!q) {
+    return []
+  }
+  
+  return await searchEmployees(q, plantel)
 })
