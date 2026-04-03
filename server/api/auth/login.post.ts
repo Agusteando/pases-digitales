@@ -28,10 +28,12 @@ export default defineEventHandler(async (event) => {
       picture: payload.picture 
     }, config.jwtSecret, { expiresIn: '12h' })
 
-    // Set cookie universally readable by Nuxt middleware without `httpOnly` or environment-blocking `secure` rules
     setCookie(event, 'auth-token', token, {
       path: '/',
-      maxAge: 60 * 60 * 12 // 12 hours
+      maxAge: 60 * 60 * 12,
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production'
     })
 
     return { success: true }

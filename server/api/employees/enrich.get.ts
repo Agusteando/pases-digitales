@@ -1,5 +1,4 @@
-import { useDB } from '~/server/utils/db'
-import { getSigniaEnrichment } from '~/server/utils/employee-engine'
+import { getInternalEmployeeList, getSigniaEnrichment } from '~/server/utils/employee-engine'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -8,30 +7,19 @@ export default defineEventHandler(async (event) => {
 
   if (!id && !name) return {}
 
-  const db = useDB()
-  let localCurp: string | undefined = undefined
-  let localRfc: string | undefined = undefined
+  const dataset = await getInternalEmployeeList()
+  const empMatch = dataset.find(e => e.id === id || e.name === name)
 
-  try {
-    const [rows]: any = await db.execute(
-      `SELECT curp, rfc FROM empleados WHERE id = ? OR nombre = ? LIMIT 1`, 
-      [id, name]
-    )
-    if (rows && rows.length > 0) {
-      localCurp = rows[0].curp
-      localRfc = rows[0].rfc
-    }
-  } catch(e) {
-    // Graceful fallback
-  }
+  let localRfc: string | undefined = empMatch?.rfc
+  let localCurp: string | undefined = empMatch?.curp
 
   const enriched = await getSigniaEnrichment(name, localRfc, localCurp)
 
   return {
     picture: enriched.picture || null,
     puesto: enriched.puesto || null,
-    email: enriched.email || null,
-    plantelId: enriched.plantelId || null,
+    email: enriched.email || empMatch?.email || null,
+    plantelId: enriched.plantelId || empMatch?.plantel || null,
     isActive: enriched.isActive !== false
   }
 })

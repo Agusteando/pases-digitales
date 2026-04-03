@@ -1,6 +1,6 @@
 import { LRUCache } from 'lru-cache'
 
-const cache = new LRUCache<string, any[]>({ max: 5, ttl: 1000 * 60 * 15 }) 
+const cache = new LRUCache<string, any[]>({ max: 5, ttl: 1000 * 60 * 30 }) 
 
 export function normalizeName(name: string) {
   if (!name) return ''

@@ -5,7 +5,6 @@ export const useAuth = () => {
 
   const fetchUser = async () => {
     try {
-      // Must use $fetch here instead of useFetch to avoid Nuxt 3 context loss inside async actions
       const data = await $fetch('/api/auth/user', {
         headers: useRequestHeaders(['cookie']) as Record<string, string>
       })
