@@ -11,20 +11,20 @@ body {
 }
 
 /* Premium Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
 }
-::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full transition-colors;
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-200/60 rounded-full transition-colors;
 }
-::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
   @apply bg-slate-300;
 }
 
 .glass-card {
-  @apply bg-white/80 backdrop-blur-xl border border-white/60 shadow-soft;
+  @apply bg-white/80 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
 }

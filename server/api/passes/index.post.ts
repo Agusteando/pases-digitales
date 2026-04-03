@@ -4,23 +4,15 @@ import dayjs from 'dayjs'
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const db = useDB()
+  const token = getCookie(event, 'auth-token')
+  const user = token ? jwt.decode(token).name : 'Admin/Sistema'
 
-  const { 
-    employeeName, categoryId, date, endDate, time, comentarios, 
-    plantel, regreso, horaRegreso, imss, tipoIncapacidad, sandbox 
-  } = body
-
-  // First-Class Sandbox Mode Handler
-  if (sandbox) {
-    // Simulate real network/DB latency for authentic UX without touching DB
-    await new Promise(resolve => setTimeout(resolve, 800))
-    return { success: true, id: `sandbox-${Date.now()}`, isSandbox: true }
-  }
-
+  const { employeeName, categoryId, date, endDate, time, comentarios, plantel, regreso, horaRegreso } = body
+  
   const sql = `
     INSERT INTO hr_entries 
-    (employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, sync_request, IMSS, tipo_incapacidad, user) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'autorizado', 0, ?, ?, 'Admin/Sistema')
+    (employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, sync_request, user) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'autorizado', 0, ?)
   `
   
   const mysqlDate = date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : dayjs().format('YYYY-MM-DD HH:mm:ss')
@@ -28,25 +20,12 @@ export default defineEventHandler(async (event) => {
   
   try {
     const [result]: any = await db.execute(sql, [
-      employeeName, 
-      categoryId, 
-      mysqlDate, 
-      mysqlEndDate, 
-      time || null, 
-      comentarios || '', 
-      plantel, 
-      regreso ? 1 : 0, 
-      horaRegreso || null,
-      imss || null,
-      categoryId === 5 ? tipoIncapacidad : null 
+      employeeName, categoryId, mysqlDate, mysqlEndDate, 
+      time || null, comentarios || '', plantel, 
+      regreso ? 1 : 0, horaRegreso || null, user
     ])
-
     return { success: true, id: result.insertId }
   } catch (error) {
-    console.error("Database insert error:", error)
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'Failed to insert pass into database.'
-    })
+    throw createError({ statusCode: 500, statusMessage: 'Failed to insert database record.' })
   }
 })

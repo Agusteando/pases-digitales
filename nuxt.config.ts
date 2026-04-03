@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   
   modules: [
     '@nuxtjs/tailwindcss'
@@ -12,14 +12,20 @@ export default defineNuxtConfig({
     transpile: ['lucide-vue-next']
   },
 
-  vite: {
-    optimizeDeps: {
-      exclude: ['mysql2', 'googleapis', 'google-auth-library']
-    }
-  },
-
   nitro: {
     preset: 'vercel'
+  },
+
+  app: {
+    head: {
+      title: 'Pases Digitales | Casita',
+      meta: [
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0' }
+      ],
+      script: [
+        { src: 'https://accounts.google.com/gsi/client', async: true, defer: true }
+      ]
+    }
   },
 
   runtimeConfig: {

@@ -11,12 +11,12 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
 
   try {
-    // Upgraded query fetching 'user' to distinguish ownership (Admin vs Plantel)
+    // Increased limit slightly to ensure we capture today's activity accurately for duplicate prevention
     const [rows] = await db.execute(
       `SELECT id, date, time, comentarios, category_id, status, user, plantel 
        FROM hr_entries 
        WHERE employee_name = ? 
-       ORDER BY date DESC LIMIT 10`,
+       ORDER BY date DESC, id DESC LIMIT 10`,
       [employeeName]
     )
     return rows

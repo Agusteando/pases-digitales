@@ -1,0 +1,56 @@
+<template>
+  <div class="h-full flex flex-col space-y-4 animate-in fade-in">
+    <div class="flex items-center justify-between pb-2">
+      <h2 class="text-xl font-extrabold text-slate-800 tracking-tight">Actividad Reciente</h2>
+      <button @click="refresh" class="p-2 text-slate-400 hover:text-slate-900 rounded-full transition-all">
+        <RefreshCcw :class="{'animate-spin': pending}" class="w-5 h-5" />
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+      <div v-if="pending && !data" class="flex justify-center py-12"><Loader2 class="w-6 h-6 animate-spin text-slate-400" /></div>
+      
+      <div v-for="pass in data" :key="pass.id" class="glass-card p-4 rounded-2xl flex items-center gap-4 group">
+        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+          <FileText class="w-5 h-5 text-slate-600" />
+        </div>
+        
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-0.5">
+            <h4 class="text-sm font-extrabold text-slate-800 truncate">{{ pass.employee_name }}</h4>
+            <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">
+              {{ pass.status }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium truncate">Folio #{{ String(pass.id).padStart(5, '0') }}</p>
+        </div>
+
+        <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <button @click="doAction(pass.id, 'share')" class="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors" title="Compartir">
+            <Share2 class="w-4 h-4" />
+          </button>
+          <button v-if="pass.status === 'pendiente'" @click="doAction(pass.id, 'authorize')" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors" title="Autorizar">
+            <CheckCircle class="w-4 h-4" />
+          </button>
+          <button @click="doAction(pass.id, 'cancel')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Cancelar">
+            <Ban class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { RefreshCcw, Loader2, Share2, CheckCircle, Ban, FileText } from 'lucide-vue-next'
+const { data, pending, refresh } = useFetch('/api/passes/recent')
+
+async function doAction(id, actionStr) {
+  try {
+    await $fetch(`/api/passes/${id}/action`, { method: 'POST', body: { action: actionStr } })
+    refresh()
+  } catch (error) {
+    console.error(error)
+  }
+}
+</script>
