@@ -72,17 +72,28 @@ export async function getInternalEmployeeList() {
   if (cache.has('internal_list')) return cache.get('internal_list')!
 
   let employees = await fetchSoapEmployees()
+  const signiaData = await getSigniaData()
 
   if (!employees) {
-    const signiaData = await getSigniaData()
     employees = signiaData.filter(e => e.isActive).map(e => ({
       id: e.id,
       name: e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`.trim(),
       rfc: e.rfc,
       curp: e.curp,
       plantel: e.plantelId || 'No Especificado',
-      email: e.email
+      email: e.email,
+      puesto: e.puesto || 'No Especificado'
     }))
+  } else {
+    // Enrich SOAP data with mandatory structured elements from Signia (Puesto, Email fallback)
+    employees = employees.map(emp => {
+      const sMatch = signiaData.find(s => s.rfc === emp.rfc || s.curp === emp.curp || normalizeName(s.name) === normalizeName(emp.name))
+      return {
+         ...emp,
+         puesto: sMatch?.puesto || 'No Especificado',
+         email: sMatch?.email || emp.email
+      }
+    })
   }
 
   cache.set('internal_list', employees)

@@ -2,8 +2,8 @@
   <div class="glass-card p-5 md:p-6 rounded-2xl flex flex-col h-full min-h-[400px]">
     <div class="flex items-center justify-between pb-4 border-b border-slate-100/50 shrink-0">
       <div>
-        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Pases Recientes</h2>
-        <p class="text-xs font-medium text-slate-500 mt-0.5">Historial general de planteles</p>
+        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">Actividad Global</h2>
+        <p class="text-xs font-medium text-slate-500 mt-0.5">Pases recientes emitidos en la red</p>
       </div>
       <button @click="refresh" class="p-2 text-slate-400 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-full shadow-sm transition-all focus:outline-none border border-slate-100">
         <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4" />
@@ -25,33 +25,35 @@
             <component :is="getCategoryIcon(pass.category_id)" class="w-4 h-4 text-white" />
           </div>
 
-          <div class="bg-white/60 hover:bg-white p-3 rounded-xl border border-transparent hover:border-slate-200 transition-colors shadow-sm">
-            <div class="flex items-center justify-between gap-2 mb-1.5">
-              <div class="flex items-center gap-2">
-                <span class="font-mono text-base font-black text-brand-700 tracking-tight">#{{ String(pass.id).padStart(5, '0') }}</span>
-                <span class="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded border"
-                      :class="pass.status === 'autorizado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                             (pass.status === 'cancelado' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-slate-100 text-slate-600 border-slate-200')">
-                  {{ pass.status }}
-                </span>
+          <div class="bg-white/60 hover:bg-white p-3 rounded-2xl border border-transparent hover:border-slate-200 transition-all shadow-sm">
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-mono text-sm font-black text-brand-700 tracking-tight">#{{ String(pass.id).padStart(5, '0') }}</span>
+                  <span class="text-[9px] uppercase font-black tracking-wide px-1.5 py-0.5 rounded border"
+                        :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
+                                 'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
+                                 'bg-red-50 text-red-700 border-red-200': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                    {{ pass.status }}
+                  </span>
+                </div>
+                <h4 class="text-sm font-extrabold text-slate-800 truncate">{{ pass.employee_name }}</h4>
               </div>
-              <div class="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <button @click="printPass(pass)" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Imprimir Formato">
-                  <Printer class="w-4 h-4" />
-                </button>
-                <button @click="sharePass(pass)" class="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Compartir">
-                  <Share2 class="w-4 h-4" />
-                </button>
-                <button v-if="pass.status !== 'cancelado'" @click="doAction(pass.id, 'cancel')" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Anular Pase">
-                  <Ban class="w-4 h-4" />
+              
+              <!-- Quick Actions -->
+              <div class="flex items-center gap-1 shrink-0">
+                <button v-if="pass.status === 'pendiente' && authUser?.name !== pass.employee_name" @click="doAction(pass.id, 'authorize')" class="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-500 hover:text-white text-[10px] font-black uppercase rounded-lg border border-emerald-200 transition-all" title="Autorizar Inmediatamente">
+                  Autorizar
                 </button>
               </div>
             </div>
-            <h4 class="text-sm font-bold text-slate-800 truncate mb-0.5">{{ pass.employee_name }}</h4>
-            <p class="text-xs font-medium text-slate-500 truncate flex items-center gap-1.5">
-              <span>{{ getCategoryName(pass.category_id) }}</span>
-              <span>•</span>
-              <span>Plantel {{ pass.plantel || 'N/A' }}</span>
+            
+            <p class="text-xs font-medium text-slate-500 truncate flex items-center gap-1.5 mt-1">
+              <span class="font-bold">{{ getCategoryName(pass.category_id) }}</span>
+              <span class="text-slate-300">•</span>
+              <span>PL {{ pass.plantel || 'N/A' }}</span>
+              <span class="text-slate-300">•</span>
+              <span>Emitido por {{ pass.user }}</span>
             </p>
           </div>
         </div>
@@ -61,8 +63,9 @@
 </template>
 
 <script setup>
-import { RefreshCcw, Loader2, Send, Ban, Share2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, Printer } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
 
+const { user: authUser } = useAuth()
 const { data, pending, refresh } = useFetch('/api/passes/recent')
 
 const getCategoryIcon = (id) => {
@@ -85,29 +88,7 @@ async function doAction(id, actionStr) {
     await $fetch(`/api/passes/${id}/action`, { method: 'POST', body: { action: actionStr } })
     refresh()
   } catch (error) {
-    console.error(error)
-  }
-}
-
-function sharePass(pass) {
-  const text = `*Pase Digital - Folio #${String(pass.id).padStart(5, '0')}*\nColaborador: ${pass.employee_name}\nEstado: ${pass.status.toUpperCase()}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
-}
-
-const printPass = async (pass) => {
-  try {
-    const blob = await $fetch(`/api/passes/${pass.id}/print`, {
-      method: 'POST',
-      responseType: 'blob'
-    })
-    const url = URL.createObjectURL(blob)
-    const newWindow = window.open(url, '_blank')
-    if (newWindow) {
-      newWindow.onload = () => newWindow.print()
-    }
-  } catch (error) {
-    console.error('Error printing pass:', error)
-    alert('Ocurrió un error al generar el PDF del pase.')
+    alert(error.data?.message || 'Error al ejecutar la acción.')
   }
 }
 </script>

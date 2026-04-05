@@ -18,7 +18,8 @@ export default defineEventHandler(async (event) => {
       id: emp.id,
       name: emp.name,
       plantel: emp.plantel,
-      email: emp.email
+      email: emp.email,
+      puesto: emp.puesto
     }))
 
   return results
