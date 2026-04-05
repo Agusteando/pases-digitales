@@ -22,8 +22,9 @@ Bienvenido a la plataforma de **Pases Digitales**. Este sistema automatiza la em
 *   **Estado Final**: Una vez que el responsable abre el enlace y autoriza o rechaza el requerimiento, el registro se vuelve definitivo, grabando inalterablemente quién tomó la decisión y a qué hora.
 
 ## 4. Directorio y Reglas (Administradores)
-*   **Directorio (Workspace)**: Los contactos encargados de recibir notificaciones se vinculan directamente mediante una búsqueda real en Google Workspace. Se asignan a un Plantel con un nivel de responsabilidad (`PRINCIPAL`, `ADMON`, `OTRO`). Cada plantel debe mantener siempre un responsable principal o administrador activo. El número de teléfono del contacto es bidireccional; si se edita aquí, se sincroniza en el directorio oficial de Google.
-*   **Reglas de WhatsApp**: El motor de reglas de notificaciones utiliza el catálogo real de **Puestos** (obtenido de Signia) y la selección de **Planteles**. Si el empleado afectado encaja en las condiciones de la regla, la alerta se dirige al responsable indicado. En caso contrario, la notificación recurre a contactar a los responsables generales del plantel.
+*   **Mapa Operativo**: El sistema organiza visualmente a los contactos y responsables por Plantel, combinando el directorio oficial de Google Workspace con las reglas lógicas de enrutamiento. 
+*   **Directorio (Workspace)**: Los contactos encargados de recibir notificaciones se vinculan directamente mediante una búsqueda real en Google Workspace. Se asignan a un Plantel con un nivel de responsabilidad (`PRINCIPAL`, `ADMON`, `OTRO`). 
+*   **Reglas de WhatsApp**: El motor de reglas de notificaciones es altamente visual. Define condiciones exactas: "Si el empleado pertenece a este Plantel y tiene este Puesto, notificar a este Contacto". En caso contrario, la notificación recurre a contactar a los responsables generales del directorio del plantel.
 
 ## 5. Historial, Modificaciones y Auditoría
 *   **Visualización Rápida**: El expediente lateral despliega de manera visual el recuento de eventos y la cronología segmentada por ciclo escolar.

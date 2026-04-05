@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const pass = rows[0]
 
     if (pass.status !== 'pendiente') {
-      throw createError({ statusCode: 400, message: `El pase ya fue procesado y su estado actual es: ${pass.status}` })
+      throw createError({ statusCode: 400, message: `El documento seguro ya fue procesado y su estado actual es: ${pass.status}` })
     }
 
     if (actingUser === pass.employee_name || actingUser === pass.user) {

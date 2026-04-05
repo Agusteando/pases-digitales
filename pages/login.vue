@@ -1,24 +1,24 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-brand-50 p-6 font-sans relative overflow-hidden">
+  <div class="min-h-screen flex items-center justify-center bg-slate-50 p-6 font-sans relative overflow-hidden">
     
-    <!-- Decorative Blurs -->
-    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-brand-200/50 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-200/40 rounded-full blur-[100px] pointer-events-none"></div>
+    <!-- Premium Decorative Blurs -->
+    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-brand-200/40 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-200/30 rounded-full blur-[100px] pointer-events-none"></div>
 
-    <div class="w-full max-w-sm glass-card bg-white/80 p-10 rounded-3xl shadow-xl border border-white relative z-10 text-center transition-all duration-500">
+    <div class="w-full max-w-[400px] glass-card p-12 rounded-[2.5rem] shadow-2xl border border-white/80 relative z-10 text-center transition-all duration-500">
       
-      <div v-if="isProcessing" class="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center z-20">
-        <Loader2 class="w-8 h-8 animate-spin text-brand-600 mb-4" />
-        <span class="text-sm font-bold text-slate-800 tracking-tight">Validando credenciales...</span>
+      <div v-if="isProcessing" class="absolute inset-0 bg-white/95 backdrop-blur-md rounded-[2.5rem] flex flex-col items-center justify-center z-20">
+        <Loader2 class="w-10 h-10 animate-spin text-brand-600 mb-5" />
+        <span class="text-sm font-black text-slate-800 tracking-tight">Validando credenciales...</span>
       </div>
 
-      <div class="w-20 h-20 bg-gradient-to-br from-brand-600 to-indigo-800 rounded-2xl shadow-lg shadow-brand-500/30 flex items-center justify-center text-white font-black text-3xl mx-auto mb-8 select-none ring-4 ring-brand-50">
+      <div class="w-24 h-24 bg-gradient-to-br from-brand-500 to-indigo-700 rounded-[1.5rem] shadow-xl shadow-brand-500/30 flex items-center justify-center text-white font-black text-4xl mx-auto mb-10 select-none ring-8 ring-white">
         PD
       </div>
       
       <h1 class="text-3xl font-black text-slate-900 mb-3 tracking-tight">Pases Digitales</h1>
-      <p class="text-slate-500 text-sm font-medium mb-10 leading-relaxed">
-        Accede con tu cuenta institucional para generar y administrar pases.
+      <p class="text-slate-500 text-sm font-bold mb-12 leading-relaxed">
+        Accede con tu cuenta institucional para gestionar operaciones.
       </p>
       
       <div class="flex justify-center min-h-[44px]">

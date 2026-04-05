@@ -1,90 +1,89 @@
 <template>
-  <div class="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
+  <div class="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-slate-50 relative overflow-hidden font-sans">
     <!-- Decorative Blurs -->
-    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-brand-200/50 rounded-full blur-[120px] pointer-events-none"></div>
-    <div class="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-200/40 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-brand-200/40 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-indigo-200/30 rounded-full blur-[100px] pointer-events-none"></div>
 
-    <div v-if="pending" class="flex flex-col items-center z-10">
-      <Loader2 class="w-10 h-10 animate-spin text-brand-600 mb-4" />
-      <p class="text-sm font-bold text-slate-500">Recuperando detalles del pase...</p>
+    <div v-if="pending" class="flex flex-col items-center z-10 bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-xl border border-white">
+      <Loader2 class="w-12 h-12 animate-spin text-brand-600 mb-5" />
+      <p class="text-sm font-black text-slate-800 tracking-tight">Recuperando documento seguro...</p>
     </div>
 
-    <div v-else-if="errorMsg" class="z-10 w-full max-w-md bg-white p-8 rounded-3xl shadow-xl text-center border border-red-100">
-      <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-        <XCircle class="w-8 h-8 text-red-500" />
+    <div v-else-if="errorMsg" class="z-10 w-full max-w-md glass-card bg-white/90 p-10 rounded-[2.5rem] shadow-2xl text-center border border-red-100">
+      <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-100">
+        <XCircle class="w-10 h-10 text-red-500" />
       </div>
-      <h2 class="text-xl font-black text-slate-900 mb-2">Acceso Denegado</h2>
-      <p class="text-sm font-medium text-slate-600 mb-6">{{ errorMsg }}</p>
-      <NuxtLink to="/" class="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">
-        Volver al Inicio
+      <h2 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">Acceso Denegado</h2>
+      <p class="text-sm font-bold text-slate-600 mb-8 leading-relaxed">{{ errorMsg }}</p>
+      <NuxtLink to="/" class="inline-block px-6 py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-colors shadow-md">
+        Ir a Plataforma Central
       </NuxtLink>
     </div>
 
-    <div v-else-if="pass" class="z-10 w-full max-w-lg glass-card p-8 rounded-3xl shadow-xl border border-white relative">
-      <div class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-        <ShieldCheck class="w-32 h-32" />
+    <div v-else-if="pass" class="z-10 w-full max-w-[500px] glass-card p-10 rounded-[2.5rem] shadow-2xl border border-white/80 relative">
+      <div class="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+        <ShieldCheck class="w-40 h-40" />
       </div>
 
-      <header class="mb-8 relative z-10">
-        <div class="flex items-center gap-3 mb-2">
-          <div class="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
-            <component :is="getCategoryIcon(pass.category_id)" class="w-5 h-5 text-brand-600" />
-          </div>
-          <div>
-            <h1 class="text-2xl font-black text-slate-900 tracking-tight">Pase #{{ String(pass.id).padStart(5, '0') }}</h1>
-            <p class="text-sm font-bold text-slate-500">{{ getCategoryName(pass.category_id) }}</p>
-          </div>
+      <header class="mb-10 relative z-10 text-center flex flex-col items-center">
+        <div class="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mb-5 border border-brand-100 shadow-sm">
+          <component :is="getCategoryIcon(pass.category_id)" class="w-8 h-8 text-brand-600" />
         </div>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight font-mono mb-1">#{{ String(pass.id).padStart(5, '0') }}</h1>
+        <p class="text-sm font-black text-brand-600 uppercase tracking-widest">{{ getCategoryName(pass.category_id) }}</p>
       </header>
 
-      <div class="space-y-6 relative z-10 mb-8">
-        <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100 grid grid-cols-2 gap-4">
-          <div class="col-span-2">
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Colaborador</span>
-            <span class="text-base font-extrabold text-slate-900">{{ pass.employee_name }}</span>
+      <div class="space-y-8 relative z-10 mb-10">
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm grid grid-cols-1 gap-5">
+          <div class="pb-5 border-b border-slate-100">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Colaborador</span>
+            <span class="text-lg font-black text-slate-900 leading-tight">{{ pass.employee_name }}</span>
           </div>
-          <div>
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plantel</span>
-            <span class="text-sm font-bold text-slate-700">PL {{ pass.plantel }}</span>
+          <div class="grid grid-cols-2 gap-4 pb-5 border-b border-slate-100">
+            <div>
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Plantel</span>
+              <span class="text-sm font-bold text-slate-800">{{ pass.plantel }}</span>
+            </div>
+            <div>
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Fecha Operativa</span>
+              <span class="text-sm font-bold text-slate-800">{{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}</span>
+            </div>
           </div>
-          <div>
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Fecha Programada</span>
-            <span class="text-sm font-bold text-slate-700">{{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}</span>
-          </div>
-          <div class="col-span-2" v-if="pass.comentarios">
-            <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Motivo / Justificación</span>
-            <span class="text-sm font-medium text-slate-600 italic">"{{ pass.comentarios }}"</span>
+          <div v-if="pass.comentarios">
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Motivo / Justificación</span>
+            <span class="text-sm font-medium text-slate-700 italic block bg-slate-50 p-4 rounded-2xl border border-slate-100">"{{ pass.comentarios }}"</span>
           </div>
         </div>
 
-        <div v-if="pass.status !== 'pendiente'" class="p-4 rounded-xl flex items-center gap-3" :class="pass.status === 'autorizado' ? 'bg-emerald-50 border border-emerald-100' : 'bg-red-50 border border-red-100'">
-          <component :is="pass.status === 'autorizado' ? CheckCircle2 : XCircle" class="w-6 h-6" :class="pass.status === 'autorizado' ? 'text-emerald-600' : 'text-red-600'" />
-          <div>
-            <p class="text-sm font-bold" :class="pass.status === 'autorizado' ? 'text-emerald-900' : 'text-red-900'">
-              Este pase ya fue {{ pass.status }}
+        <div v-if="pass.status !== 'pendiente'" class="p-5 rounded-2xl flex items-start gap-4 shadow-sm" :class="pass.status === 'autorizado' ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'">
+          <component :is="pass.status === 'autorizado' ? CheckCircle2 : XCircle" class="w-8 h-8 shrink-0" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-red-500'" />
+          <div class="pt-1">
+            <p class="text-base font-black tracking-tight" :class="pass.status === 'autorizado' ? 'text-emerald-900' : 'text-red-900'">
+              Registro {{ pass.status }}
             </p>
-            <p class="text-[11px] font-medium" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-red-700'">
-              Por: {{ pass.authorized_by }} • {{ new Date(pass.authorized_at).toLocaleString() }}
+            <p class="text-xs font-bold mt-1" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-red-700'">
+              Por: {{ pass.authorized_by }} <br/>
+              <span class="opacity-70 font-medium">{{ new Date(pass.authorized_at).toLocaleString() }}</span>
             </p>
           </div>
         </div>
       </div>
 
-      <footer v-if="pass.status === 'pendiente'" class="flex gap-3 relative z-10">
-        <button @click="doAction('reject')" :disabled="isProcessing || !canAuthorize" class="flex-1 py-3.5 bg-red-50 text-red-700 font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-200 disabled:opacity-50 outline-none flex justify-center items-center gap-2">
-          <X class="w-4 h-4" /> Rechazar
+      <footer v-if="pass.status === 'pendiente'" class="flex gap-4 relative z-10">
+        <button @click="doAction('reject')" :disabled="isProcessing || !canAuthorize" class="flex-1 py-4 bg-white text-red-600 font-black rounded-2xl hover:bg-red-50 transition-all border border-red-200 hover:border-red-300 disabled:opacity-50 outline-none flex justify-center items-center gap-2 shadow-sm">
+          <X class="w-5 h-5" /> Rechazar
         </button>
-        <button @click="doAction('authorize')" :disabled="isProcessing || !canAuthorize" class="flex-1 py-3.5 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors shadow-sm disabled:opacity-50 outline-none flex justify-center items-center gap-2">
-          <Check class="w-4 h-4" /> Autorizar
+        <button @click="doAction('authorize')" :disabled="isProcessing || !canAuthorize" class="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 outline-none flex justify-center items-center gap-2">
+          <Check class="w-5 h-5" /> Autorizar
         </button>
       </footer>
       
-      <p v-if="!canAuthorize && pass.status === 'pendiente'" class="text-center text-xs font-bold text-amber-600 mt-4 relative z-10">
-        Política de seguridad: No puedes autorizar un pase que emitiste o que es para ti.
+      <p v-if="!canAuthorize && pass.status === 'pendiente'" class="text-center text-xs font-black text-amber-600 mt-6 relative z-10 bg-amber-50 p-3 rounded-xl border border-amber-200">
+        Política de seguridad: Restricción de auto-autorización activada.
       </p>
 
       <div class="mt-8 text-center relative z-10">
-         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver a la plataforma operativa</NuxtLink>
+         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver al Dashboard</NuxtLink>
       </div>
     </div>
   </div>
@@ -116,7 +115,7 @@ const fetchPass = async () => {
     const data = await $fetch(`/api/passes/authorize/${token}`)
     pass.value = data
   } catch (err) {
-    errorMsg.value = err.data?.message || 'Error al recuperar el pase.'
+    errorMsg.value = err.data?.message || 'Error al recuperar el documento seguro.'
   } finally {
     pending.value = false
   }
@@ -147,7 +146,7 @@ const getCategoryName = (id) => {
   return map[id] || 'Otro'
 }
 
-const formatDate = (dateStr) => dayjs(dateStr).format('DD MMM YYYY')
+const formatDate = (dateStr) => dayjs(dateStr).format('DD MMMM YYYY')
 
 fetchPass()
 </script>

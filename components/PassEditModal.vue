@@ -1,79 +1,83 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20">
       
-      <header class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+      <header class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0 relative">
+        <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
         <div>
-          <h3 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-            Pase #{{ String(pass.id).padStart(5, '0') }}
-            <span v-if="!isEditable" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-200 text-slate-600">Solo Lectura</span>
+          <h3 class="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <span class="font-mono text-brand-600">#{{ String(pass.id).padStart(5, '0') }}</span>
+            <span v-if="!isEditable" class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 border border-slate-200">Solo Lectura</span>
           </h3>
-          <p class="text-xs font-medium text-slate-500 mt-0.5">{{ pass.employee_name }}</p>
+          <p class="text-sm font-bold text-slate-500 mt-1">{{ pass.employee_name }}</p>
         </div>
-        <button @click="$emit('close')" class="text-slate-400 hover:text-slate-700 transition-colors focus:outline-none">
+        <button @click="$emit('close')" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
           <X class="w-5 h-5" />
         </button>
       </header>
 
-      <div class="p-6 overflow-y-auto custom-scrollbar space-y-5 flex-1">
+      <div class="p-8 overflow-y-auto custom-scrollbar space-y-6 flex-1 bg-slate-50/30">
         
-        <div v-if="!isEditable" class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex gap-3 items-center">
-          <Lock class="w-5 h-5 text-slate-400 shrink-0" />
-          <p class="text-xs text-slate-600 font-medium">
-            El periodo permitido para modificación ha concluido, el registro se encuentra en un estado inalterable, o no eres el creador de este pase.
-          </p>
+        <div v-if="!isEditable" class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex gap-4 items-start shadow-sm">
+          <Lock class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+          <div>
+            <h4 class="text-sm font-black text-slate-700">Edición Bloqueada</h4>
+            <p class="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+              El periodo permitido (48h) ha concluido, el registro se encuentra en un estado inalterable, o no posees los permisos del creador original.
+            </p>
+          </div>
         </div>
 
-        <form @submit.prevent="handleSave" id="editPassForm" class="space-y-5">
-          <div class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Categoría</label>
-            <select v-model="form.categoryId" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium text-slate-900 transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500">
+        <form @submit.prevent="handleSave" id="editPassForm" class="space-y-6">
+          <div class="space-y-2">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Categoría Operativa</label>
+            <select v-model="form.categoryId" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500">
               <option :value="1">Pase de entrada (Llegada tarde)</option>
               <option :value="2">Pase de salida (Salida anticipada)</option>
               <option :value="3">Pase para faltar (Ausencia)</option>
               <option :value="4">Pase cambio de horario</option>
-              <option :value="5">Incapacidad</option>
+              <option :value="5">Incapacidad Médica</option>
             </select>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fecha inicio</label>
-              <input type="date" v-model="form.date" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+          <div class="grid grid-cols-2 gap-5">
+            <div class="space-y-2">
+              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Fecha Inicial</label>
+              <input type="date" v-model="form.date" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
             </div>
-            <div v-if="[3, 5].includes(form.categoryId)" class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fecha fin</label>
-              <input type="date" v-model="form.endDate" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+            <div v-if="[3, 5].includes(form.categoryId)" class="space-y-2">
+              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Fecha Final</label>
+              <input type="date" v-model="form.endDate" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
             </div>
-            <div v-if="![3].includes(form.categoryId)" class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hora evento</label>
-              <input type="time" v-model="form.time" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+            <div v-if="![3].includes(form.categoryId)" class="space-y-2">
+              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Hora Evento</label>
+              <input type="time" v-model="form.time" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
             </div>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Plantel</label>
-            <input type="text" v-model="form.plantel" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+          <div class="space-y-2">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Plantel Asignado</label>
+            <input type="text" v-model="form.plantel" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
 
-          <div v-if="[2].includes(form.categoryId)" class="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <input type="checkbox" id="regresoEdit" v-model="form.regreso" :disabled="!isEditable" class="w-4 h-4 rounded text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" />
-            <label for="regresoEdit" class="text-sm font-bold text-slate-700 select-none cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !isEditable}">El colaborador regresa al plantel</label>
+          <div v-if="[2].includes(form.categoryId)" class="flex items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <input type="checkbox" id="regresoEdit" v-model="form.regreso" :disabled="!isEditable" class="w-5 h-5 rounded text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" />
+            <label for="regresoEdit" class="text-sm font-bold text-slate-700 select-none cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !isEditable}">El colaborador retorna en la misma jornada</label>
           </div>
 
-          <div v-if="form.regreso && [2].includes(form.categoryId)" class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Hora regreso</label>
-            <input type="time" v-model="form.horaRegreso" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+          <div v-if="form.regreso && [2].includes(form.categoryId)" class="space-y-2">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Hora Estimada de Retorno</label>
+            <input type="time" v-model="form.horaRegreso" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
           </div>
 
-          <div v-if="form.categoryId === 5" class="space-y-4 p-4 bg-teal-50/50 rounded-xl border border-teal-100">
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Folio IMSS</label>
-              <input type="text" v-model="form.imss" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+          <div v-if="form.categoryId === 5" class="space-y-5 p-5 bg-teal-50/80 rounded-2xl border border-teal-100 shadow-sm">
+            <div class="space-y-2">
+              <label class="block text-[11px] font-black text-teal-700 uppercase tracking-widest">Folio IMSS</label>
+              <input type="text" v-model="form.imss" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-teal-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
             </div>
-            <div class="space-y-1.5">
-              <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tipo Incapacidad</label>
-              <select v-model="form.tipoIncapacidad" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500">
+            <div class="space-y-2">
+              <label class="block text-[11px] font-black text-teal-700 uppercase tracking-widest">Clasificación Médica</label>
+              <select v-model="form.tipoIncapacidad" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-teal-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500">
                 <option value="Enfermedad en General">Enfermedad en General</option>
                 <option value="Riesgo de Trabajo">Riesgo de Trabajo</option>
                 <option value="Maternidad">Maternidad</option>
@@ -81,28 +85,28 @@
             </div>
           </div>
 
-          <div class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Motivo</label>
-            <textarea v-model="form.comentarios" rows="3" :disabled="!isEditable" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-brand-500 outline-none text-sm font-medium transition-all shadow-sm disabled:bg-slate-50 disabled:text-slate-500 resize-none"></textarea>
+          <div class="space-y-2">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Justificación u Observaciones</label>
+            <textarea v-model="form.comentarios" rows="3" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500 resize-none"></textarea>
           </div>
         </form>
 
       </div>
 
-      <footer class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
-        <button v-if="isEditable" @click="handleCancel" :disabled="isSaving" class="px-4 py-2 text-sm font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors outline-none disabled:opacity-50 flex items-center gap-2">
+      <footer class="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
+        <button v-if="isEditable" @click="handleCancel" :disabled="isSaving" class="px-4 py-2.5 text-sm font-black text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors outline-none disabled:opacity-50 flex items-center gap-2 border border-transparent hover:border-red-100">
           <Trash2 class="w-4 h-4" />
-          Anular Pase
+          Anular Registro
         </button>
         <div v-else></div>
 
         <div class="flex items-center gap-3">
-          <button @click="$emit('close')" :disabled="isSaving" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors outline-none disabled:opacity-50">
-            Cerrar
+          <button @click="$emit('close')" :disabled="isSaving" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none disabled:opacity-50 border border-transparent hover:border-slate-200">
+            Cancelar
           </button>
-          <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
+          <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
             <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-            <span>{{ isSaving ? 'Guardando...' : 'Actualizar Pase' }}</span>
+            <span>{{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}</span>
           </button>
         </div>
       </footer>
@@ -128,7 +132,6 @@ const isOwner = computed(() => {
   return user.value && user.value.name === props.pass.user
 })
 
-// Strict editing rule: only the creator can edit/cancel, and only within 48 hours of pass date
 const isEditable = computed(() => {
   if (!isOwner.value) return false
   if (props.pass.status === 'cancelado' || props.pass.status === 'rechazado') return false
@@ -201,7 +204,7 @@ const handleSave = async () => {
 }
 
 const handleCancel = async () => {
-  if (!confirm('¿Estás seguro de anular permanentemente este pase? Esta acción no se puede deshacer.')) return
+  if (!confirm('¿Estás seguro de anular permanentemente este pase? Esta acción no se puede deshacer y el registro quedará inhabilitado.')) return
   if (isSaving.value) return
   isSaving.value = true
 

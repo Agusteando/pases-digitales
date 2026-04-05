@@ -20,6 +20,7 @@ export default defineEventHandler(async (event) => {
     puesto: enriched.puesto || null,
     email: enriched.email || empMatch?.email || null,
     plantelId: enriched.plantelId || empMatch?.plantel || null,
-    isActive: enriched.isActive !== false
+    isActive: enriched.isActive !== false,
+    curp: enriched.curp || empMatch?.curp || null
   }
 })

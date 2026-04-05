@@ -19,7 +19,8 @@ export default defineEventHandler(async (event) => {
       name: emp.name,
       plantel: emp.plantel,
       email: emp.email,
-      puesto: emp.puesto
+      puesto: emp.puesto,
+      curp: emp.curp
     }))
 
   return results
