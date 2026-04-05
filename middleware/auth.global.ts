@@ -1,14 +1,18 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const token = useCookie('auth-token')
+  const redirectCookie = useCookie('auth-redirect', { maxAge: 300 })
   
   if (to.path === '/login') {
     if (token.value) {
-      return navigateTo('/', { replace: true })
+      const redirect = redirectCookie.value || '/'
+      redirectCookie.value = null
+      return navigateTo(redirect, { replace: true })
     }
     return
   }
 
   if (!token.value) {
+    if (to.path !== '/') redirectCookie.value = to.fullPath
     return navigateTo('/login', { replace: true })
   }
 
@@ -18,6 +22,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   if (!user.value) {
+    if (to.path !== '/') redirectCookie.value = to.fullPath
     return navigateTo('/login', { replace: true })
   }
 })

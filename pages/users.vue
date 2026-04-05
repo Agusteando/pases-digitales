@@ -1,0 +1,57 @@
+<template>
+  <div class="p-6 md:p-10 max-w-7xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
+    
+    <header class="mb-8 shrink-0">
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight">Usuarios del Sistema</h1>
+      <p class="text-slate-500 mt-2 text-sm font-medium">Monitoreo de operadores autenticados, roles y estadísticas de actividad en la plataforma.</p>
+    </header>
+
+    <div v-if="pending" class="py-16 flex justify-center flex-1">
+      <Loader2 class="w-8 h-8 animate-spin text-brand-600" />
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 items-start content-start">
+      <div v-for="sysUser in users" :key="sysUser.email" class="glass-card bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col gap-6 relative group">
+        
+        <div class="flex items-start gap-4">
+          <div class="relative shrink-0">
+            <img v-if="sysUser.picture" :src="sysUser.picture" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md bg-white" />
+            <div v-else class="w-14 h-14 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center font-black text-brand-700 text-lg">
+              {{ sysUser.name.slice(0, 2).toUpperCase() }}
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full" title="Cuenta Activa"></div>
+          </div>
+          
+          <div class="flex-1 min-w-0 pt-1">
+            <h3 class="text-base font-black text-slate-900 truncate tracking-tight">{{ sysUser.name }}</h3>
+            <p class="text-[11px] font-medium text-slate-500 truncate mt-0.5">{{ sysUser.email }}</p>
+            <span class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-black tracking-wide uppercase border bg-slate-50 text-slate-600 border-slate-200">
+              {{ sysUser.role }}
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+          <div class="bg-brand-50/50 rounded-xl p-3 border border-brand-100/50 flex flex-col justify-center items-center text-center">
+            <span class="text-xl font-black text-brand-700 font-mono leading-none mb-1">{{ sysUser.passesGenerated }}</span>
+            <span class="text-[9px] font-bold text-brand-600/80 uppercase tracking-widest">Generados</span>
+          </div>
+          <div class="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50 flex flex-col justify-center items-center text-center">
+            <span class="text-xl font-black text-emerald-700 font-mono leading-none mb-1">{{ sysUser.passesAuthorized }}</span>
+            <span class="text-[9px] font-bold text-emerald-600/80 uppercase tracking-widest">Autorizados</span>
+          </div>
+        </div>
+
+        <div class="text-center pt-2">
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Último Acceso</p>
+          <p class="text-xs font-medium text-slate-600 mt-0.5">{{ new Date(sysUser.last_login).toLocaleString() }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { Loader2 } from 'lucide-vue-next'
+const { data: users, pending } = useFetch('/api/users/stats')
+</script>

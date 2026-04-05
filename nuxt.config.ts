@@ -38,6 +38,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    appUrl: process.env.APP_URL || 'http://localhost:3000',
     mysqlHost: process.env.MYSQL_HOST,
     mysqlUser: process.env.MYSQL_USER,
     mysqlPassword: process.env.MYSQL_PASSWORD,

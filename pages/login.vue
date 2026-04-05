@@ -50,7 +50,12 @@ onMounted(() => {
           })
           const { fetchUser } = useAuth()
           await fetchUser()
-          await navigateTo('/', { replace: true })
+          
+          const redirectCookie = useCookie('auth-redirect')
+          const redirect = redirectCookie.value || '/'
+          redirectCookie.value = null
+          
+          await navigateTo(redirect, { replace: true })
         } catch (error) {
           console.error('Auth error:', error)
           isProcessing.value = false

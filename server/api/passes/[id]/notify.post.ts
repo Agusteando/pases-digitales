@@ -1,12 +1,10 @@
 import { useDB } from '~/server/utils/db'
-import { randomBytes } from 'crypto'
-import { defineEventHandler, getRouterParam, createError } from '#imports'
+import { defineEventHandler, getRouterParam, createError, useRuntimeConfig } from '#imports'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { getSigniaEnrichment } from '~/server/utils/employee-engine'
 
-// Normalizes a workspace phone number to a valid WhatsApp Chat ID
 const toWhatsAppChatId = (phone: string) => {
-  if (phone.includes('@')) return phone // already formatted (e.g. groups or @c.us)
+  if (phone.includes('@')) return phone
   let cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 10) cleaned = `521${cleaned}`
   return `${cleaned}@c.us`
@@ -17,8 +15,8 @@ export default defineEventHandler(async (event) => {
   if (!id) throw createError({ statusCode: 400 })
 
   const db = useDB()
+  const config = useRuntimeConfig()
   
-  // 1. Fetch pass details
   const [rows]: any = await db.execute('SELECT * FROM hr_entries WHERE id = ?', [id])
   if (!rows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado' })
 
@@ -32,14 +30,14 @@ export default defineEventHandler(async (event) => {
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
   const returnMessage = pass.hora_regreso ? `Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
 
+  // Secure Internal Authorization Link
+  const authUrl = `${config.appUrl}/authorize/${pass.auth_token}`
+
   const results: any[] = []
 
-  // 2. Global Telegram Notification (Legacy Group Workflow)
-  // Always routes here unconditionally as the master operational log
+  // 1. Global Telegram Notification (Operational Master Log)
   const telegramGlobalId = '-1003057962499'
-  const tgObfuscatedId = `${pass.id}-${randomBytes(5).toString('hex')}`
-  const tgLongUrl = `https://api.casitaiedis.edu.mx/incidencias/${tgObfuscatedId}-TG`
-  const tgMessage = `*Favor de autorizar* ${categoryName} de *${pass.employee_name}* con motivo ${pass.comentarios || 'N/A'} ${returnMessage}\nFecha: ${formattedDate} - Hora: - ${pass.time || 'N/A'} - Folio *${paddedId}*\n\n${tgLongUrl}`
+  const tgMessage = `*REQUERIMIENTO DE AUTORIZACIÓN*\n${categoryName} de *${pass.employee_name}* con motivo ${pass.comentarios || 'N/A'} ${returnMessage}\nFecha: ${formattedDate} - Hora: - ${pass.time || 'N/A'} - Folio *${paddedId}*\n\nAutorizar Pase: ${authUrl}`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -52,7 +50,7 @@ export default defineEventHandler(async (event) => {
     results.push({ platform: 'telegram', status: 'error' })
   }
 
-  // 3. Dynamic WhatsApp Notification using Configurable Rule Engine
+  // 2. Dynamic WhatsApp Notification using Configurable Rule Engine
   const empData = await getSigniaEnrichment(pass.employee_name)
   const empPuesto = (empData.puesto || 'Desconocido').trim()
   const empPlantel = (pass.plantel || '').trim()
@@ -70,39 +68,32 @@ export default defineEventHandler(async (event) => {
          matchedAnyRule = true
          if (rule.target_type === 'CONTACT') {
              const gwData = await getCachedWorkspaceUser(rule.target_val)
-             if (gwData.phone && gwData.phone.length >= 10) {
-                 waTargets.add(toWhatsAppChatId(gwData.phone))
-             }
+             if (gwData.phone && gwData.phone.length >= 10) waTargets.add(toWhatsAppChatId(gwData.phone))
          } else if (rule.target_type === 'CUSTOM') {
              waTargets.add(toWhatsAppChatId(rule.target_val))
          }
      }
   }
 
-  // 4. Fallback Behavior: If no custom rules were triggered, fallback to all directory contacts in the same plantel
+  // Fallback: Notify all contacts in that plantel directory
   if (!matchedAnyRule) {
       const [contacts]: any = await db.execute('SELECT email FROM hr_directory WHERE plantel = ?', [empPlantel])
       for (const contact of contacts) {
           if (contact.email) {
             const gwData = await getCachedWorkspaceUser(contact.email)
-            if (gwData.phone && gwData.phone.length >= 10) {
-              waTargets.add(toWhatsAppChatId(gwData.phone))
-            }
+            if (gwData.phone && gwData.phone.length >= 10) waTargets.add(toWhatsAppChatId(gwData.phone))
           }
       }
   }
 
-  // Dispatch to all collected WhatsApp Targets
-  for (const chatId of waTargets) {
-    const obfuscatedId = `${pass.id}-${randomBytes(5).toString('hex')}`
-    const longUrl = `https://api.casitaiedis.edu.mx/incidencias/${obfuscatedId}-${chatId}`
-    const message = `*Favor de autorizar* ${categoryName} de *${pass.employee_name}* con motivo ${pass.comentarios || 'N/A'} ${returnMessage}\nFecha: ${formattedDate} - Hora: - ${pass.time || 'N/A'} - Folio *${paddedId}*\n\n${longUrl}`
+  const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*\nMotivo: ${pass.comentarios || 'N/A'}\n${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nAutorizar/Rechazar:\n${authUrl}`
 
+  for (const chatId of waTargets) {
     try {
       await $fetch('https://pumpea.shop/whatsapp-manager/bot/send/jurado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ chatId, message }).toString()
+        body: new URLSearchParams({ chatId, message: waMessage }).toString()
       })
       results.push({ platform: 'whatsapp', chatId, status: 'success' })
     } catch (e) {

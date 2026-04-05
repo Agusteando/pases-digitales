@@ -2,6 +2,7 @@ import { useDB } from '~/server/utils/db'
 import jwt from 'jsonwebtoken'
 import { getCookie } from '#imports'
 import dayjs from 'dayjs'
+import { randomUUID } from 'crypto'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -27,10 +28,14 @@ export default defineEventHandler(async (event) => {
   const mysqlDate = date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : dayjs().format('YYYY-MM-DD HH:mm:ss')
   const mysqlEndDate = endDate ? dayjs(endDate).format('YYYY-MM-DD 23:59:59') : mysqlDate
   
+  // All new passes require explicit authorization
+  const authToken = randomUUID()
+  const initialStatus = 'pendiente'
+  
   const sql = `
     INSERT INTO hr_entries 
-    (employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, sync_request, IMSS, tipo_incapacidad, user) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'autorizado', 0, ?, ?, ?)
+    (employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, user) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
   `
   
   try {
@@ -44,12 +49,14 @@ export default defineEventHandler(async (event) => {
       plantel || 'No Especificado', 
       regreso ? 1 : 0, 
       horaRegreso || null,
+      initialStatus,
+      authToken,
       imss || null,
       categoryId === 5 ? tipoIncapacidad : null,
       actingUser
     ])
 
-    return { success: true, id: result.insertId }
+    return { success: true, id: result.insertId, auth_token: authToken }
   } catch (error) {
     console.error("Database insert error:", error)
     throw createError({

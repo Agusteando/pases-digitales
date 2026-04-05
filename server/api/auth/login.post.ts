@@ -1,11 +1,13 @@
 import { OAuth2Client } from 'google-auth-library'
 import jwt from 'jsonwebtoken'
 import { useRuntimeConfig, defineEventHandler, readBody, setCookie, createError } from '#imports'
+import { useDB } from '~/server/utils/db'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const config = useRuntimeConfig()
   const client = new OAuth2Client(config.googleClientId)
+  const db = useDB()
 
   try {
     if (!body.credential) {
@@ -21,6 +23,13 @@ export default defineEventHandler(async (event) => {
     if (!payload || !payload.email) {
       throw new Error('Invalid payload')
     }
+
+    // Upsert into System Users Table
+    await db.execute(`
+      INSERT INTO system_users (email, name, picture, last_login) 
+      VALUES (?, ?, ?, NOW()) 
+      ON DUPLICATE KEY UPDATE name = VALUES(name), picture = VALUES(picture), last_login = NOW()
+    `, [payload.email, payload.name, payload.picture])
 
     const token = jwt.sign({ 
       email: payload.email, 
