@@ -28,32 +28,31 @@ export default defineEventHandler(async (event) => {
   const mysqlDate = date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : dayjs().format('YYYY-MM-DD HH:mm:ss')
   const mysqlEndDate = endDate ? dayjs(endDate).format('YYYY-MM-DD 23:59:59') : mysqlDate
   
-  // All new passes require explicit authorization
   const authToken = randomUUID()
   const initialStatus = 'pendiente'
   
   const sql = `
     INSERT INTO hr_entries 
-    (employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, user) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+    (user, employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
   `
   
   try {
     const [result]: any = await db.execute(sql, [
+      actingUser,
       employeeName, 
       categoryId, 
       mysqlDate, 
       mysqlEndDate, 
       time || null, 
       comentarios || '', 
-      plantel || 'No Especificado', 
+      plantel || null, 
       regreso ? 1 : 0, 
       horaRegreso || null,
       initialStatus,
       authToken,
       imss || null,
-      categoryId === 5 ? tipoIncapacidad : null,
-      actingUser
+      categoryId === 5 ? tipoIncapacidad : null
     ])
 
     return { success: true, id: result.insertId, auth_token: authToken }

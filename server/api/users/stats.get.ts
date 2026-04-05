@@ -4,7 +4,7 @@ export default defineEventHandler(async () => {
   const db = useDB()
   
   try {
-    const [users]: any = await db.execute('SELECT email, name, picture, role, last_login FROM system_users ORDER BY last_login DESC')
+    const [users]: any = await db.execute('SELECT email, name, picture, role, last_login, is_admin FROM system_users ORDER BY last_login DESC')
     
     // Calculate stats per user
     const [emissions]: any = await db.execute('SELECT user as name, COUNT(*) as count FROM hr_entries GROUP BY user')
@@ -15,6 +15,7 @@ export default defineEventHandler(async () => {
 
     return users.map((u: any) => ({
       ...u,
+      is_admin: Boolean(u.is_admin),
       passesGenerated: emitMap[u.name] || 0,
       passesAuthorized: authMap[u.name] || 0
     }))

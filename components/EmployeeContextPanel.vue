@@ -14,8 +14,8 @@
           <div class="h-2.5 bg-slate-200 rounded animate-pulse w-2/3"></div>
         </div>
         <div v-else class="mt-1.5 flex flex-wrap gap-2">
-          <span class="px-2 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">Plantel {{ displayPlantel }}</span>
-          <span class="px-2 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100 truncate max-w-[200px]">{{ displayRole }}</span>
+          <span v-if="displayPlantel" class="px-2 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">Plantel {{ displayPlantel }}</span>
+          <span v-if="displayRole" class="px-2 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100 truncate max-w-[200px]">{{ displayRole }}</span>
         </div>
       </div>
     </div>
@@ -90,7 +90,7 @@
                 <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5">
                   <ShieldCheck class="w-3.5 h-3.5 text-slate-400" />
                   <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                    {{ pass.status }} por {{ pass.authorized_by || 'Sistema' }}
+                    {{ pass.status }}{{ pass.authorized_by ? ' por ' + pass.authorized_by : '' }}
                   </span>
                 </div>
               </div>
@@ -104,7 +104,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { AlertTriangle, Loader2, ShieldCheck, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { AlertTriangle, Loader2, ShieldCheck } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 dayjs.locale('es')
@@ -143,8 +143,8 @@ const { data: historyData, pending: pendingHistory } = useFetch('/api/passes/emp
 })
 
 const displayPic = computed(() => useFallbackImage.value || !enrichment.value?.picture ? getFallbackAvatar(props.employee.name) : enrichment.value.picture)
-const displayRole = computed(() => enrichment.value?.puesto || 'Puesto Funcional No Especificado')
-const displayPlantel = computed(() => enrichment.value?.plantelId || props.employee.plantel)
+const displayRole = computed(() => enrichment.value?.puesto || null)
+const displayPlantel = computed(() => enrichment.value?.plantelId || props.employee.plantel || null)
 
 const isToday = (dateStr) => {
   if (!dateStr) return false

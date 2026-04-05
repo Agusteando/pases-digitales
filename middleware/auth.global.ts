@@ -25,4 +25,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (to.path !== '/') redirectCookie.value = to.fullPath
     return navigateTo('/login', { replace: true })
   }
+
+  const adminRoutes = ['/analytics', '/routing', '/users', '/notifications']
+  if (adminRoutes.some(r => to.path.startsWith(r)) && !user.value.is_admin) {
+    return navigateTo('/', { replace: true })
+  }
 })

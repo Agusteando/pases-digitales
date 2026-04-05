@@ -27,6 +27,7 @@
           <History class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
+          v-if="user?.is_admin"
           to="/analytics" 
           class="p-3.5 w-full rounded-xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-50 text-brand-600 shadow-sm border border-brand-100"
@@ -36,6 +37,7 @@
           <BarChart2 class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
+          v-if="user?.is_admin"
           to="/routing" 
           class="p-3.5 w-full rounded-xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-50 text-brand-600 shadow-sm border border-brand-100"
@@ -45,6 +47,7 @@
           <Network class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
+          v-if="user?.is_admin"
           to="/users" 
           class="p-3.5 w-full rounded-xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-50 text-brand-600 shadow-sm border border-brand-100"
@@ -83,11 +86,11 @@
         <History class="w-5 h-5" />
         <span class="text-[9px] font-bold">Historial</span>
       </NuxtLink>
-      <NuxtLink to="/routing" class="px-2 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/routing' ? '' : 'text-slate-500'">
+      <NuxtLink v-if="user?.is_admin" to="/routing" class="px-2 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/routing' ? '' : 'text-slate-500'">
         <Network class="w-5 h-5" />
         <span class="text-[9px] font-bold">Rutas</span>
       </NuxtLink>
-      <NuxtLink to="/users" class="px-2 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/users' ? '' : 'text-slate-500'">
+      <NuxtLink v-if="user?.is_admin" to="/users" class="px-2 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/users' ? '' : 'text-slate-500'">
         <Shield class="w-5 h-5" />
         <span class="text-[9px] font-bold">Usuarios</span>
       </NuxtLink>
@@ -101,7 +104,7 @@
 
 <script setup>
 import { Plus, BarChart2, History, Network, Shield, LogOut } from 'lucide-vue-next'
-const { logout } = useAuth()
+const { user, logout } = useAuth()
 
 const handleLogout = async () => {
   await logout()

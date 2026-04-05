@@ -38,7 +38,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-bold text-slate-900 truncate" :class="{'text-brand-700': highlightedIndex === idx}">{{ emp.name }}</p>
-              <p class="text-xs text-slate-500 font-medium truncate">{{ emp.puesto || 'Puesto no especificado' }} • Plantel {{ emp.plantel }}</p>
+              <p class="text-xs text-slate-500 font-medium truncate"><span v-if="emp.puesto">{{ emp.puesto }} • </span>Plantel {{ emp.plantel }}</p>
             </div>
           </div>
         </div>

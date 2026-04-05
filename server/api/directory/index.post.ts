@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   try {
     await db.execute(
       'INSERT INTO hr_directory (plantel, email, role, puesto) VALUES (?, ?, ?, ?)', 
-      [plantel, email, role, puesto || 'No especificado']
+      [plantel, email, role, puesto || null]
     )
     return { success: true }
   } catch (error) {

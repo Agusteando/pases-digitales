@@ -27,7 +27,7 @@ function parseSoapXML(xmlString: string) {
       name: getTag('NombreCompleto'),
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
-      plantel: plantel || 'No Especificado',
+      plantel: plantel || null,
       email: getTag('Correo')
     })
   }
@@ -80,9 +80,9 @@ export async function getInternalEmployeeList() {
       name: e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`.trim(),
       rfc: e.rfc,
       curp: e.curp,
-      plantel: e.plantelId || 'No Especificado',
+      plantel: e.plantelId || null,
       email: e.email,
-      puesto: e.puesto || 'No Especificado'
+      puesto: e.puesto || null
     }))
   } else {
     // Enrich SOAP data with mandatory structured elements from Signia (Puesto, Email fallback)
@@ -90,7 +90,7 @@ export async function getInternalEmployeeList() {
       const sMatch = signiaData.find(s => s.rfc === emp.rfc || s.curp === emp.curp || normalizeName(s.name) === normalizeName(emp.name))
       return {
          ...emp,
-         puesto: sMatch?.puesto || 'No Especificado',
+         puesto: sMatch?.puesto || null,
          email: sMatch?.email || emp.email
       }
     })
