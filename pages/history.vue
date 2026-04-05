@@ -69,7 +69,9 @@
             <tr v-else v-for="pass in passes" :key="pass.id" class="bg-white/60 hover:bg-white transition-colors group">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-2">
-                  <span class="font-mono text-sm font-black text-slate-900 tracking-tight">#{{ String(pass.id).padStart(5, '0') }}</span>
+                  <NuxtLink :to="`/pass/${pass.id}`" class="font-mono text-sm font-black text-brand-700 hover:text-brand-900 tracking-tight transition-colors">
+                    #{{ String(pass.id).padStart(5, '0') }}
+                  </NuxtLink>
                   <span v-if="pass.processed" title="Sincronizado" class="flex items-center justify-center w-4 h-4 rounded-full bg-emerald-100">
                     <Check class="w-2.5 h-2.5 text-emerald-600" />
                   </span>
@@ -90,17 +92,17 @@
               <td class="px-6 py-4">
                 <span class="text-[10px] uppercase font-bold px-2 py-1 rounded border"
                       :class="pass.status === 'autorizado' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-                             (pass.status === 'cancelado' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200')">
+                             (pass.status === 'cancelado' || pass.status === 'rechazado' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200')">
                   {{ pass.status }}
                 </span>
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button @click="openEditModal(pass)" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Inspeccionar / Editar">
+                  <NuxtLink :to="`/pass/${pass.id}`" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Ver Detalles">
+                    <Eye class="w-4 h-4" />
+                  </NuxtLink>
+                  <button v-if="user?.is_admin || user?.name === pass.user" @click="openEditModal(pass)" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Editar Rápidamente">
                     <Edit2 class="w-4 h-4" />
-                  </button>
-                  <button @click="printPass(pass)" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Imprimir Formato">
-                    <Printer class="w-4 h-4" />
                   </button>
                   <button @click="sharePass(pass)" class="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Compartir WhatsApp">
                     <Share2 class="w-4 h-4" />
@@ -120,11 +122,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Download, Edit2, Printer, Share2, Check, Loader2 } from 'lucide-vue-next'
+import { Search, Download, Edit2, Share2, Check, Loader2, Eye } from 'lucide-vue-next'
 import PassExportModal from '~/components/PassExportModal.vue'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 
+const { user } = useAuth()
 const showExportModal = ref(false)
 const selectedPass = ref(null)
 
@@ -179,23 +182,6 @@ const openEditModal = (pass) => {
 const sharePass = (pass) => {
   const text = `*Pase Digital - Folio #${String(pass.id).padStart(5, '0')}*\nColaborador: ${pass.employee_name}\nEstado: ${pass.status.toUpperCase()}`;
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
-}
-
-const printPass = async (pass) => {
-  try {
-    const blob = await $fetch(`/api/passes/${pass.id}/print`, {
-      method: 'POST',
-      responseType: 'blob'
-    })
-    const url = URL.createObjectURL(blob)
-    const newWindow = window.open(url, '_blank')
-    if (newWindow) {
-      newWindow.onload = () => newWindow.print()
-    }
-  } catch (error) {
-    console.error('Error printing pass:', error)
-    alert('Ocurrió un error al generar el PDF del pase.')
-  }
 }
 
 onMounted(() => {

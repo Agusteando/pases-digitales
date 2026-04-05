@@ -29,7 +29,9 @@
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1">
-                  <span class="font-mono text-sm font-black text-brand-700 tracking-tight">#{{ String(pass.id).padStart(5, '0') }}</span>
+                  <NuxtLink :to="`/pass/${pass.id}`" class="font-mono text-sm font-black text-brand-700 hover:text-brand-900 tracking-tight transition-colors">
+                    #{{ String(pass.id).padStart(5, '0') }}
+                  </NuxtLink>
                   <span class="text-[9px] uppercase font-black tracking-wide px-1.5 py-0.5 rounded border"
                         :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
                                  'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
@@ -38,13 +40,6 @@
                   </span>
                 </div>
                 <h4 class="text-sm font-extrabold text-slate-800 truncate">{{ pass.employee_name }}</h4>
-              </div>
-              
-              <!-- Quick Actions -->
-              <div class="flex items-center gap-1 shrink-0">
-                <button v-if="pass.status === 'pendiente' && authUser?.name !== pass.employee_name" @click="doAction(pass.id, 'authorize')" class="px-2 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-500 hover:text-white text-[10px] font-black uppercase rounded-lg border border-emerald-200 transition-all" title="Autorizar Inmediatamente">
-                  Autorizar
-                </button>
               </div>
             </div>
             
@@ -65,7 +60,6 @@
 <script setup>
 import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
 
-const { user: authUser } = useAuth()
 const { data, pending, refresh } = useFetch('/api/passes/recent')
 
 const getCategoryIcon = (id) => {
@@ -81,14 +75,5 @@ const getCategoryColor = (id) => {
 const getCategoryName = (id) => {
   const map = { 1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad' }
   return map[id] || 'Otro'
-}
-
-async function doAction(id, actionStr) {
-  try {
-    await $fetch(`/api/passes/${id}/action`, { method: 'POST', body: { action: actionStr } })
-    refresh()
-  } catch (error) {
-    alert(error.data?.message || 'Error al ejecutar la acción.')
-  }
 }
 </script>
