@@ -24,17 +24,30 @@ export default defineEventHandler(async (event) => {
       throw new Error('Invalid payload')
     }
 
-    // Upsert into System Users Table
+    // Safely extract and coalesce optional fields to prevent undefined bind errors
+    const email = payload.email.trim()
+    const name = payload.name ? payload.name.trim() : email.split('@')[0]
+    const picture = payload.picture ? payload.picture.trim() : null
+    
+    // Explicit admin bootstrap for exact recovery email
+    const isMasterAdmin = email.toLowerCase() === 'desarrollo.tecnologico@casitaiedis.edu.mx' ? 1 : 0
+
+    // Upsert into System Users Table to auto-create any authenticated user
+    // Only master admin auto-overwrites is_admin flag back to 1 on login
     await db.execute(`
-      INSERT INTO system_users (email, name, picture, last_login) 
-      VALUES (?, ?, ?, NOW()) 
-      ON DUPLICATE KEY UPDATE name = VALUES(name), picture = VALUES(picture), last_login = NOW()
-    `, [payload.email, payload.name, payload.picture])
+      INSERT INTO system_users (email, name, picture, last_login, is_admin) 
+      VALUES (?, ?, ?, NOW(), ?) 
+      ON DUPLICATE KEY UPDATE 
+        name = VALUES(name), 
+        picture = VALUES(picture), 
+        last_login = NOW(),
+        is_admin = IF(email = 'desarrollo.tecnologico@casitaiedis.edu.mx', 1, is_admin)
+    `, [email, name, picture, isMasterAdmin])
 
     const token = jwt.sign({ 
-      email: payload.email, 
-      name: payload.name, 
-      picture: payload.picture 
+      email: email, 
+      name: name, 
+      picture: picture 
     }, config.jwtSecret, { expiresIn: '12h' })
 
     setCookie(event, 'auth-token', token, {

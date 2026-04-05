@@ -56,13 +56,14 @@ export const buildWhatsAppTemplate = (data: any, isCancelled = false): string =>
   const statusMark = isCancelled ? '🚫 *ANULADO*' : '✅ *AUTORIZADO*'
   const categoryStr = categoryNames[data.categoryId] || 'Operación'
   
+  const motivoStr = data.comentarios ? `\n✍️ *Nota:* ${data.comentarios}` : ''
+  const plantelStr = data.plantel ? `\n🏢 *Plantel:* ${data.plantel}` : ''
+  
   return `🎫 *PASE DIGITAL | #${String(data.id).padStart(5, '0')}*
 ${statusMark}
 
-👤 *Colaborador:* ${data.employeeName}
-🏢 *Plantel:* ${data.plantel}
+👤 *Colaborador:* ${data.employeeName}${plantelStr}
 📋 *Movimiento:* ${categoryStr}
-⏰ *Fecha:* ${data.date}${data.time ? ' | Hora: ' + data.time : ''}
-✍️ *Nota:* ${data.comentarios || 'N/A'}
-🧑‍💻 *Sistema:* Emitido por ${data.user || 'Admin'}`;
+⏰ *Fecha:* ${data.date}${data.time ? ' | Hora: ' + data.time : ''}${motivoStr}
+🧑‍💻 *Emitido por:* ${data.user}`;
 }

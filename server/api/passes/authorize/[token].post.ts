@@ -12,20 +12,21 @@ export default defineEventHandler(async (event) => {
   }
 
   const cookieToken = getCookie(event, 'auth-token')
-  let actingUser = 'Sistema'
-  
-  if (cookieToken) {
-    try {
-      const decoded: any = jwt.decode(cookieToken)
-      if (decoded && decoded.name) actingUser = decoded.name
-    } catch (e) {}
-  }
+  if (!cookieToken) throw createError({ statusCode: 401, message: 'Autenticación requerida.' })
+
+  let actingUser = null
+  try {
+    const decoded: any = jwt.decode(cookieToken)
+    if (decoded && decoded.name) actingUser = decoded.name
+  } catch (e) {}
+
+  if (!actingUser) throw createError({ statusCode: 401, message: 'Sesión inválida.' })
 
   const db = useDB()
 
   try {
-    const [rows]: any = await db.execute(`SELECT id, employee_name, status FROM hr_entries WHERE auth_token = ?`, [tokenUrl])
-    if (!rows.length) throw createError({ statusCode: 404, message: 'Enlace inválido.' })
+    const [rows]: any = await db.execute(`SELECT id, employee_name, user, status FROM hr_entries WHERE auth_token = ?`, [tokenUrl])
+    if (!rows.length) throw createError({ statusCode: 404, message: 'Enlace inválido o pase no encontrado.' })
 
     const pass = rows[0]
 
@@ -33,8 +34,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: `El pase ya fue procesado y su estado es: ${pass.status}` })
     }
 
-    if (actingUser === pass.employee_name) {
-      throw createError({ statusCode: 403, message: 'No puedes autorizar tu propio pase.' })
+    // Separation of Duties: A user cannot authorize a pass if they created it OR if it belongs to them
+    if (actingUser === pass.employee_name || actingUser === pass.user) {
+      throw createError({ statusCode: 403, message: 'Política de seguridad: No puedes autorizar un pase en el que estás involucrado como colaborador o creador.' })
     }
 
     const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'

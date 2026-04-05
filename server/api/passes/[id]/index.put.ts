@@ -1,6 +1,7 @@
 import { useDB } from '~/server/utils/db'
 import dayjs from 'dayjs'
-import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
+import jwt from 'jsonwebtoken'
+import { defineEventHandler, getRouterParam, readBody, getCookie, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -8,13 +9,29 @@ export default defineEventHandler(async (event) => {
   
   if (!id) throw createError({ statusCode: 400, message: 'ID no proporcionado.' })
 
+  const token = getCookie(event, 'auth-token')
+  if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida' })
+
+  let actingUser = null
+  try {
+    const decoded: any = jwt.decode(token)
+    if (decoded && decoded.name) actingUser = decoded.name
+  } catch (e) {}
+
+  if (!actingUser) throw createError({ statusCode: 401, message: 'Sesión inválida' })
+
   const db = useDB()
 
   try {
-    const [rows]: any = await db.execute('SELECT date, status FROM hr_entries WHERE id = ?', [id])
+    const [rows]: any = await db.execute('SELECT date, status, user FROM hr_entries WHERE id = ?', [id])
     if (!rows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado.' })
 
     const pass = rows[0]
+
+    // Strict ownership rule for editing
+    if (pass.user !== actingUser) {
+      throw createError({ statusCode: 403, message: 'Solo el creador original puede modificar este pase.' })
+    }
     
     if (pass.status === 'cancelado') {
       throw createError({ statusCode: 403, message: 'No se permite modificar un pase anulado.' })
@@ -37,9 +54,9 @@ export default defineEventHandler(async (event) => {
        mysqlDate,
        mysqlEndDate,
        body.time || null,
-       body.comentarios || '',
+       body.comentarios || null,
        body.categoryId,
-       body.plantel || '',
+       body.plantel || null,
        body.regreso ? 1 : 0,
        body.horaRegreso || null,
        body.imss || null,

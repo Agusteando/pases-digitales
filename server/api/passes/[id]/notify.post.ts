@@ -28,7 +28,10 @@ export default defineEventHandler(async (event) => {
   const categoryName = categories[pass.category_id] || 'Pase'
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
-  const returnMessage = pass.hora_regreso ? `Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
+  
+  const returnMessage = pass.hora_regreso ? `\nRetorno estimado: ${pass.hora_regreso}` : ''
+  const motivoMsg = pass.comentarios ? `\nMotivo: ${pass.comentarios}` : ''
+  const timeMsg = pass.time ? `\nHora: ${pass.time}` : ''
 
   // Secure Internal Authorization Link
   const authUrl = `${config.appUrl}/authorize/${pass.auth_token}`
@@ -37,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Global Telegram Notification (Operational Master Log)
   const telegramGlobalId = '-1003057962499'
-  const tgMessage = `*REQUERIMIENTO DE AUTORIZACIÓN*\n${categoryName} de *${pass.employee_name}* con motivo ${pass.comentarios || 'N/A'} ${returnMessage}\nFecha: ${formattedDate} - Hora: - ${pass.time || 'N/A'} - Folio *${paddedId}*\n\nAutorizar Pase: ${authUrl}`
+  const tgMessage = `*REQUERIMIENTO DE AUTORIZACIÓN*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg}\nFolio *${paddedId}*\n\nAutorizar Pase: ${authUrl}`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -52,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
   // 2. Dynamic WhatsApp Notification using Configurable Rule Engine
   const empData = await getSigniaEnrichment(pass.employee_name)
-  const empPuesto = (empData.puesto || 'Desconocido').trim()
+  const empPuesto = (empData.puesto || '').trim()
   const empPlantel = (pass.plantel || '').trim()
 
   const [rules]: any = await db.execute('SELECT * FROM notification_rules')
@@ -76,7 +79,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Fallback: Notify all contacts in that plantel directory
-  if (!matchedAnyRule) {
+  if (!matchedAnyRule && empPlantel) {
       const [contacts]: any = await db.execute('SELECT email FROM hr_directory WHERE plantel = ?', [empPlantel])
       for (const contact of contacts) {
           if (contact.email) {
@@ -86,7 +89,7 @@ export default defineEventHandler(async (event) => {
       }
   }
 
-  const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*\nMotivo: ${pass.comentarios || 'N/A'}\n${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nAutorizar/Rechazar:\n${authUrl}`
+  const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nAutorizar/Rechazar:\n${authUrl}`
 
   for (const chatId of waTargets) {
     try {

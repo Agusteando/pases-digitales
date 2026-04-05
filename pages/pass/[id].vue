@@ -6,12 +6,9 @@
         <ArrowLeft class="w-4 h-4" /> Volver
       </button>
       
-      <div v-if="pass && isOwnerOrAdmin" class="flex gap-2">
+      <div v-if="pass && isOwner" class="flex gap-2">
         <button v-if="isEditable" @click="showEditModal = true" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm hover:border-brand-500 hover:text-brand-600 transition-colors flex items-center gap-2 outline-none">
-          <Edit2 class="w-4 h-4" /> Editar
-        </button>
-        <button @click="sharePass" class="px-4 py-2 bg-teal-50 border border-teal-100 text-teal-700 text-sm font-bold rounded-xl shadow-sm hover:bg-teal-500 hover:text-white transition-colors flex items-center gap-2 outline-none">
-          <Share2 class="w-4 h-4" /> Compartir
+          <Edit2 class="w-4 h-4" /> Editar / Anular
         </button>
       </div>
     </div>
@@ -74,11 +71,11 @@
                 <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nombre Completo</span>
                 <span class="text-base font-extrabold text-slate-900">{{ pass.employee_name }}</span>
               </div>
-              <div>
+              <div v-if="pass.plantel">
                 <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plantel Asignado</span>
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">
                   <Building2 class="w-3.5 h-3.5 text-slate-500" />
-                  {{ pass.plantel || 'No Especificado' }}
+                  {{ pass.plantel }}
                 </span>
               </div>
             </div>
@@ -121,10 +118,10 @@
               </div>
             </div>
 
-            <div>
+            <div v-if="pass.comentarios">
               <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Motivo / Justificación</span>
               <p class="text-sm font-medium text-slate-700 bg-slate-50 p-4 rounded-2xl border border-slate-100 italic">
-                {{ pass.comentarios || 'Sin comentarios adicionales.' }}
+                {{ pass.comentarios }}
               </p>
             </div>
             
@@ -174,14 +171,11 @@
             </div>
 
             <!-- Manual Auth Warning -->
-            <div v-if="pass.status === 'pendiente' && !canAuthorize" class="mt-6 p-3 bg-amber-50 rounded-xl border border-amber-200 flex gap-2 items-start">
+            <div v-if="pass.status === 'pendiente'" class="mt-6 p-3 bg-amber-50 rounded-xl border border-amber-200 flex gap-2 items-start">
               <Info class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <p class="text-[10px] text-amber-800 font-medium leading-relaxed">
-                Este pase ha sido enviado a la ruta correspondiente. Debes esperar la resolución a través de la notificación externa.
+                Este pase debe ser resuelto exclusivamente a través del enlace enviado en la notificación oficial.
               </p>
-            </div>
-            <div v-else-if="pass.status === 'pendiente' && canAuthorize" class="mt-6 p-3 bg-brand-50 rounded-xl border border-brand-200">
-               <p class="text-[10px] text-brand-800 font-bold text-center">Eres elegible para autorizar. Usa el enlace recibido por notificación.</p>
             </div>
           </div>
 
@@ -216,7 +210,6 @@
       </div>
     </div>
 
-    <!-- Reused Modal Component -->
     <PassEditModal v-if="pass && showEditModal" :isOpen="showEditModal" :pass="pass" @close="showEditModal = false" @updated="refreshPass" />
   </div>
 </template>
@@ -238,18 +231,12 @@ const { user } = useAuth()
 const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
 const showEditModal = ref(false)
 
-const isOwnerOrAdmin = computed(() => {
-  if (!user.value || !pass.value) return false
-  return user.value.is_admin || user.value.name === pass.value.user
-})
-
-const canAuthorize = computed(() => {
-  if (!user.value || !pass.value) return false
-  return user.value.is_admin && user.value.name !== pass.value.employee_name
+const isOwner = computed(() => {
+  return user.value && pass.value && user.value.name === pass.value.user
 })
 
 const isEditable = computed(() => {
-  if (!isOwnerOrAdmin.value || !pass.value) return false
+  if (!isOwner.value || !pass.value) return false
   if (pass.value.status === 'cancelado' || pass.value.status === 'rechazado') return false
   const passDate = dayjs(pass.value.date)
   const hoursDiff = dayjs().diff(passDate, 'hour')
@@ -280,12 +267,6 @@ const getCategoryName = (id) => {
 const formatDateOnly = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMMM YYYY') : 'N/A'
 const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY, HH:mm') : 'N/A'
 const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : 'N/A'
-
-const sharePass = () => {
-  if (!pass.value) return
-  const text = `*Pase Digital - Folio #${String(pass.value.id).padStart(5, '0')}*\nColaborador: ${pass.value.employee_name}\nEstado: ${pass.value.status.toUpperCase()}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
-}
 
 const refreshPass = () => {
   refresh()

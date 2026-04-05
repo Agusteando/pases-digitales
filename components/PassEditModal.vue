@@ -20,7 +20,7 @@
         <div v-if="!isEditable" class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex gap-3 items-center">
           <Lock class="w-5 h-5 text-slate-400 shrink-0" />
           <p class="text-xs text-slate-600 font-medium">
-            El periodo permitido para modificación ha concluido o el registro se encuentra en un estado inalterable.
+            El periodo permitido para modificación ha concluido, el registro se encuentra en un estado inalterable, o no eres el creador de este pase.
           </p>
         </div>
 
@@ -89,14 +89,22 @@
 
       </div>
 
-      <footer class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
-        <button @click="$emit('close')" :disabled="isSaving" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors outline-none disabled:opacity-50">
-          Cerrar
+      <footer class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+        <button v-if="isEditable" @click="handleCancel" :disabled="isSaving" class="px-4 py-2 text-sm font-bold text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors outline-none disabled:opacity-50 flex items-center gap-2">
+          <Trash2 class="w-4 h-4" />
+          Anular Pase
         </button>
-        <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
-          <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-          <span>{{ isSaving ? 'Guardando...' : 'Actualizar Pase' }}</span>
-        </button>
+        <div v-else></div>
+
+        <div class="flex items-center gap-3">
+          <button @click="$emit('close')" :disabled="isSaving" class="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors outline-none disabled:opacity-50">
+            Cerrar
+          </button>
+          <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-lg shadow-sm transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
+            <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+            <span>{{ isSaving ? 'Guardando...' : 'Actualizar Pase' }}</span>
+          </button>
+        </div>
       </footer>
 
     </div>
@@ -105,7 +113,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { X, Lock, Loader2 } from 'lucide-vue-next'
+import { X, Lock, Loader2, Trash2 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const props = defineProps({
@@ -114,14 +122,19 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'updated'])
+const { user } = useAuth()
 
-// Determine if editable: not canceled, and date is within the last 48 hours
+const isOwner = computed(() => {
+  return user.value && user.value.name === props.pass.user
+})
+
+// Strict editing rule: only the creator can edit/cancel, and only within 48 hours of pass date
 const isEditable = computed(() => {
-  if (props.pass.status === 'cancelado') return false
+  if (!isOwner.value) return false
+  if (props.pass.status === 'cancelado' || props.pass.status === 'rechazado') return false
   const passDate = dayjs(props.pass.date)
   const now = dayjs()
   const hoursDiff = now.diff(passDate, 'hour')
-  // Allow editing if the pass is for the future, or created within the last 48 hours
   return hoursDiff <= 48
 })
 
@@ -145,7 +158,6 @@ const formatToDateInput = (val) => {
 
 const formatToTimeInput = (val) => {
   if (!val) return ''
-  // '14:30:00' -> '14:30'
   return val.slice(0, 5)
 }
 
@@ -183,6 +195,26 @@ const handleSave = async () => {
   } catch (error) {
     console.error('Update error:', error)
     alert(error?.data?.message || 'Ocurrió un error al intentar actualizar el registro.')
+  } finally {
+    isSaving.value = false
+  }
+}
+
+const handleCancel = async () => {
+  if (!confirm('¿Estás seguro de anular permanentemente este pase? Esta acción no se puede deshacer.')) return
+  if (isSaving.value) return
+  isSaving.value = true
+
+  try {
+    await $fetch(`/api/passes/${props.pass.id}/action`, {
+      method: 'POST',
+      body: { action: 'cancel' }
+    })
+    emit('updated')
+    emit('close')
+  } catch (error) {
+    console.error('Cancel error:', error)
+    alert(error?.data?.message || 'Ocurrió un error al intentar anular el registro.')
   } finally {
     isSaving.value = false
   }

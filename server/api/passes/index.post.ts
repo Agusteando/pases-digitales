@@ -1,6 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import jwt from 'jsonwebtoken'
-import { getCookie } from '#imports'
+import { getCookie, createError, defineEventHandler, readBody } from '#imports'
 import dayjs from 'dayjs'
 import { randomUUID } from 'crypto'
 
@@ -9,16 +9,17 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
   
   const token = getCookie(event, 'auth-token')
-  let actingUser = 'Sistema'
-  
-  if (token) {
-    try {
-      const decoded: any = jwt.decode(token)
-      if (decoded && decoded.name) {
-        actingUser = decoded.name
-      }
-    } catch (e) {}
-  }
+  if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida' })
+
+  let actingUser = null
+  try {
+    const decoded: any = jwt.decode(token)
+    if (decoded && decoded.name) {
+      actingUser = decoded.name
+    }
+  } catch (e) {}
+
+  if (!actingUser) throw createError({ statusCode: 401, message: 'Sesión inválida' })
 
   const { 
     employeeName, categoryId, date, endDate, time, comentarios, 
@@ -45,7 +46,7 @@ export default defineEventHandler(async (event) => {
       mysqlDate, 
       mysqlEndDate, 
       time || null, 
-      comentarios || '', 
+      comentarios || null, 
       plantel || null, 
       regreso ? 1 : 0, 
       horaRegreso || null,

@@ -45,8 +45,8 @@
             
             <p class="text-xs font-medium text-slate-500 truncate flex items-center gap-1.5 mt-1">
               <span class="font-bold">{{ getCategoryName(pass.category_id) }}</span>
-              <span class="text-slate-300">•</span>
-              <span>PL {{ pass.plantel || 'N/A' }}</span>
+              <span v-if="pass.plantel" class="text-slate-300">•</span>
+              <span v-if="pass.plantel">PL {{ pass.plantel }}</span>
               <span class="text-slate-300">•</span>
               <span>Emitido por {{ pass.user }}</span>
             </p>

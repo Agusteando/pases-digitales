@@ -87,7 +87,7 @@
                 <span class="text-sm text-slate-600">{{ formatDate(pass.date) }}</span>
               </td>
               <td class="px-6 py-4">
-                <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">PL {{ pass.plantel || 'N/A' }}</span>
+                <span v-if="pass.plantel" class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">PL {{ pass.plantel }}</span>
               </td>
               <td class="px-6 py-4">
                 <span class="text-[10px] uppercase font-bold px-2 py-1 rounded border"
@@ -101,11 +101,8 @@
                   <NuxtLink :to="`/pass/${pass.id}`" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Ver Detalles">
                     <Eye class="w-4 h-4" />
                   </NuxtLink>
-                  <button v-if="user?.is_admin || user?.name === pass.user" @click="openEditModal(pass)" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Editar Rápidamente">
+                  <button v-if="user?.name === pass.user" @click="openEditModal(pass)" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Editar Rápidamente">
                     <Edit2 class="w-4 h-4" />
-                  </button>
-                  <button @click="sharePass(pass)" class="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors" title="Compartir WhatsApp">
-                    <Share2 class="w-4 h-4" />
                   </button>
                 </div>
               </td>
@@ -122,7 +119,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Download, Edit2, Share2, Check, Loader2, Eye } from 'lucide-vue-next'
+import { Search, Download, Edit2, Check, Loader2, Eye } from 'lucide-vue-next'
 import PassExportModal from '~/components/PassExportModal.vue'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
@@ -177,11 +174,6 @@ const debounceSearch = () => {
 
 const openEditModal = (pass) => {
   selectedPass.value = pass
-}
-
-const sharePass = (pass) => {
-  const text = `*Pase Digital - Folio #${String(pass.id).padStart(5, '0')}*\nColaborador: ${pass.employee_name}\nEstado: ${pass.status.toUpperCase()}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
 }
 
 onMounted(() => {
