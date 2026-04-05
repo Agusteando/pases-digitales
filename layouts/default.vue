@@ -35,6 +35,15 @@
         >
           <BarChart2 class="w-6 h-6" />
         </NuxtLink>
+        <NuxtLink 
+          to="/routing" 
+          class="p-3.5 w-full rounded-xl flex justify-center transition-all group outline-none"
+          active-class="bg-brand-50 text-brand-600 shadow-sm border border-brand-100"
+          :class="$route.path === '/routing' ? '' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900 border border-transparent'"
+          title="Contactos y Enrutamiento"
+        >
+          <Network class="w-6 h-6" />
+        </NuxtLink>
       </nav>
 
       <div class="mt-auto pb-4 w-full px-4">
@@ -57,28 +66,28 @@
 
     <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 pb-safe pt-2 px-4 flex justify-around items-center z-50 shadow-lg">
-      <NuxtLink to="/" class="px-4 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/' ? '' : 'text-slate-500'">
-        <Plus class="w-6 h-6" />
-        <span class="text-[10px] font-bold">Pases</span>
+      <NuxtLink to="/" class="px-3 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/' ? '' : 'text-slate-500'">
+        <Plus class="w-5 h-5" />
+        <span class="text-[9px] font-bold">Pases</span>
       </NuxtLink>
-      <NuxtLink to="/history" class="px-4 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/history' ? '' : 'text-slate-500'">
-        <History class="w-6 h-6" />
-        <span class="text-[10px] font-bold">Historial</span>
+      <NuxtLink to="/history" class="px-3 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/history' ? '' : 'text-slate-500'">
+        <History class="w-5 h-5" />
+        <span class="text-[9px] font-bold">Historial</span>
       </NuxtLink>
-      <NuxtLink to="/analytics" class="px-4 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/analytics' ? '' : 'text-slate-500'">
-        <BarChart2 class="w-6 h-6" />
-        <span class="text-[10px] font-bold">Métricas</span>
+      <NuxtLink to="/routing" class="px-3 py-2 flex flex-col items-center gap-1 transition-colors" active-class="text-brand-600" :class="$route.path === '/routing' ? '' : 'text-slate-500'">
+        <Network class="w-5 h-5" />
+        <span class="text-[9px] font-bold">Rutas</span>
       </NuxtLink>
-      <button @click="handleLogout" class="px-4 py-2 flex flex-col items-center gap-1 text-slate-500 transition-colors hover:text-red-600">
-        <LogOut class="w-6 h-6" />
-        <span class="text-[10px] font-bold">Salir</span>
+      <button @click="handleLogout" class="px-3 py-2 flex flex-col items-center gap-1 text-slate-500 transition-colors hover:text-red-600">
+        <LogOut class="w-5 h-5" />
+        <span class="text-[9px] font-bold">Salir</span>
       </button>
     </nav>
   </div>
 </template>
 
 <script setup>
-import { Plus, BarChart2, History, LogOut } from 'lucide-vue-next'
+import { Plus, BarChart2, History, Network, LogOut } from 'lucide-vue-next'
 const { logout } = useAuth()
 
 const handleLogout = async () => {

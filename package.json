@@ -13,6 +13,7 @@
   "dependencies": {
     "dayjs": "^1.11.10",
     "google-auth-library": "^9.6.3",
+    "googleapis": "^133.0.0",
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^10.2.0",
     "lucide-vue-next": "^0.344.0",

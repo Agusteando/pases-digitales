@@ -45,6 +45,9 @@ export default defineNuxtConfig({
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     jwtSecret: process.env.JWT_SECRET,
     signiaApiUrl: process.env.SIGNIA_API_URL || 'https://signia.casitaapps.com/api/export/employees',
+    googleWorkspaceAdminEmail: process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL,
+    googleSaClientEmail: process.env.GOOGLE_SA_CLIENT_EMAIL,
+    googleSaPrivateKey: process.env.GOOGLE_SA_PRIVATE_KEY,
     
     public: {
       googleClientIdPublic: process.env.GOOGLE_CLIENT_ID,
