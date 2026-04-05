@@ -80,11 +80,11 @@
       </footer>
       
       <p v-if="!canAuthorize && pass.status === 'pendiente'" class="text-center text-xs font-bold text-amber-600 mt-4 relative z-10">
-        No puedes autorizar tu propio pase.
+        Política de seguridad: No puedes autorizar un pase que emitiste o que es para ti.
       </p>
 
       <div class="mt-8 text-center relative z-10">
-         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver a Pases Digitales</NuxtLink>
+         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver a la plataforma operativa</NuxtLink>
       </div>
     </div>
   </div>
@@ -108,7 +108,7 @@ const pending = ref(true)
 const isProcessing = ref(false)
 
 const canAuthorize = computed(() => {
-  return pass.value && user.value && pass.value.employee_name !== user.value.name
+  return pass.value && user.value && pass.value.employee_name !== user.value.name && pass.value.user !== user.value.name
 })
 
 const fetchPass = async () => {

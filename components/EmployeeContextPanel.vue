@@ -28,7 +28,7 @@
         </div>
         <div class="flex-1">
           <h4 class="text-sm font-bold text-amber-900">Pase previo detectado</h4>
-          <p class="text-xs text-amber-800 mt-0.5 font-medium">El colaborador ya tiene un pase registrado hoy. Verifique el historial antes de duplicar la operación.</p>
+          <p class="text-xs text-amber-800 mt-0.5 font-medium">El colaborador ya tiene un registro durante esta jornada operativa.</p>
         </div>
       </div>
     </transition>
@@ -37,7 +37,7 @@
     <div class="relative z-10 flex-1 flex flex-col min-h-0">
       <div class="flex items-center justify-between mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100 shrink-0">
         <div>
-          <h3 class="text-sm font-black text-slate-800">Historial Operativo</h3>
+          <h3 class="text-sm font-black text-slate-800">Cronología de Eventos</h3>
           <p class="text-[10px] font-bold text-brand-600 uppercase tracking-widest mt-0.5" v-if="historyData?.cycle">Ciclo Escolar {{ historyData.cycle }}</p>
         </div>
         <div class="flex gap-2">
@@ -53,8 +53,8 @@
       </div>
       
       <div v-else-if="!groupedHistory.length" class="py-10 text-center bg-white/50 rounded-xl border border-slate-200 border-dashed">
-        <p class="text-sm font-bold text-slate-500">Expediente Limpio</p>
-        <p class="text-xs font-medium text-slate-400 mt-1">No hay incidencias en el ciclo escolar actual.</p>
+        <p class="text-sm font-bold text-slate-500">Expediente en blanco</p>
+        <p class="text-xs font-medium text-slate-400 mt-1">No hay incidencias para mostrar en el ciclo actual.</p>
       </div>
 
       <div v-else class="flex-1 overflow-y-auto custom-scrollbar pr-3 -mr-3 space-y-6">
