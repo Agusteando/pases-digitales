@@ -1,4 +1,4 @@
-import { getSigniaData } from '~/server/utils/employee-engine'
+import { getFastSoapEmployees } from '~/server/utils/employee-engine'
 import { defineEventHandler } from '#imports'
 
 export default defineEventHandler(async () => {
@@ -12,13 +12,13 @@ export default defineEventHandler(async () => {
     console.warn('Options API fallback engaged for planteles')
   }
 
-  // Graceful fallback: extract from authoritative employees list mapping nested prisma payload
-  const data = await getSigniaData()
+  // Graceful fallback: extract from SOAP authoritative employees list
+  const data = await getFastSoapEmployees()
   const planteles = new Set<string>()
   
   data.forEach(e => {
-    if (e.plantel?.name && typeof e.plantel.name === 'string') {
-      planteles.add(e.plantel.name.trim())
+    if (e.plantel && typeof e.plantel === 'string') {
+      planteles.add(e.plantel.trim())
     }
   })
   

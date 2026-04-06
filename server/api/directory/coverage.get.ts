@@ -36,6 +36,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Evaluates strictly in deterministic order: 1. Director, 2. Administrador
   const dirStatus = await checkGroup(directors, 'Director')
   if (!dirStatus.complete) {
     if (dirStatus.missing) return { isComplete: false, step: 'DIRECTOR_MISSING', role: 'Director' }

@@ -1,4 +1,4 @@
-import { getFastSoapEmployees, getSigniaEnrichment } from '~/server/utils/employee-engine'
+import { getFastSoapEmployees, getSigniaEnrichment, cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler, getQuery } from '#imports'
 
 export default defineEventHandler(async (event) => {
@@ -18,11 +18,15 @@ export default defineEventHandler(async (event) => {
   // 2. Query Signia exclusively to fetch the real picture and correct operational status
   const enriched = await getSigniaEnrichment(name, localRfc, localCurp)
 
+  // Explicit priority given to SOAP-resolved plantel for all routing purposes
+  const soapPlantel = cleanPlantelName(empMatch?.plantel)
+  const finalPlantel = soapPlantel || enriched.plantelName || null
+
   return {
     picture: enriched.picture || null,
     puesto: enriched.puesto || null,
     email: enriched.email || empMatch?.email || null,
-    plantel: enriched.plantelName || empMatch?.plantel || null, // Resolves authoritative clean plantel name exactly when needed
+    plantel: finalPlantel,
     isActive: enriched.isActive !== false,
     curp: enriched.curp || empMatch?.curp || null
   }

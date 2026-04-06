@@ -34,7 +34,7 @@ function parseSoapXML(xmlString: string) {
       name: getTag('NombreCompleto'),
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
-      plantel: getTag('ClaveArea'), // Legacy SOAP value, will be overridden by Signia
+      plantel: getTag('ClaveArea'), // Base SOAP value that drives truth downstream
       email: getTag('Correo')
     })
   }
@@ -101,7 +101,8 @@ export async function getFastSoapEmployees() {
 
      return {
         ...emp,
-        plantel: cleanPlantelName(match?.plantel?.name) || emp.plantel, // Authoritative clean name from the nested prisma payload
+        // Enforce SOAP Plantel priority for routing alignment while retaining fallback
+        plantel: cleanPlantelName(emp.plantel) || cleanPlantelName(match?.plantel?.name),
         puesto: match?.puesto || emp.puesto,
         email: match?.email || emp.email
      }
