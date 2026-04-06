@@ -13,7 +13,7 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Generar Pase"
+          title="Generar pase"
         >
           <Plus class="w-6 h-6" />
         </NuxtLink>
@@ -22,7 +22,7 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/history' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Historial y Búsqueda"
+          title="Historial"
         >
           <History class="w-6 h-6" />
         </NuxtLink>
@@ -32,7 +32,7 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/analytics' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Métricas"
+          title="Estadísticas"
         >
           <BarChart2 class="w-6 h-6" />
         </NuxtLink>
@@ -42,7 +42,7 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/routing' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Configurar Notificaciones"
+          title="Notificaciones"
         >
           <BellRing class="w-6 h-6" />
         </NuxtLink>
@@ -52,7 +52,7 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/users' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Usuarios del Sistema"
+          title="Usuarios"
         >
           <Shield class="w-6 h-6" />
         </NuxtLink>

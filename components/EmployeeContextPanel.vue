@@ -13,7 +13,7 @@
         <div v-else class="mt-2 flex flex-wrap gap-2 items-center">
           <span v-if="displayPlantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5">
             <Building2 class="w-3.5 h-3.5 text-slate-400" />
-            Base: {{ displayPlantel }}
+            {{ displayPlantel }}
           </span>
           <span v-if="displayRole" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
             <Briefcase class="w-3.5 h-3.5 text-brand-400" />
@@ -31,12 +31,12 @@
             <FileText class="w-5 h-5 text-brand-600" />
           </div>
           <div>
-            <h4 class="text-sm font-black text-brand-900 tracking-tight">Pase Abierto</h4>
-            <p class="text-xs text-brand-700/90 mt-0.5 font-medium">El colaborador ya tiene un pase hoy.</p>
+            <h4 class="text-sm font-black text-brand-900 tracking-tight">Pase abierto</h4>
+            <p class="text-xs text-brand-700/90 mt-0.5 font-medium">El colaborador tiene un pase registrado el día de hoy.</p>
           </div>
         </div>
         <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 w-full sm:w-auto outline-none">
-          <span>Abrir Folio</span>
+          <span>Abrir pase actual</span>
           <ArrowRight class="w-4 h-4" />
         </NuxtLink>
       </div>
@@ -66,8 +66,8 @@
           <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm border border-slate-100">
             <History class="w-6 h-6 text-slate-300" />
           </div>
-          <p class="text-sm font-black text-slate-700">Expediente en blanco</p>
-          <p class="text-xs font-medium text-slate-500 mt-1">No hay incidencias registradas en el ciclo actual.</p>
+          <p class="text-sm font-black text-slate-700">Sin registros</p>
+          <p class="text-xs font-medium text-slate-500 mt-1">No hay pases registrados en el ciclo actual.</p>
         </div>
 
         <div v-else class="space-y-8 pl-2">
@@ -85,11 +85,11 @@
                 </div>
                 
                 <!-- Pass Card -->
-                <NuxtLink :to="`/pass/${pass.id}`" class="block bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 hover:shadow-md transition-all outline-none">
+                <div class="block bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 transition-all outline-none">
                   <div class="flex items-start justify-between mb-3 gap-4">
                     <div class="flex flex-col gap-1.5">
                       <div class="flex items-center gap-2">
-                        <span class="font-mono text-sm font-black tracking-tight group-hover:text-brand-600 transition-colors" :class="isToday(pass.date) ? 'text-brand-600' : 'text-slate-900'">#{{ String(pass.id).padStart(5, '0') }}</span>
+                        <span class="font-mono text-sm font-black tracking-tight" :class="isToday(pass.date) ? 'text-brand-600' : 'text-slate-900'">#{{ String(pass.id).padStart(5, '0') }}</span>
                         <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border"
                               :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
                                        'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
@@ -104,13 +104,22 @@
                   
                   <p v-if="pass.comentarios" class="text-xs font-medium text-slate-600 italic bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 line-clamp-2">"{{ pass.comentarios }}"</p>
                   
-                  <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
-                    <ShieldCheck class="w-4 h-4" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-red-400'" />
-                    <span class="text-[10px] font-bold uppercase tracking-wider" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-red-600'">
-                      Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by : '' }}
-                    </span>
+                  <!-- Bottom Bar with Explicit Action Link -->
+                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-2">
+                      <ShieldCheck class="w-4 h-4" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-red-400'" />
+                      <span class="text-[10px] font-bold uppercase tracking-wider" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-red-600'">
+                        Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by : '' }}
+                      </span>
+                    </div>
+                    <div v-else></div> <!-- Spacer -->
+                    
+                    <NuxtLink :to="`/pass/${pass.id}`" class="text-brand-600 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg outline-none">
+                      <span class="text-[10px] font-black uppercase tracking-widest">Abrir detalle</span>
+                      <ArrowRight class="w-3.5 h-3.5" />
+                    </NuxtLink>
                   </div>
-                </NuxtLink>
+                </div>
               </div>
             </div>
           </div>
@@ -133,7 +142,7 @@ const props = defineProps({
 })
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio Horario', 5: 'Incapacidad' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
   return map[id] || 'Otro'
 }
 
@@ -144,6 +153,10 @@ const getCategoryColor = (id) => {
 
 const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/enrich', {
   query: { id: props.employee.id, name: props.employee.name }
+})
+
+const { data: historyData, pending: pendingHistory } = useFetch('/api/passes/employee', {
+  query: { name: props.employee.name }
 })
 
 const displayPic = computed(() => enrichment.value?.picture || props.employee.picture || null)

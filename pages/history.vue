@@ -2,12 +2,12 @@
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Historial de Pases</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Consulta, inspecciona y exporta los registros generados en la plataforma.</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Historial de pases</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Consulta y exportación de registros.</p>
       </div>
       <button @click="showExportModal = true" class="px-5 py-3 bg-white border border-slate-200/80 text-slate-700 font-black rounded-2xl shadow-sm hover:border-brand-500 hover:text-brand-600 hover:shadow-md transition-all flex items-center justify-center gap-2 outline-none">
         <Download class="w-5 h-5" />
-        <span>Exportar Reporte</span>
+        <span>Exportar reporte</span>
       </button>
     </header>
 
@@ -19,7 +19,7 @@
           v-model="filters.q" 
           @input="debounceSearch"
           type="text" 
-          placeholder="Buscar por folio o nombre del colaborador..." 
+          placeholder="Buscar por folio o nombre..." 
           class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-2xl text-sm font-bold outline-none transition-all shadow-sm"
         />
       </div>
@@ -106,14 +106,14 @@
                     <Eye class="w-4 h-4" />
                   </NuxtLink>
                   <template v-if="user?.name === pass.user || user?.is_admin">
-                    <button v-if="pass.status === 'pendiente'" @click="quickResend(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm disabled:opacity-50" title="Reenviar Notificación">
+                    <button v-if="pass.status === 'pendiente'" @click="quickResend(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm disabled:opacity-50" title="Reenviar notificación">
                       <Loader2 v-if="actionLoading === pass.id && actionType === 'resend'" class="w-4 h-4 animate-spin" />
                       <Send v-else class="w-4 h-4" />
                     </button>
-                    <button v-if="isEditable(pass)" @click="openEditModal(pass)" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Editar Datos">
+                    <button v-if="isEditable(pass)" @click="openEditModal(pass)" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Editar datos">
                       <Edit2 class="w-4 h-4" />
                     </button>
-                    <button v-if="pass.status === 'pendiente'" @click="quickCancel(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 shadow-sm disabled:opacity-50" title="Anular Folio">
+                    <button v-if="pass.status === 'pendiente'" @click="quickCancel(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 shadow-sm disabled:opacity-50" title="Anular folio">
                       <Loader2 v-if="actionLoading === pass.id && actionType === 'cancel'" class="w-4 h-4 animate-spin" />
                       <Trash2 v-else class="w-4 h-4" />
                     </button>
@@ -158,7 +158,7 @@ const actionType = ref(null)
 let searchTimeout = null
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
   return map[id] || 'Otro'
 }
 

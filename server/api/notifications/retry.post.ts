@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     const targetAuthUrl = `${config.appUrl}/authorize/${pass.auth_token}?r=${rToken}`
 
     const categories: Record<number, string> = {
-      1: 'Pase de entrada', 2: 'Pase de salida', 3: 'Pase para faltar', 4: 'Pase cambio de horario', 5: 'Incapacidad'
+      1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica'
     }
     const categoryName = categories[pass.category_id] || 'Pase'
     const paddedId = String(pass.id).padStart(5, '0')
@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     const motivoMsg = pass.comentarios ? `\nMotivo: ${pass.comentarios}` : ''
 
     if (isWhatsApp) {
-      const waMessage = `*Requiere Autorización (Reintento)* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
+      const waMessage = `*Solicitud de autorización (Reintento)* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
 
       try {
         const response = await sendWhatsAppMessage({ chatId: log.chat_id, message: waMessage })
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event) => {
         )
         return { success: true }
       } catch (apiErr: any) {
-        throw createError({ statusCode: 500, message: 'Fallo al reintentar envío por WhatsApp' })
+        throw createError({ statusCode: 500, message: 'Error al enviar mensaje por WhatsApp' })
       }
     } 
     
@@ -62,7 +62,7 @@ export default defineEventHandler(async (event) => {
       const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
-           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Requiere Autorización (Reintento)</h1>
+           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Solicitud de autorización (Reintento)</h1>
            <p style="margin: 0 0 32px; color: #64748b; font-size: 15px;">Folio <strong>#${paddedId}</strong> &bull; ${categoryName}</p>
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
@@ -71,11 +71,11 @@ export default defineEventHandler(async (event) => {
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
            </div>
 
-           <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px;">Revisar y Resolver Solicitud</a>
+           <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px;">Revisar solicitud</a>
         </div>
       </div>`
       try {
-        await sendWorkspaceEmail(log.chat_id, `Recordatorio: Pase #${paddedId} requiere atención`, emailHtml)
+        await sendWorkspaceEmail(log.chat_id, `Recordatorio: Solicitud #${paddedId} requiere atención`, emailHtml)
         await db.execute(
           `UPDATE notification_logs SET status = 'sent', error_text = REPLACE(error_text, ' | Error:', ' | Reintentado OK:') WHERE id = ?`, 
           [log.id]

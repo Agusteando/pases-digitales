@@ -3,7 +3,7 @@
     
     <div class="mb-8 shrink-0 flex items-center justify-between">
       <button @click="$router.push('/history')" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 sm:-ml-4 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-200">
-        <ArrowLeft class="w-4 h-4" /> Volver al Historial
+        <ArrowLeft class="w-4 h-4" /> Regresar
       </button>
     </div>
 
@@ -15,9 +15,9 @@
       <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100">
         <AlertTriangle class="w-12 h-12 text-red-500" />
       </div>
-      <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tight">Folio Inaccesible</h2>
-      <p class="text-slate-500 font-bold max-w-md mx-auto">El registro que intentas visualizar no existe en la base de datos o fue eliminado.</p>
-      <button @click="$router.push('/history')" class="mt-6 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors shadow-md outline-none">Regresar al Historial</button>
+      <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tight">Folio no encontrado</h2>
+      <p class="text-slate-500 font-bold max-w-md mx-auto">El pase que buscas no existe o fue eliminado.</p>
+      <button @click="$router.push('/history')" class="mt-6 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors shadow-md outline-none">Regresar al historial</button>
     </div>
 
     <div v-else class="space-y-8 flex-1">
@@ -104,7 +104,7 @@
             <div v-if="pass.category_id === 5" class="mb-8 p-6 bg-teal-50 rounded-2xl border border-teal-100 grid grid-cols-2 gap-6 shadow-sm">
               <div>
                 <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Folio IMSS</span>
-                <span class="text-base font-black text-teal-900 font-mono">{{ pass.IMSS || 'No Registrado' }}</span>
+                <span class="text-base font-black text-teal-900 font-mono">{{ pass.IMSS || 'No registrado' }}</span>
               </div>
               <div>
                 <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Tipo de incapacidad</span>
@@ -135,7 +135,7 @@
                <div>
                  <p class="text-sm font-black text-slate-700">Acciones no disponibles</p>
                  <p class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
-                   El registro ya ha sido resuelto ({{pass.status}}). Por reglas de seguridad, no se puede modificar, anular ni reenviar.
+                   No se puede editar: el pase ya fue resuelto.
                  </p>
                </div>
             </div>
@@ -151,7 +151,7 @@
                 <Edit2 class="w-4 h-4 text-slate-400" />
                 <span>Editar</span>
               </button>
-              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">Edición bloqueada: Han pasado más de 48 horas desde el evento.</p>
+              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">No se puede editar: el tiempo límite de 48 horas ha concluido.</p>
 
               <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200 outline-none">
                 <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
@@ -326,7 +326,7 @@ const getCategoryColorBox = (id) => {
 }
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
   return map[id] || 'Otro'
 }
 
@@ -340,7 +340,7 @@ const isSystemLog = (text) => {
 
 const extractTargetName = (text) => {
   if (!text) return 'Desconocido'
-  if (isSystemLog(text)) return 'Auditoría Global (Sistema)'
+  if (isSystemLog(text)) return 'Registro general (Sistema)'
   const match = text.match(/Destinatario:\s*([^|]+)/)
   return match ? match[1].trim() : 'Sistema'
 }

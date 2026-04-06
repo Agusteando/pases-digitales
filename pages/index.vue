@@ -1,23 +1,27 @@
 <template>
   <div class="flex flex-col xl:flex-row h-full w-full">
     
-    <!-- Left Column: Search & Action Form -->
-    <section class="w-full xl:w-[48%] flex flex-col bg-white/60 backdrop-blur-md border-r border-slate-200/60 z-20 min-h-[50vh] xl:h-screen xl:sticky xl:top-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+    <!-- Left Column: Step-by-Step Creation Flow -->
+    <section class="w-full xl:w-[48%] flex flex-col bg-white/80 backdrop-blur-md border-r border-slate-200/60 z-20 xl:h-screen xl:sticky xl:top-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       
-      <header class="px-8 py-8 border-b border-slate-200/60 bg-white/50">
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Emisión de Pase</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Justificación formal de incidencias del personal.</p>
+      <header class="px-6 md:px-8 py-6 border-b border-slate-200/60 bg-white/50 shrink-0">
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight">Registro de pases</h1>
+        <p class="text-slate-500 mt-1 text-sm font-medium">Justificación de incidencias del personal.</p>
       </header>
 
-      <div class="flex-1 overflow-y-auto px-8 py-8 custom-scrollbar relative">
+      <div class="flex-1 overflow-y-auto px-6 py-8 md:px-8 custom-scrollbar relative flex flex-col gap-10">
         
-        <!-- Search Section -->
-        <div class="mb-10">
-          <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Colaborador</label>
+        <!-- Step 1: Seleccionar Colaborador -->
+        <div class="relative">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">1</div>
+            <h2 class="text-base font-black text-slate-900">Seleccionar colaborador</h2>
+          </div>
+          
           <EmployeeSearch @select="addEmployee" />
           
           <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
-            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
+            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300">
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-3">
                    <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="shrink-0" />
@@ -42,21 +46,21 @@
                   <!-- Plantel Base (SOAP) -->
                   <span v-if="emp.plantelBase" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5" :class="{'opacity-60': emp.plantelActual && emp.plantelActual !== emp.plantelBase}">
                     <Building2 class="w-3.5 h-3.5 text-slate-400" />
-                    Base: {{ emp.plantelBase }}
+                    {{ emp.plantelBase }}
                   </span>
 
                   <!-- Plantel Actual (Routing override) -->
                   <template v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase">
                     <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-200/80 shadow-sm flex items-center gap-1.5 animate-in fade-in duration-300">
                       <MapPin class="w-3.5 h-3.5 text-blue-500" />
-                      Actual: {{ emp.plantelActual }}
+                      Ubicación actual: {{ emp.plantelActual }}
                       <button type="button" @click.stop="resetPlantelActual(emp)" class="ml-1 hover:text-blue-900 bg-blue-100/50 p-0.5 rounded-md transition-colors outline-none"><XIcon class="w-3 h-3"/></button>
                     </span>
                   </template>
                   
                   <!-- Trigger to change Plantel Actual -->
-                  <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1 border border-transparent hover:border-blue-200 outline-none">
-                    <MapPin class="w-3 h-3" /> Cambiar actual
+                  <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-bold text-slate-500 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1 border border-transparent hover:border-blue-200 outline-none">
+                    <MapPin class="w-3 h-3" /> Registrar desde otra ubicación
                   </button>
                 </div>
 
@@ -77,98 +81,77 @@
         </div>
 
         <!-- Directory Coverage Loading State -->
-        <div v-if="checkingCoverage" class="mb-10 py-10 flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-slate-100 animate-pulse">
+        <div v-if="checkingCoverage" class="py-10 flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-slate-100 animate-pulse">
            <Loader2 class="w-8 h-8 animate-spin text-brand-400 mb-3" />
            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
         </div>
         
-        <template v-else-if="!currentCoverageTask && selectedEmployees.length > 0">
-          <!-- Intelligent Quick Actions Layer -->
-          <div class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Accesos Rápidos</label>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <!-- Birthday Action -->
-              <button v-if="hasBirthday()" @click="triggerBirthdayQuickAction" type="button" class="relative overflow-hidden bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl p-4 text-left transition-transform hover:scale-[1.02] hover:shadow-lg outline-none group border border-orange-400/50 flex items-center gap-4">
-                <div class="absolute right-0 top-0 bottom-0 w-32 bg-white/20 blur-2xl transform skew-x-12 translate-x-10 group-hover:translate-x-0 transition-transform duration-700"></div>
-                <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
-                  <Cake class="w-5 h-5" />
-                </div>
-                <div class="relative z-10">
-                  <h3 class="text-sm font-black text-white tracking-tight">Pase de Cumpleaños 🎉</h3>
-                  <p class="text-[10px] font-bold text-orange-100 mt-0.5">Prellenar salida temprano (2:00 PM)</p>
-                </div>
-              </button>
-
-              <!-- Early Leave Quick Action -->
-              <button @click="triggerEarlyLeaveQuickAction" type="button" class="bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                  <LogOut class="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 class="text-sm font-black text-slate-800">Salida Temprano</h4>
-                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Atajo de uso frecuente</p>
-                </div>
-              </button>
-
-              <!-- Ir a otro plantel Quick Action -->
-              <button @click="triggerIrAOtroPlantel" type="button" class="bg-white border border-slate-200 hover:border-brand-300 hover:bg-brand-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group" :class="hasBirthday() ? 'sm:col-span-2' : ''">
-                <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                  <MapPin class="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 class="text-sm font-black text-slate-800">Ir a otro plantel</h4>
-                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Registrar salida y destino</p>
-                </div>
-              </button>
-            </div>
+        <!-- Step 2: Motivo del pase (Aparece al seleccionar empleado) -->
+        <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">2</div>
+            <h2 class="text-base font-black text-slate-900">Motivo de la incidencia</h2>
           </div>
 
-          <!-- Standard Scenarios Section -->
-          <div class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Tipo de Pase</label>
-            <div class="grid grid-cols-2 gap-4">
-              <ScenarioCard 
-                v-for="scenario in predefinedScenarios" 
-                :key="scenario.id" 
-                :title="scenario.title" 
-                :iconName="scenario.icon" 
-                :active="activeScenario?.id === scenario.id" 
-                @click="selectScenario(scenario)"
-              />
-            </div>
+          <div class="grid grid-cols-2 gap-3">
+            <ScenarioCard 
+              v-for="scenario in predefinedScenarios" 
+              :key="scenario.id" 
+              :title="scenario.title" 
+              :iconName="scenario.icon" 
+              :active="activeScenario?.id === scenario.id" 
+              @click="selectScenario(scenario)"
+            />
+          </div>
+        </div>
+
+        <!-- Step 3: Detalles y Generación (Aparece al elegir motivo) -->
+        <div v-if="activeScenario" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500 pb-10">
+          <div class="flex items-center gap-3 mb-4 mt-2">
+            <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">3</div>
+            <h2 class="text-base font-black text-slate-900">Detalles de la solicitud</h2>
           </div>
 
-          <!-- Form Section -->
-          <form v-if="activeScenario" @submit.prevent="submitPass" class="space-y-6 bg-white p-8 rounded-3xl border border-slate-200/80 shadow-card animate-in fade-in slide-in-from-bottom-4 duration-500 relative overflow-hidden">
+          <form @submit.prevent="submitPass" class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-card relative overflow-hidden flex flex-col gap-6">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-brand-500"></div>
             
-            <h3 class="font-black text-slate-900 text-lg mb-4 flex items-center gap-2">
-              <PenTool class="w-5 h-5 text-brand-500" />
-              Detalles del Pase
-            </h3>
+            <!-- Quick Context Presets inside the form -->
+            <div v-if="activeScenario.categoryId === 2" class="flex flex-wrap items-center gap-2 pb-5 border-b border-slate-100">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full mb-1">Atajos contextuales:</span>
+              <button type="button" @click="applyPreset('now')" class="px-3 py-1.5 bg-slate-50 hover:bg-brand-50 text-slate-600 hover:text-brand-700 text-xs font-bold rounded-lg border border-slate-200 hover:border-brand-200 transition-colors flex items-center gap-1.5 outline-none">
+                <Clock class="w-3.5 h-3.5" /> Asignar hora actual
+              </button>
+              <button type="button" @click="applyPreset('transfer')" class="px-3 py-1.5 bg-slate-50 hover:bg-brand-50 text-slate-600 hover:text-brand-700 text-xs font-bold rounded-lg border border-slate-200 hover:border-brand-200 transition-colors flex items-center gap-1.5 outline-none">
+                <MapPin class="w-3.5 h-3.5" /> Traslado a plantel
+              </button>
+              <button v-if="hasBirthday()" type="button" @click="applyPreset('birthday')" class="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold rounded-lg border border-orange-200 transition-colors flex items-center gap-1.5 outline-none shadow-sm">
+                <Cake class="w-3.5 h-3.5" /> Cumpleaños
+              </button>
+            </div>
 
+            <!-- Core Form Grid -->
             <div class="grid grid-cols-2 gap-5">
               <div class="space-y-2 col-span-2 md:col-span-1">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha Inicio</label>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha de inicio</label>
                 <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
               </div>
               <div v-if="activeScenario.needsEndDate" class="space-y-2 col-span-2 md:col-span-1">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha Fin</label>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha de término</label>
                 <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
               </div>
               <div v-if="activeScenario.needsTime" class="space-y-2 col-span-2 md:col-span-1">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora Evento</label>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora</label>
                 <input type="time" v-model="form.time" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
               </div>
             </div>
 
             <div v-if="activeScenario.canReturn" class="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
               <input type="checkbox" id="regreso" v-model="form.regreso" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-slate-300 transition-colors cursor-pointer" />
-              <label for="regreso" class="text-sm font-black text-slate-700 cursor-pointer select-none">El colaborador retorna en la misma jornada</label>
+              <label for="regreso" class="text-sm font-black text-slate-700 cursor-pointer select-none">Retorna en la misma jornada</label>
             </div>
 
             <div v-if="form.regreso" class="space-y-2 animate-in fade-in zoom-in-95 duration-200">
-              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora Estimada de Retorno</label>
+              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora de retorno</label>
               <input type="time" v-model="form.horaRegreso" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
             </div>
 
@@ -181,47 +164,47 @@
               <div class="space-y-2">
                 <label class="block text-[10px] font-black text-teal-700 uppercase tracking-widest">Clasificación Médica</label>
                 <select v-model="form.tipoIncapacidad" class="w-full px-4 py-3 rounded-xl border border-teal-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none text-sm font-bold text-teal-900 transition-all bg-white shadow-sm">
-                  <option value="Enfermedad en General">Enfermedad en General</option>
-                  <option value="Riesgo de Trabajo">Riesgo de Trabajo</option>
+                  <option value="Enfermedad general">Enfermedad general</option>
+                  <option value="Riesgo de trabajo">Riesgo de trabajo</option>
                   <option value="Maternidad">Maternidad</option>
                 </select>
               </div>
             </div>
 
-            <!-- Destino Option (Appended to comments) -->
+            <!-- Destino Option -->
             <div class="space-y-3 pt-2">
               <div v-if="!showDestino" class="flex">
                 <button type="button" @click="showDestino = true" class="text-xs font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">
-                  <Plus class="w-3.5 h-3.5" /> Agregar plantel destino
+                  <Plus class="w-3.5 h-3.5" /> Añadir destino a otro plantel
                 </button>
               </div>
               <div v-else class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 relative animate-in fade-in zoom-in-95 duration-200">
-                <button type="button" @click="showDestino = false; form.destino = ''" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600">
+                <button type="button" @click="showDestino = false" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 bg-white rounded-full p-1 border border-slate-200 outline-none">
                    <XIcon class="w-4 h-4" />
                 </button>
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Plantel Destino</label>
-                <select v-model="form.destino" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 bg-white shadow-sm">
-                  <option value="">Selecciona un plantel...</option>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Plantel de destino</label>
+                <select v-model="form.destino" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 bg-white shadow-sm cursor-pointer">
+                  <option value="">Seleccione un plantel...</option>
                   <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
                 </select>
-                <p v-if="form.destino" class="text-[10px] text-slate-500 font-medium mt-2">Este dato se documentará automáticamente en la justificación.</p>
               </div>
             </div>
 
             <div class="space-y-2">
-              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Justificación u Observaciones</label>
-              <textarea v-model="form.comentarios" rows="3" placeholder="Redacta el motivo de forma clara..." required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium text-slate-900 resize-none transition-all bg-slate-50/50"></textarea>
+              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Justificación</label>
+              <textarea v-model="form.comentarios" rows="3" placeholder="Describe el motivo de forma clara..." required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium text-slate-900 resize-none transition-all bg-slate-50/50"></textarea>
             </div>
 
-            <div class="pt-4">
+            <div class="pt-4 border-t border-slate-100">
               <button type="submit" :disabled="isSubmitting" class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black text-base rounded-2xl transition-all shadow-md hover:shadow-xl disabled:opacity-70 disabled:hover:bg-brand-600 flex items-center justify-center gap-3 outline-none transform active:scale-[0.98]">
                 <Loader2 v-if="isSubmitting" class="w-5 h-5 animate-spin" />
                 <Send v-else class="w-5 h-5" />
-                <span>{{ isSubmitting ? 'Procesando Envío...' : 'Generar y Notificar Pase' }}</span>
+                <span>{{ isSubmitting ? 'Procesando...' : 'Generar pase' }}</span>
               </button>
             </div>
           </form>
-        </template>
+        </div>
+
       </div>
     </section>
 
@@ -254,9 +237,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { Loader2, X as XIcon, Cake, LogOut, PenTool, Send, Building2, Briefcase, MapPin, Plus } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, PenTool, Send, Building2, Briefcase, MapPin, Plus, Clock, ArrowRight } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -390,14 +373,14 @@ const form = reactive({
   regreso: false,
   horaRegreso: '',
   imss: '',
-  tipoIncapacidad: 'Enfermedad en General'
+  tipoIncapacidad: 'Enfermedad general'
 })
 
 const predefinedScenarios = [
-  { id: 'salida', title: 'Salida Anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
-  { id: 'llegada', title: 'Llegada Tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
-  { id: 'falta', title: 'Ausencia Justificada', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
-  { id: 'imss', title: 'Incapacidad Médica', icon: 'Stethoscope', categoryId: 5, needsTime: false, canReturn: false, needsEndDate: true, isMedical: true }
+  { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
+  { id: 'llegada', title: 'Llegada tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
+  { id: 'falta', title: 'Ausencia justificada', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
+  { id: 'imss', title: 'Incapacidad médica', icon: 'Stethoscope', categoryId: 5, needsTime: false, canReturn: false, needsEndDate: true, isMedical: true }
 ]
 
 function selectScenario(scenario) {
@@ -406,7 +389,7 @@ function selectScenario(scenario) {
   Object.assign(form, { 
     date: todayDate, endDate: todayDate, time: '', 
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
-    imss: '', tipoIncapacidad: 'Enfermedad en General'
+    imss: '', tipoIncapacidad: 'Enfermedad general'
   })
 }
 
@@ -424,44 +407,63 @@ function hasBirthday() {
   return selectedEmployees.value.some(emp => isBirthday(emp))
 }
 
-function triggerBirthdayQuickAction() {
-  const salidaScenario = predefinedScenarios.find(s => s.categoryId === 2)
-  selectScenario(salidaScenario)
-  form.date = todayDate
-  form.endDate = todayDate
-  form.time = '14:00'
-  
-  const emp = selectedEmployees.value.find(e => isBirthday(e))
-  let birthdayStr = ''
-  if (emp && emp.curp && emp.curp.length >= 10) {
-    const dd = emp.curp.substring(8, 10)
-    const mm = emp.curp.substring(6, 8)
-    birthdayStr = ` (Fecha de nacimiento: ${dd}/${mm})`
+function applyPreset(type) {
+  if (type === 'now') {
+    form.time = getCurrentTime()
+    form.comentarios = ''
+    showDestino.value = false
+    form.destino = ''
+    form.regreso = false
+  } else if (type === 'transfer') {
+    form.time = getCurrentTime()
+    showDestino.value = true
+    form.regreso = true
+  } else if (type === 'birthday') {
+    form.date = todayDate
+    form.endDate = todayDate
+    form.time = '14:00'
+    const emp = selectedEmployees.value.find(e => isBirthday(e))
+    let birthdayStr = ''
+    if (emp && emp.curp && emp.curp.length >= 10) {
+      const dd = emp.curp.substring(8, 10)
+      const mm = emp.curp.substring(6, 8)
+      birthdayStr = ` (Nacimiento: ${dd}/${mm})`
+    }
+    form.comentarios = `Pase de salida anticipada con motivo de celebración de cumpleaños del colaborador${birthdayStr}.`
+    showDestino.value = false
+    form.destino = ''
+    form.regreso = false
   }
-  
-  form.comentarios = `Pase de salida temprano con motivo de celebración de cumpleaños del colaborador${birthdayStr}.`
 }
 
-function triggerEarlyLeaveQuickAction() {
-  const salidaScenario = predefinedScenarios.find(s => s.categoryId === 2)
-  selectScenario(salidaScenario)
-  form.time = getCurrentTime()
-  form.comentarios = ''
-}
+watch(() => form.destino, (newDestino) => {
+  if (showDestino.value) {
+    if (newDestino) {
+      const template = `Traslado al plantel ${newDestino} para cubrir requerimientos operativos.`;
+      if (!form.comentarios || form.comentarios.startsWith('Traslado al plantel')) {
+        form.comentarios = template;
+      }
+    } else {
+      if (form.comentarios.startsWith('Traslado al plantel')) {
+        form.comentarios = '';
+      }
+    }
+  }
+});
 
-function triggerIrAOtroPlantel() {
-  const salidaScenario = predefinedScenarios.find(s => s.categoryId === 2)
-  selectScenario(salidaScenario)
-  form.time = getCurrentTime()
-  showDestino.value = true
-}
+watch(() => showDestino.value, (newVal) => {
+  if (!newVal) {
+    form.destino = '';
+    if (form.comentarios.startsWith('Traslado al plantel')) {
+      form.comentarios = '';
+    }
+  }
+});
 
 async function submitPass() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   
-  const payloadComentarios = form.destino ? `${form.comentarios}\n\nDestino: ${form.destino}` : form.comentarios;
-
   try {
     await Promise.all(selectedEmployees.value.map(emp => 
       $fetch('/api/passes', {
@@ -473,7 +475,7 @@ async function submitPass() {
           date: form.date,
           endDate: form.endDate,
           time: form.time,
-          comentarios: payloadComentarios,
+          comentarios: form.comentarios,
           regreso: form.regreso,
           horaRegreso: form.horaRegreso,
           imss: form.imss,

@@ -7,7 +7,7 @@
         <div>
           <h3 class="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <span class="font-mono text-brand-600">#{{ String(pass.id).padStart(5, '0') }}</span>
-            <span v-if="!isEditable" class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 border border-slate-200">Solo Lectura</span>
+            <span v-if="!isEditable" class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 border border-slate-200">Solo lectura</span>
           </h3>
           <p class="text-sm font-bold text-slate-500 mt-1">{{ pass.employee_name }}</p>
         </div>
@@ -23,7 +23,7 @@
           <div>
             <h4 class="text-sm font-black text-amber-900">Edición bloqueada</h4>
             <p class="text-xs text-amber-700 font-medium mt-1 leading-relaxed">
-              La modificación de datos está inhabilitada. Esto ocurre cuando el folio ya ha sido resuelto (autorizado/rechazado/anulado), han pasado más de 48 horas desde el evento, o no tienes permisos administrativos.
+              La edición no está disponible. El pase ya fue resuelto, han pasado más de 48 horas o no cuenta con permisos de administrador.
             </p>
           </div>
         </div>
@@ -32,11 +32,11 @@
           <div class="space-y-2">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Categoría</label>
             <select v-model="form.categoryId" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500">
-              <option :value="1">Pase de entrada (Llegada tarde)</option>
-              <option :value="2">Pase de salida (Salida anticipada)</option>
-              <option :value="3">Pase para faltar (Ausencia)</option>
-              <option :value="4">Pase cambio de horario</option>
-              <option :value="5">Incapacidad Médica</option>
+              <option :value="1">Llegada tarde</option>
+              <option :value="2">Salida anticipada</option>
+              <option :value="3">Ausencia justificada</option>
+              <option :value="4">Cambio de horario</option>
+              <option :value="5">Incapacidad médica</option>
             </select>
           </div>
 
@@ -62,7 +62,7 @@
 
           <div v-if="[2].includes(form.categoryId)" class="flex items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
             <input type="checkbox" id="regresoEdit" v-model="form.regreso" :disabled="!isEditable" class="w-5 h-5 rounded text-brand-600 border-slate-300 focus:ring-brand-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" />
-            <label for="regresoEdit" class="text-sm font-bold text-slate-700 select-none cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !isEditable}">El colaborador regresa hoy</label>
+            <label for="regresoEdit" class="text-sm font-bold text-slate-700 select-none cursor-pointer" :class="{'opacity-60 cursor-not-allowed': !isEditable}">Retorna en la misma jornada</label>
           </div>
 
           <div v-if="form.regreso && [2].includes(form.categoryId)" class="space-y-2">
@@ -78,8 +78,8 @@
             <div class="space-y-2">
               <label class="block text-[11px] font-black text-teal-700 uppercase tracking-widest">Tipo de incapacidad</label>
               <select v-model="form.tipoIncapacidad" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-teal-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500">
-                <option value="Enfermedad en General">Enfermedad en General</option>
-                <option value="Riesgo de Trabajo">Riesgo de Trabajo</option>
+                <option value="Enfermedad general">Enfermedad general</option>
+                <option value="Riesgo de trabajo">Riesgo de trabajo</option>
                 <option value="Maternidad">Maternidad</option>
               </select>
             </div>
@@ -99,7 +99,7 @@
         </button>
         <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
           <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-          <span>{{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}</span>
+          <span>{{ isSaving ? 'Guardando...' : 'Guardar cambios' }}</span>
         </button>
       </footer>
 

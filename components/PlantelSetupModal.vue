@@ -19,7 +19,7 @@
           <!-- State 1: Select Person -->
           <div v-if="setupForm.internalStep === 'SELECT_PERSON'" class="space-y-4">
             <p class="text-sm font-medium text-slate-600 mb-2 leading-relaxed">
-              Para continuar con el pase de <strong class="text-slate-900 font-black">{{ employeeFirstName }}</strong>, selecciona al <strong class="text-slate-900 font-black">{{ coverageData.role }}</strong> de <strong class="text-slate-900 font-black">{{ plantel }}</strong>.
+              Para continuar con el registro de <strong class="text-slate-900 font-black">{{ employeeFirstName }}</strong>, selecciona al <strong class="text-slate-900 font-black">{{ coverageData.role }}</strong> de <strong class="text-slate-900 font-black">{{ plantel }}</strong>.
             </p>
             <div class="relative z-50">
               <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Search class="w-4 h-4" /></div>

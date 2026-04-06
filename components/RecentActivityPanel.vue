@@ -2,8 +2,8 @@
   <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col h-full min-h-[400px]">
     <div class="flex items-center justify-between pb-6 border-b border-slate-100 shrink-0">
       <div>
-        <h2 class="text-xl font-black text-slate-900 tracking-tight">Actividad Global</h2>
-        <p class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Flujo operativo reciente</p>
+        <h2 class="text-xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
+        <p class="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Últimos pases registrados</p>
       </div>
       <button @click="refresh" class="p-2.5 text-slate-400 hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl shadow-sm transition-all focus:outline-none border border-slate-200/60">
         <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4" />
@@ -17,7 +17,7 @@
         <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
           <FileText class="w-8 h-8 text-slate-300" />
         </div>
-        <span class="text-sm font-bold text-slate-500">No hay pases recientes emitidos en la red.</span>
+        <span class="text-sm font-bold text-slate-500">No hay pases recientes.</span>
       </div>
 
       <div v-else class="relative pl-14 space-y-5">
@@ -31,9 +31,9 @@
             <div class="flex items-start justify-between gap-3 mb-2">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1.5">
-                  <NuxtLink :to="`/pass/${pass.id}`" class="font-mono text-sm font-black text-brand-600 hover:text-brand-800 tracking-tight transition-colors">
+                  <span class="font-mono text-sm font-black text-brand-600 tracking-tight">
                     #{{ String(pass.id).padStart(5, '0') }}
-                  </NuxtLink>
+                  </span>
                   <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border"
                         :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
                                  'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
@@ -52,6 +52,13 @@
               <span class="text-slate-300">•</span>
               <span class="font-medium">Emitido por {{ pass.user }}</span>
             </p>
+
+            <div class="mt-3 pt-3 border-t border-slate-100 flex justify-end">
+               <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center gap-1.5 text-xs font-black text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-2 rounded-lg transition-colors outline-none">
+                 <span>Abrir detalle del pase</span>
+                 <ArrowRight class="w-3.5 h-3.5" />
+               </NuxtLink>
+            </div>
           </div>
         </div>
       </div>
@@ -60,7 +67,7 @@
 </template>
 
 <script setup>
-import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight } from 'lucide-vue-next'
 
 const { data, pending, refresh } = useFetch('/api/passes/recent')
 
@@ -75,7 +82,7 @@ const getCategoryColor = (id) => {
 }
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
   return map[id] || 'Otro'
 }
 </script>

@@ -2,12 +2,12 @@
   <div class="p-6 md:p-10 max-w-7xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     <header class="mb-10 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Registro de Envíos</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Auditoría y estado de entrega del motor de notificaciones.</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Registro de notificaciones</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Estado de entrega de los mensajes.</p>
       </div>
       <button @click="refreshLogs" class="text-sm font-black text-slate-600 hover:text-brand-600 bg-white border border-slate-200/80 px-5 py-3 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 outline-none">
         <RefreshCcw :class="{'animate-spin': pendingLogs}" class="w-4 h-4"/>
-        <span>Actualizar Logs</span>
+        <span>Actualizar logs</span>
       </button>
     </header>
 
@@ -76,7 +76,7 @@ const isSystemLog = (text) => {
 
 const extractTargetName = (text) => {
   if (!text) return 'Desconocido'
-  if (isSystemLog(text)) return 'Auditoría Global (Sistema)'
+  if (isSystemLog(text)) return 'Registro general (Sistema)'
   const match = text.match(/Destinatario:\s*([^|]+)/)
   return match ? match[1].trim() : 'Sistema'
 }

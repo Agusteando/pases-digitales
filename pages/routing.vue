@@ -3,8 +3,8 @@
     
     <header class="mb-8 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Configurar Notificaciones</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Gestión de canales y reglas de distribución por plantel.</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Configuración de notificaciones</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Reglas de distribución por plantel.</p>
       </div>
     </header>
 
@@ -29,7 +29,7 @@
           >
             <div class="flex items-center gap-3">
               <Globe class="w-4 h-4" :class="selectedPlantel === 'ALL' ? 'text-brand-200' : 'text-slate-400 group-hover:text-brand-500'" />
-              Nivel Institucional
+              Nivel institucional
             </div>
           </button>
           
@@ -52,11 +52,11 @@
         
         <div class="mb-8">
           <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <span v-if="selectedPlantel === 'ALL'">Notificaciones a Nivel Institucional</span>
+            <span v-if="selectedPlantel === 'ALL'">Notificaciones a Nivel institucional</span>
             <span v-else>Plantel: {{ selectedPlantel }}</span>
           </h2>
           <p class="text-sm font-medium text-slate-500 mt-1">
-            {{ selectedPlantel === 'ALL' ? 'Reglas maestras que se evaluarán para toda la organización.' : 'Responsables y reglas específicas para este plantel.' }}
+            {{ selectedPlantel === 'ALL' ? 'Reglas aplicables a toda la organización.' : 'Responsables y reglas específicas para este plantel.' }}
           </p>
         </div>
 
@@ -64,7 +64,7 @@
         <section v-if="selectedPlantel !== 'ALL'" class="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Users class="w-4 h-4" /> Responsables Base del Plantel
+              <Users class="w-4 h-4" /> Responsables del plantel
             </h3>
             <button @click="openAddModal('DIRECTORY')" class="px-4 py-2 bg-white border border-slate-200 text-brand-600 text-xs font-black rounded-xl shadow-sm hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
               <Plus class="w-3.5 h-3.5" /> Agregar Responsable
@@ -76,7 +76,7 @@
               <UserX class="w-6 h-6 text-slate-400" />
             </div>
             <p class="text-base font-black text-slate-700">Sin responsables asignados</p>
-            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de responsables base. Agrega un contacto para que reciba las notificaciones por defecto.</p>
+            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de responsables. Agrega un contacto para que reciba las notificaciones por defecto.</p>
           </div>
 
           <div v-else class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
@@ -107,10 +107,10 @@
               </div>
 
               <div class="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button v-if="isAdmin" @click="openEditModal(contact)" class="text-slate-400 hover:text-brand-600 bg-white p-2 rounded-full hover:bg-brand-50 transition-all shadow-sm border border-slate-100 focus:outline-none" title="Editar Configuración">
+                <button v-if="isAdmin" @click="openEditModal(contact)" class="text-slate-400 hover:text-brand-600 bg-white p-2 rounded-full hover:bg-brand-50 transition-all shadow-sm border border-slate-100 focus:outline-none" title="Editar configuración">
                   <Edit2 class="w-4 h-4" />
                 </button>
-                <button v-if="isAdmin" @click="deleteContact(contact.id)" class="text-slate-400 hover:text-red-600 bg-white p-2 rounded-full hover:bg-red-50 transition-all shadow-sm border border-slate-100 focus:outline-none" title="Remover Responsable">
+                <button v-if="isAdmin" @click="deleteContact(contact.id)" class="text-slate-400 hover:text-red-600 bg-white p-2 rounded-full hover:bg-red-50 transition-all shadow-sm border border-slate-100 focus:outline-none" title="Remover responsable">
                   <Trash2 class="w-4 h-4" />
                 </button>
               </div>
@@ -122,7 +122,7 @@
         <section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Network class="w-4 h-4" /> Reglas Específicas
+              <Network class="w-4 h-4" /> Reglas específicas
             </h3>
             <button @click="openAddModal('RULE')" class="px-4 py-2 bg-white border border-slate-200 text-brand-600 text-xs font-black rounded-xl shadow-sm hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
               <Plus class="w-3.5 h-3.5" /> Agregar Regla
@@ -134,7 +134,7 @@
               <GitMerge class="w-6 h-6 text-slate-400" />
             </div>
             <p class="text-base font-black text-slate-700">Comportamiento estándar</p>
-            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">No existen reglas específicas de enrutamiento aquí. Las notificaciones fluirán hacia los Responsables Base.</p>
+            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">No existen reglas específicas de enrutamiento aquí. Las notificaciones fluirán hacia los responsables del plantel.</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -170,7 +170,7 @@
                   
                   <div class="flex flex-col min-w-0">
                     <div class="flex items-center gap-2 mb-0.5">
-                      <span class="text-[9px] font-black uppercase tracking-widest" :class="rule.channel === 'WHATSAPP' ? 'text-emerald-600' : 'text-brand-600'">Destinatario Específico</span>
+                      <span class="text-[9px] font-black uppercase tracking-widest" :class="rule.channel === 'WHATSAPP' ? 'text-emerald-600' : 'text-brand-600'">Destinatario específico</span>
                       <span class="text-[9px] font-black tracking-widest px-1.5 rounded uppercase border"
                             :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-brand-100 text-brand-700 border-brand-200'">
                         {{ rule.channel === 'WHATSAPP' ? 'WA' : 'Mail' }}
@@ -239,7 +239,7 @@
           <!-- WS User Identity Search (Hidden if editing an existing contact) -->
           <div v-if="modalType !== 'EDIT_DIRECTORY'" class="space-y-3 relative">
             <label class="block text-[11px] font-black text-brand-600 uppercase tracking-widest flex items-center gap-2">
-              <Search class="w-3 h-3" /> Seleccionar Destinatario (Workspace)
+              <Search class="w-3 h-3" /> Seleccionar destinatario (Workspace)
             </label>
             <input v-model="gwSearchQuery" @input="searchGw" placeholder="Nombre o correo institucional..." class="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold shadow-sm transition-all bg-white" autocomplete="off" />
             
@@ -272,7 +272,7 @@
 
           <!-- Only for Directory: Role selection -->
           <div v-if="modalType === 'DIRECTORY' || modalType === 'EDIT_DIRECTORY'" class="space-y-3">
-            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Nivel de Responsabilidad</label>
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Nivel de responsabilidad</label>
             <select v-model="form.role" required :disabled="modalType === 'EDIT_DIRECTORY'" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-white shadow-sm transition-all disabled:opacity-50 disabled:bg-slate-50">
               <option value="Director">Director</option>
               <option value="Administrador">Administrador</option>
@@ -282,7 +282,7 @@
 
           <!-- Channel Selection -->
           <div class="space-y-3 pt-2 border-t border-slate-100">
-            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Canal de Entrega</label>
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Canal de entrega</label>
             <div class="grid grid-cols-2 gap-3">
               <button type="button" @click="form.channel = 'EMAIL'" class="p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all outline-none"
                       :class="form.channel === 'EMAIL' ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm' : 'border-slate-200 bg-white text-slate-500 hover:border-brand-200 hover:bg-slate-50'">
@@ -300,7 +300,7 @@
           <!-- Phone capture (Shown everywhere to allow pre-configuration) -->
           <div class="space-y-3 p-5 bg-slate-50 rounded-2xl border border-slate-200/80 animate-in fade-in slide-in-from-top-4 duration-300">
             <label class="block text-[11px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
-              <Smartphone class="w-3.5 h-3.5" /> Teléfono Celular
+              <Smartphone class="w-3.5 h-3.5" /> Teléfono celular
             </label>
             <div class="flex items-center">
               <div class="bg-emerald-100 border border-emerald-200 border-r-0 px-4 py-3 rounded-l-xl text-emerald-800 font-black text-sm flex items-center gap-1.5 shadow-sm">
@@ -318,7 +318,7 @@
           <button type="button" @click="closeModal" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none border border-transparent hover:border-slate-200">Cancelar</button>
           <button type="submit" form="linkageForm" :disabled="isSaving || !isValid" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 outline-none disabled:opacity-70">
             <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-            <span>Guardar Configuración</span>
+            <span>Guardar configuración</span>
           </button>
         </footer>
       </div>

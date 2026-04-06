@@ -6,17 +6,17 @@
 
     <div v-if="pending" class="flex flex-col items-center z-10 bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] shadow-xl border border-white">
       <Loader2 class="w-12 h-12 animate-spin text-brand-600 mb-5" />
-      <p class="text-sm font-black text-slate-800 tracking-tight">Recuperando documento seguro...</p>
+      <p class="text-sm font-black text-slate-800 tracking-tight">Cargando solicitud...</p>
     </div>
 
     <div v-else-if="errorMsg" class="z-10 w-full max-w-md glass-card bg-white/90 p-10 rounded-[2.5rem] shadow-2xl text-center border border-red-100">
       <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5 border border-red-100">
         <XCircle class="w-10 h-10 text-red-500" />
       </div>
-      <h2 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">Acceso Denegado</h2>
+      <h2 class="text-2xl font-black text-slate-900 mb-2 tracking-tight">Acceso denegado</h2>
       <p class="text-sm font-bold text-slate-600 mb-8 leading-relaxed">{{ errorMsg }}</p>
       <NuxtLink to="/" class="inline-block px-6 py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-slate-800 transition-colors shadow-md">
-        Ir a Plataforma Central
+        Ir a plataforma
       </NuxtLink>
     </div>
 
@@ -45,12 +45,12 @@
               <span class="text-sm font-bold text-slate-800">{{ pass.plantel }}</span>
             </div>
             <div>
-              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Fecha Operativa</span>
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Fecha</span>
               <span class="text-sm font-bold text-slate-800">{{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}</span>
             </div>
           </div>
           <div v-if="pass.comentarios">
-            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Motivo / Justificación</span>
+            <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Justificación</span>
             <span class="text-sm font-medium text-slate-700 italic block bg-slate-50 p-4 rounded-2xl border border-slate-100">"{{ pass.comentarios }}"</span>
           </div>
         </div>
@@ -79,11 +79,11 @@
       </footer>
       
       <p v-if="!canAuthorize && pass.status === 'pendiente'" class="text-center text-xs font-black text-amber-600 mt-6 relative z-10 bg-amber-50 p-3 rounded-xl border border-amber-200">
-        Política de seguridad: Restricción de auto-autorización activada.
+        No puedes autorizar tu propia solicitud.
       </p>
 
       <div class="mt-8 text-center relative z-10">
-         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver al Dashboard</NuxtLink>
+         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver al inicio</NuxtLink>
       </div>
     </div>
   </div>
@@ -115,7 +115,7 @@ const fetchPass = async () => {
     const data = await $fetch(`/api/passes/authorize/${token}`)
     pass.value = data
   } catch (err) {
-    errorMsg.value = err.data?.message || 'Error al recuperar el documento seguro.'
+    errorMsg.value = err.data?.message || 'Error al cargar la solicitud.'
   } finally {
     pending.value = false
   }
@@ -130,7 +130,7 @@ const doAction = async (actionStr) => {
     pass.value.authorized_by = user.value.name
     pass.value.authorized_at = new Date().toISOString()
   } catch (err) {
-    alert(err.data?.message || 'Error procesando la solicitud.')
+    alert(err.data?.message || 'Error al procesar la solicitud.')
   } finally {
     isProcessing.value = false
   }
@@ -142,7 +142,7 @@ const getCategoryIcon = (id) => {
 }
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
   return map[id] || 'Otro'
 }
 

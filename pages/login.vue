@@ -18,7 +18,7 @@
       
       <h1 class="text-3xl font-black text-slate-900 mb-3 tracking-tight">Pases Digitales</h1>
       <p class="text-slate-500 text-sm font-bold mb-12 leading-relaxed">
-        Accede con tu cuenta institucional para gestionar operaciones.
+        Inicia sesión con tu cuenta institucional.
       </p>
       
       <div class="flex justify-center min-h-[44px]">

@@ -27,11 +27,11 @@ export default defineEventHandler(async () => {
     })
 
     const categoryNames: Record<number, string> = {
-      1: 'Llegada Tarde',
-      2: 'Salida Anticipada',
-      3: 'Ausencia',
-      4: 'Cambio de Horario',
-      5: 'Incapacidad'
+      1: 'Llegada tarde',
+      2: 'Salida anticipada',
+      3: 'Ausencia justificada',
+      4: 'Cambio de horario',
+      5: 'Incapacidad médica'
     }
 
     const byCategory = Object.keys(catMap).map(k => ({

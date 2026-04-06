@@ -2,8 +2,8 @@
   <div class="space-y-6">
     <div class="glass-card p-8 rounded-3xl flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Pases Generados Hoy</h2>
-        <p class="text-sm font-medium text-slate-500 mt-1">Métricas operativas de la jornada en curso</p>
+        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Pases generados</h2>
+        <p class="text-sm font-medium text-slate-500 mt-1">Resumen de incidencias de la jornada actual</p>
       </div>
       <div class="text-6xl font-black text-brand-600 font-mono tracking-tighter">
         {{ data?.totalToday || 0 }}
@@ -17,7 +17,7 @@
     <div v-else-if="data" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Chart: Categories -->
       <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
-        <h3 class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest">Tipos de Pase</h3>
+        <h3 class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest">Motivos</h3>
         <div class="space-y-6">
           <div v-for="(cat, idx) in data.byCategory" :key="cat.name" class="group">
             <div class="flex justify-between text-sm mb-2.5">

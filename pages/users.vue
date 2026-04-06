@@ -2,8 +2,8 @@
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
     <header class="mb-10 shrink-0">
-      <h1 class="text-3xl font-black text-slate-900 tracking-tight">Usuarios del Sistema</h1>
-      <p class="text-slate-500 mt-2 text-sm font-bold">Monitoreo de operadores autenticados y gestión de roles administrativos.</p>
+      <h1 class="text-3xl font-black text-slate-900 tracking-tight">Usuarios</h1>
+      <p class="text-slate-500 mt-2 text-sm font-bold">Gestión de cuentas y permisos de administrador.</p>
     </header>
 
     <div v-if="pending" class="py-20 flex justify-center flex-1">
