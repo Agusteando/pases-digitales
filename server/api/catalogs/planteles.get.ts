@@ -1,24 +1,18 @@
-import { getFastSoapEmployees } from '~/server/utils/employee-engine'
+import { getFastSoapEmployees, cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler } from '#imports'
 
 export default defineEventHandler(async () => {
-  // Use authoritative options API to avoid rebuilding the catalog manually
-  try {
-    const options: any = await $fetch('https://signia.casitaapps.com/api/options', { timeout: 5000 })
-    if (options && Array.isArray(options.planteles)) {
-      return options.planteles.map((p: any) => p.name || p.label || p).filter(Boolean).sort()
-    }
-  } catch (e) {
-    console.warn('Options API fallback engaged for planteles')
-  }
-
-  // Graceful fallback: extract from SOAP authoritative employees list
+  // CRITICAL RULE: Must use ONLY SOAP-resolved planteles as the authoritative source.
+  // The Signia Options API fallback has been permanently removed to guarantee that
+  // the planteles listed in 'Configurar Notificaciones' perfectly match the exact strings 
+  // saved by the onboarding modal and pase generation.
   const data = await getFastSoapEmployees()
   const planteles = new Set<string>()
   
   data.forEach(e => {
-    if (e.plantel && typeof e.plantel === 'string') {
-      planteles.add(e.plantel.trim())
+    const cleaned = cleanPlantelName(e.plantel)
+    if (cleaned && cleaned !== 'N/A') {
+      planteles.add(cleaned)
     }
   })
   

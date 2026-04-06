@@ -1,9 +1,13 @@
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler, getQuery } from '#imports'
 
 export default defineEventHandler(async (event) => {
-  const plantel = getQuery(event).plantel as string
+  const rawPlantel = getQuery(event).plantel as string
+  
+  // Enforce consistent cleaning to match the database records exactly
+  const plantel = cleanPlantelName(rawPlantel)
   if (!plantel || plantel === 'N/A') return { isComplete: true }
 
   const db = useDB()

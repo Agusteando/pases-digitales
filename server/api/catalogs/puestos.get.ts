@@ -1,19 +1,10 @@
-import { getSigniaData } from '~/server/utils/employee-engine'
+import { getFastSoapEmployees } from '~/server/utils/employee-engine'
 import { defineEventHandler } from '#imports'
 
 export default defineEventHandler(async () => {
-  // Use authoritative options API to avoid rebuilding the catalog manually
-  try {
-    const options: any = await $fetch('https://signia.casitaapps.com/api/options', { timeout: 5000 })
-    if (options && Array.isArray(options.puestos)) {
-      return options.puestos.map((p: any) => p.name || p.label || p).filter(Boolean).sort()
-    }
-  } catch (e) {
-    console.warn('Options API fallback engaged for puestos')
-  }
-
-  // Graceful fallback: extract from authoritative employees list
-  const data = await getSigniaData()
+  // CRITICAL RULE: Must use ONLY SOAP-resolved datasets to ensure alignment 
+  // across the routing and notification engine. Signia API fallback removed.
+  const data = await getFastSoapEmployees()
   const puestos = new Set<string>()
   
   data.forEach(e => {
