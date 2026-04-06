@@ -104,7 +104,8 @@ export async function getFastSoapEmployees() {
         // Enforce SOAP Plantel priority for routing alignment while retaining fallback
         plantel: cleanPlantelName(emp.plantel) || cleanPlantelName(match?.plantel?.name),
         puesto: match?.puesto || emp.puesto,
-        email: match?.email || emp.email
+        email: match?.email || emp.email,
+        picture: match?.picture || null
      }
   })
 
@@ -117,7 +118,8 @@ export async function getFastSoapEmployees() {
       curp: e.curp,
       plantel: cleanPlantelName(e.plantel?.name),
       email: e.email,
-      puesto: e.puesto || null
+      puesto: e.puesto || null,
+      picture: e.picture || null
     }))
   }
 

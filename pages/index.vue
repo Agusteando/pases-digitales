@@ -19,7 +19,10 @@
           <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
             <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full gap-3 bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
               <div class="flex items-center justify-between">
-                <span class="text-base font-black text-slate-800">{{ emp.name }}</span>
+                <div class="flex items-center gap-3">
+                   <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="shrink-0" />
+                   <span class="text-base font-black text-slate-800">{{ emp.name }}</span>
+                </div>
                 <button type="button" @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-white bg-slate-50 hover:bg-red-500 w-8 h-8 flex items-center justify-center rounded-full transition-colors focus:outline-none border border-slate-100 shrink-0">
                   <XIcon class="w-4 h-4" />
                 </button>
@@ -204,6 +207,7 @@ import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
 import RecentActivityPanel from '~/components/RecentActivityPanel.vue'
 import PlantelSetupModal from '~/components/PlantelSetupModal.vue'
+import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
 const selectedEmployees = ref([])
 const activeScenario = ref(null)
@@ -263,6 +267,7 @@ async function addEmployee(emp) {
       actualEmp.curp = enriched.curp || emp.curp || null
       actualEmp.plantel = enriched.plantel || emp.plantel || null
       actualEmp.puesto = enriched.puesto || emp.puesto || null
+      actualEmp.picture = enriched.picture || emp.picture || null
       actualEmp._enriching = false
 
       await checkPlantelCoverage(actualEmp.plantel)

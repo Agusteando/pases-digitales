@@ -38,9 +38,7 @@
             
             <div class="absolute left-0 top-0 bottom-0 w-1 rounded-r-full transition-colors" :class="highlightedIndex === idx ? 'bg-brand-500' : 'bg-transparent'"></div>
 
-            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/60" :class="highlightedIndex === idx ? 'border-brand-200 bg-brand-100 text-brand-600' : 'text-slate-400'">
-              <User class="w-5 h-5" />
-            </div>
+            <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 shadow-sm" :class="highlightedIndex === idx ? 'ring-2 ring-brand-400 ring-offset-2 ring-offset-brand-50' : ''" />
             
             <div class="flex-1 min-w-0">
               <p class="text-sm font-black text-slate-900 truncate" :class="{'text-brand-700': highlightedIndex === idx}">{{ emp.name }}</p>
@@ -67,7 +65,8 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Search, X, Loader2, User, SearchX } from 'lucide-vue-next'
+import { Search, X, Loader2, SearchX } from 'lucide-vue-next'
+import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
 const emit = defineEmits(['select'])
 

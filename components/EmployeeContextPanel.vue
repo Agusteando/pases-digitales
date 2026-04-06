@@ -2,10 +2,7 @@
   <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col gap-8 relative overflow-hidden bg-white/90">
     <!-- Header: Employee Info -->
     <div class="flex items-center gap-5 relative z-10">
-      <div class="relative shrink-0">
-        <div v-if="pendingEnrich" class="w-20 h-20 rounded-2xl bg-slate-100 animate-pulse border border-slate-200/60"></div>
-        <img v-else :src="displayPic" @error="handleImageError" class="w-20 h-20 rounded-2xl object-cover bg-white shadow-sm border border-slate-200/60 ring-4 ring-white" alt="Fotografía" />
-      </div>
+      <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-sm" />
 
       <div class="flex-1 min-w-0">
         <h2 class="text-2xl font-black text-slate-900 truncate tracking-tight">{{ employee.name }}</h2>
@@ -118,8 +115,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { AlertTriangle, Loader2, ShieldCheck, History, Building2, Briefcase } from 'lucide-vue-next'
+import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 dayjs.locale('es')
@@ -138,16 +136,6 @@ const getCategoryColor = (id) => {
   return map[id] || 'bg-slate-400'
 }
 
-const useFallbackImage = ref(false)
-function getFallbackAvatar(name) {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=eef2ff&color=4f46e5&bold=true`
-}
-
-function handleImageError(event) {
-  useFallbackImage.value = true
-  event.target.src = getFallbackAvatar(props.employee.name)
-}
-
 const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/enrich', {
   query: { id: props.employee.id, name: props.employee.name }
 })
@@ -157,7 +145,7 @@ const { data: historyData, pending: pendingHistory } = useFetch('/api/passes/emp
   lazy: true
 })
 
-const displayPic = computed(() => useFallbackImage.value || !enrichment.value?.picture ? getFallbackAvatar(props.employee.name) : enrichment.value.picture)
+const displayPic = computed(() => enrichment.value?.picture || props.employee.picture || null)
 const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
 const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.plantel || null)
 

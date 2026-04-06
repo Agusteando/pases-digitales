@@ -15,11 +15,8 @@
         
         <div class="flex flex-col items-center text-center gap-3">
           <div class="relative shrink-0">
-            <img v-if="sysUser.picture" :src="sysUser.picture" class="w-20 h-20 rounded-3xl object-cover border border-slate-200/60 shadow-sm bg-white ring-4 ring-white" />
-            <div v-else class="w-20 h-20 rounded-3xl bg-brand-50 border border-brand-100 shadow-sm flex items-center justify-center font-black text-brand-600 text-2xl ring-4 ring-white">
-              {{ sysUser.name.slice(0, 2).toUpperCase() }}
-            </div>
-            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full shadow-sm" title="Cuenta Activa"></div>
+            <PremiumAvatar :src="sysUser.picture" :name="sysUser.name" size="lg" class="shrink-0 ring-4 ring-white shadow-sm" />
+            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full shadow-sm z-30" title="Cuenta Activa"></div>
           </div>
           
           <div class="w-full mt-1">
@@ -67,6 +64,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Loader2, Shield } from 'lucide-vue-next'
+import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
 const { data: users, pending } = useFetch('/api/users/stats')
 const isToggling = ref(null)

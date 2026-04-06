@@ -82,12 +82,7 @@
           <div v-else class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
             <div v-for="contact in currentContacts" :key="contact.id" class="glass-card p-5 rounded-3xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative group">
               <div class="flex items-start gap-4">
-                <div class="relative shrink-0">
-                  <img v-if="contact.gw?.photoUrl" :src="contact.gw.photoUrl" class="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-sm bg-white" />
-                  <div v-else class="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-slate-400 text-lg">
-                    {{ getInitials(contact.gw?.name || contact.email) }}
-                  </div>
-                </div>
+                <PremiumAvatar :src="contact.gw?.photoUrl" :name="contact.gw?.name || contact.email" size="md" class="shrink-0 ring-2 ring-white shadow-sm bg-white" />
                 
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-black text-slate-900 truncate tracking-tight">{{ contact.gw?.name || 'Sincronizando...' }}</p>
@@ -167,9 +162,7 @@
                      :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-brand-50/50 border-brand-100'">
                   <div class="absolute left-0 top-0 bottom-0 w-1" :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-500' : 'bg-brand-500'"></div>
                   
-                  <div v-if="rule.gw_photo" class="w-10 h-10 rounded-xl border-2 border-white shadow-sm shrink-0 overflow-hidden bg-white">
-                    <img :src="rule.gw_photo" class="w-full h-full object-cover" />
-                  </div>
+                  <PremiumAvatar v-if="rule.gw_photo" :src="rule.gw_photo" :name="rule.gw_name || rule.target_val" size="sm" class="shrink-0 border border-white shadow-sm bg-white" />
                   <div v-else class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border"
                        :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-brand-100 text-brand-600 border-brand-200'">
                     <User class="w-5 h-5" />
@@ -336,6 +329,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Building2, Globe, ChevronRight, ChevronDown, Filter, Users, Network, Search, X, UserX, Mail, MessageCircle, Plus, Smartphone, Trash2, Edit2, GitMerge, ArrowRight, ArrowDown, User, Loader2, CheckCircle2 } from 'lucide-vue-next'
+import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
 const { user } = useAuth()
 const isAdmin = computed(() => user.value?.is_admin || false)
