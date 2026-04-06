@@ -1,71 +1,108 @@
 <template>
-  <div class="relative inline-flex items-center justify-center isolate select-none overflow-hidden" :class="[sizeClasses, $attrs.class]" ref="containerRef">
+  <!-- Root container maintains size classes and acts as hover trigger/ref -->
+  <div class="relative inline-flex items-center justify-center isolate group select-none" :class="[sizeClasses, $attrs.class]" ref="containerRef">
     
-    <!-- Ambient Loading State / Background Shell -->
-    <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]">
-      <div v-if="isProcessing" class="absolute inset-0 bg-gradient-to-tr from-brand-100/40 via-slate-100 to-indigo-100/40 animate-pulse"></div>
-    </div>
-    
-    <!-- Aura Layer (A softly blurred multiplied clone that creates the premium glow from the image's own colors) -->
-    <img 
-      v-if="activeSrc" 
-      :src="activeSrc" 
-      class="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-700 pointer-events-none" 
-      aria-hidden="true" 
-    />
-    
-    <!-- Core Image Layer -->
-    <img 
-      v-if="activeSrc" 
-      :src="activeSrc" 
-      class="relative z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-700 ease-out" 
-      :class="{'opacity-0 scale-90': isProcessing, 'opacity-100 scale-100': !isProcessing}" 
-      :style="!usedCanvas ? 'object-position: center 15%;' : ''" 
-      :alt="name" 
-    />
-
-    <!-- Fallback Initials Layer -->
-    <div 
-      v-else-if="!isProcessing" 
-      class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-brand-50 to-indigo-100 flex items-center justify-center font-black text-brand-600 shadow-inner border border-brand-200/50" 
-      :class="textClass"
-    >
-      {{ initials }}
-    </div>
-
-    <!-- Eye Follow Layers -->
-    <div v-if="activeSrc && activeEyeData && !isProcessing" class="absolute inset-0 z-15 pointer-events-none rounded-[inherit] overflow-hidden">
-      <img v-for="(eye, i) in activeEyeData" :key="i"
-           :ref="el => setEyeRef(el)"
-           :src="eye.src"
-           class="absolute origin-center will-change-transform"
-           :style="{ left: eye.left, top: eye.top, width: eye.sizePercent, height: eye.sizePercent }"
-           style="transform: translate(-50%, -50%);"
-           aria-hidden="true" />
-    </div>
-
-    <!-- Inner Glass / Lighting Ring -->
-    <div class="absolute inset-0 z-20 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none transition-all"></div>
-
-    <!-- Pipeline Debug Overlay (Only visible when DEBUG_FACE is true) -->
-    <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none overflow-hidden rounded-[inherit]">
+    <!-- Clipping Wrapper: replaces the previous overflow-hidden on the root -->
+    <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0">
       
-      <!-- Safe Face Detection Bounds -->
-      <div v-if="debugInfo.faceRect" class="absolute border border-red-500/80 bg-red-500/10" 
-           :style="{ left: debugInfo.faceRect.left + '%', top: debugInfo.faceRect.top + '%', width: debugInfo.faceRect.width + '%', height: debugInfo.faceRect.height + '%' }">
+      <!-- Ambient Loading State / Background Shell -->
+      <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]">
+        <div v-if="isProcessing" class="absolute inset-0 bg-gradient-to-tr from-brand-100/40 via-slate-100 to-indigo-100/40 animate-pulse"></div>
+      </div>
+      
+      <!-- Aura Layer (A softly blurred multiplied clone that creates the premium glow from the image's own colors) -->
+      <img 
+        v-if="activeSrc" 
+        :src="activeSrc" 
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-700 pointer-events-none" 
+        aria-hidden="true" 
+      />
+      
+      <!-- Core Image Layer -->
+      <img 
+        v-if="activeSrc" 
+        :src="activeSrc" 
+        class="relative z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-700 ease-out" 
+        :class="{'opacity-0 scale-90': isProcessing, 'opacity-100 scale-100': !isProcessing}" 
+        :style="!usedCanvas ? 'object-position: center 15%;' : ''" 
+        :alt="name" 
+      />
+
+      <!-- Fallback Initials Layer -->
+      <div 
+        v-else-if="!isProcessing" 
+        class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-brand-50 to-indigo-100 flex items-center justify-center font-black text-brand-600 shadow-inner border border-brand-200/50" 
+        :class="textClass"
+      >
+        {{ initials }}
       </div>
 
-      <!-- Live Landmarks Mapping -->
-      <div v-for="(lm, i) in debugInfo.landmarks" :key="'lm'+i" 
-           class="absolute w-1 h-1 bg-yellow-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-sm" 
-           :style="{ left: lm.x + '%', top: lm.y + '%' }">
+      <!-- Eye Follow Layers -->
+      <div v-if="activeSrc && activeEyeData && !isProcessing" class="absolute inset-0 z-15 pointer-events-none rounded-[inherit] overflow-hidden">
+        <img v-for="(eye, i) in activeEyeData" :key="i"
+             :ref="el => setEyeRef(el)"
+             :src="eye.src"
+             class="absolute origin-center will-change-transform"
+             :style="{ left: eye.left, top: eye.top, width: eye.sizePercent, height: eye.sizePercent }"
+             style="transform: translate(-50%, -50%);"
+             aria-hidden="true" />
       </div>
 
-      <!-- State Readout -->
-      <div class="absolute bottom-0 inset-x-0 bg-black/80 text-[7px] text-green-400 font-mono p-1 leading-tight flex flex-col backdrop-blur-md">
-        <span>F: {{ debugInfo.faceOK ? 'OK' : 'FAIL' }} | E: {{ debugInfo.eyesOK ? 'OK' : 'SKIP' }}</span>
-        <span>B: {{ debugInfo.bgStatus }}</span>
-        <span>X: {{ debugInfo.followActive ? 'ACTIVE' : 'OFF' }}</span>
+      <!-- Inner Glass / Lighting Ring -->
+      <div class="absolute inset-0 z-20 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none transition-all"></div>
+
+      <!-- Pipeline Debug Overlay Bounds (Only visible when DEBUG_FACE is true) -->
+      <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none">
+        
+        <!-- Safe Face Detection Bounds -->
+        <div v-if="debugInfo.faceRect" class="absolute border border-red-500/80 bg-red-500/10" 
+             :style="{ left: debugInfo.faceRect.left + '%', top: debugInfo.faceRect.top + '%', width: debugInfo.faceRect.width + '%', height: debugInfo.faceRect.height + '%' }">
+        </div>
+
+        <!-- Live Landmarks Mapping -->
+        <div v-for="(lm, i) in debugInfo.landmarks" :key="'lm'+i" 
+             class="absolute w-1 h-1 bg-yellow-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-sm" 
+             :style="{ left: lm.x + '%', top: lm.y + '%' }">
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW: Interactive Hover Tooltip that breaks out of the overflow clipping mask -->
+    <div v-if="isDebug && !isProcessing" 
+         class="absolute top-full left-1/2 -translate-x-1/2 pt-3 z-[100] opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100 flex justify-center">
+      
+      <div class="w-56 bg-slate-900/95 backdrop-blur-md text-slate-200 text-xs font-mono p-4 rounded-2xl shadow-2xl select-text cursor-auto border border-slate-700/80">
+        <div class="font-black text-brand-400 mb-3 uppercase tracking-widest text-[10px] flex items-center justify-between">
+          <span>Pipeline Debug</span>
+        </div>
+        
+        <div class="space-y-2">
+          <div class="flex justify-between border-b border-slate-700/50 pb-1.5">
+            <span class="text-slate-400">Face</span>
+            <span :class="debugInfo.faceOK ? 'text-emerald-400' : 'text-red-400'">{{ debugInfo.faceOK ? 'OK' : 'FAIL' }}</span>
+          </div>
+          
+          <div class="flex justify-between border-b border-slate-700/50 pb-1.5">
+            <span class="text-slate-400">Eyes</span>
+            <span :class="debugInfo.eyesOK ? 'text-emerald-400' : 'text-amber-400'">{{ debugInfo.eyesOK ? 'OK' : 'SKIP' }}</span>
+          </div>
+          
+          <div class="flex flex-col border-b border-slate-700/50 pb-1.5">
+            <span class="text-slate-400 mb-1">Background</span>
+            <span class="text-[10px] leading-relaxed break-words" :class="debugInfo.bgStatus.includes('ROLLBACK') || debugInfo.bgStatus === 'FAIL' ? 'text-amber-400' : 'text-emerald-400'">
+              {{ debugInfo.bgStatus }}
+            </span>
+          </div>
+          
+          <div class="flex justify-between">
+            <span class="text-slate-400">Follow Fx</span>
+            <span :class="debugInfo.followActive ? 'text-emerald-400' : 'text-slate-500'">{{ debugInfo.followActive ? 'ACTIVE' : 'OFF' }}</span>
+          </div>
+        </div>
+        
+        <div class="mt-3 pt-2 border-t border-slate-700/80 text-[9px] text-slate-500 text-center uppercase tracking-widest font-sans">
+          Select text to copy
+        </div>
       </div>
     </div>
   </div>
