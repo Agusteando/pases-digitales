@@ -6,20 +6,13 @@
         <ArrowLeft class="w-4 h-4" /> Volver al Historial
       </button>
       
-      <!-- Actionable Operations Hub -->
-      <div v-if="pass && isOwner" class="flex flex-wrap items-center gap-3 bg-white/50 p-2 rounded-2xl border border-slate-200/60 backdrop-blur-md shadow-sm">
-        
-        <button v-if="pass.status === 'pendiente'" @click="handleResend" :disabled="isResending" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 outline-none disabled:opacity-70 disabled:hover:bg-brand-600">
-          <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
-          <Send v-else class="w-4 h-4" />
-          <span>{{ isResending ? 'Enviando...' : 'Reenviar Notificación' }}</span>
+      <!-- Administrative Actions -->
+      <div v-if="pass && isOwner && isEditable" class="flex flex-wrap items-center gap-3">
+        <button @click="showEditModal = true" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-black rounded-xl shadow-sm hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
+          <Edit2 class="w-4 h-4" /> Editar Pase
         </button>
 
-        <button v-if="isEditable" @click="showEditModal = true" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-black rounded-xl shadow-sm hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
-          <Edit2 class="w-4 h-4" /> Editar
-        </button>
-
-        <button v-if="isEditable && pass.status === 'pendiente'" @click="handleCancel" :disabled="isCancelling" class="px-5 py-2.5 bg-white border border-slate-200 text-red-600 text-sm font-black rounded-xl shadow-sm hover:border-red-300 hover:text-red-700 hover:bg-red-50 transition-all flex items-center gap-2 outline-none disabled:opacity-70">
+        <button v-if="pass.status === 'pendiente'" @click="handleCancel" :disabled="isCancelling" class="px-5 py-2.5 bg-white border border-slate-200 text-red-600 text-sm font-black rounded-xl shadow-sm hover:border-red-300 hover:text-red-700 hover:bg-red-50 transition-all flex items-center gap-2 outline-none disabled:opacity-70">
           <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
           <Trash2 v-else class="w-4 h-4" />
           <span>Anular</span>
@@ -183,12 +176,35 @@
               </div>
             </div>
 
-            <!-- Manual Auth Warning -->
-            <div v-if="pass.status === 'pendiente'" class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-200 flex gap-3 items-start shadow-sm">
-              <Info class="w-5 h-5 text-amber-600 shrink-0" />
-              <p class="text-xs text-amber-800 font-bold leading-relaxed">
-                Este documento es de uso estrictamente digital. Su resolución ocurre a través del enlace notificado externamente a los responsables. Utiliza el botón <strong>Reenviar Notificación</strong> arriba si el destinatario no lo recibió.
-              </p>
+            <!-- Operational Recovery: Resend Action -->
+            <div v-if="pass.status === 'pendiente'" class="mt-8 p-6 bg-brand-50 rounded-3xl border border-brand-100 shadow-sm flex flex-col gap-5 relative overflow-hidden group">
+              <div class="absolute top-0 right-0 w-32 h-32 bg-brand-200/30 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none transition-transform group-hover:scale-110"></div>
+              
+              <div class="flex gap-4 items-start relative z-10">
+                <div class="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center shrink-0 border border-brand-200 mt-0.5">
+                  <BellRing class="w-5 h-5 text-brand-600" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-brand-900 tracking-tight">Recuperación Operativa</h4>
+                  <p class="text-xs text-brand-800/90 font-medium leading-relaxed mt-1">
+                    Si el responsable no recibió el acceso, emite una nueva copia segura de este folio. <strong class="font-black text-brand-900">No dupliques el pase.</strong>
+                  </p>
+                  
+                  <div v-if="recentTargets.length > 0" class="mt-4 flex flex-wrap gap-2">
+                    <span class="text-[9px] font-black uppercase tracking-widest text-brand-700 w-full mb-0.5">Se notificará nuevamente a:</span>
+                    <span v-for="t in recentTargets" :key="t" class="px-2.5 py-1.5 bg-white text-brand-800 text-[10px] font-bold rounded-lg border border-brand-200 shadow-sm flex items-center gap-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                      {{ t }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <button @click="handleResend" :disabled="isResending" class="relative z-10 w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 outline-none disabled:opacity-70">
+                <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
+                <Send v-else class="w-4 h-4" />
+                <span>Reenviar Notificación Original</span>
+              </button>
             </div>
           </div>
 
@@ -241,7 +257,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, ArrowRight } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, BellRing, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, ArrowRight } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -271,12 +287,36 @@ const isEditable = computed(() => {
   return hoursDiff <= 48
 })
 
+const recentTargets = computed(() => {
+  if (!pass.value?.notifications) return []
+  const targets = new Map()
+  
+  pass.value.notifications.forEach(log => {
+    if (isSystemLog(log.error_text)) return
+    const name = extractTargetName(log.error_text)
+    if (name === 'Sistema' || name === 'Desconocido') return
+    
+    let channel = 'Correo'
+    if (log.error_text.includes('WhatsApp')) channel = 'WhatsApp'
+    
+    if (!targets.has(name)) {
+      targets.set(name, channel)
+    } else {
+      const existing = targets.get(name)
+      if (existing !== channel && !existing.includes(channel)) {
+         targets.set(name, `${existing} & ${channel}`)
+      }
+    }
+  })
+  
+  return Array.from(targets.entries()).map(([name, channel]) => `${name} (${channel})`)
+})
+
 const handleResend = async () => {
   if (isResending.value || !pass.value) return
   isResending.value = true
   try {
     await $fetch(`/api/passes/${passId.value}/notify`, { method: 'POST' })
-    alert('Las notificaciones han sido generadas y reenviadas exitosamente.')
     refresh()
   } catch (err) {
     console.error('Resend error', err)
