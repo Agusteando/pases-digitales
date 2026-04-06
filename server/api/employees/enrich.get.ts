@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     picture: enriched.picture || null,
     puesto: enriched.puesto || null,
     email: enriched.email || empMatch?.email || null,
-    plantelId: enriched.plantelId || empMatch?.plantel || null,
+    plantel: enriched.plantelId || empMatch?.plantel || null, // Authoritative clean plantel name
     isActive: enriched.isActive !== false,
     curp: enriched.curp || empMatch?.curp || null
   }

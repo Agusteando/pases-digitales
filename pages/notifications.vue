@@ -39,7 +39,7 @@
                   </div>
                   <div>
                     <p class="text-sm font-black text-slate-800 tracking-tight">{{ extractTargetName(log.error_text) }}</p>
-                    <p class="text-[10px] font-bold text-slate-500 truncate max-w-[200px]" :title="log.chat_id">{{ log.chat_id }}</p>
+                    <p class="text-[10px] font-bold text-slate-500 truncate max-w-[200px]" :title="log.chat_id">{{ isSystemLog(log.error_text) ? 'Canal Fijo (Telegram)' : log.chat_id }}</p>
                   </div>
                 </div>
               </td>
@@ -52,7 +52,7 @@
               </td>
               <td class="px-6 py-5 text-xs font-bold text-slate-500">{{ new Date(log.created_at).toLocaleString() }}</td>
               <td class="px-6 py-5 text-right">
-                <button v-if="log.status !== 'sent' && !log.error_text.includes('Telegram')" @click="retryNotification(log.id)" class="text-brand-600 hover:text-white bg-brand-50 hover:bg-brand-600 text-xs font-black px-4 py-2 rounded-xl transition-all shadow-sm">
+                <button v-if="log.status !== 'sent' && !isSystemLog(log.error_text)" @click="retryNotification(log.id)" class="text-brand-600 hover:text-white bg-brand-50 hover:bg-brand-600 text-xs font-black px-4 py-2 rounded-xl transition-all shadow-sm">
                   Reintentar
                 </button>
               </td>
@@ -66,12 +66,17 @@
 
 <script setup>
 import { ref } from 'vue'
-import { RefreshCcw, Loader2, MessageCircle, Mail, Send as SendIcon, Bell } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, MessageCircle, Mail, Server, Bell } from 'lucide-vue-next'
 
 const { data: logs, pending: pendingLogs, refresh: refreshLogs } = useFetch('/api/notifications', { default: () => [] })
 
+const isSystemLog = (text) => {
+  return text && text.includes('Auditoría Global')
+}
+
 const extractTargetName = (text) => {
   if (!text) return 'Desconocido'
+  if (isSystemLog(text)) return 'Auditoría Global (Sistema)'
   const match = text.match(/Destinatario:\s*([^|]+)/)
   return match ? match[1].trim() : 'Sistema'
 }
@@ -80,7 +85,7 @@ const getChannelColor = (text) => {
   if (!text) return 'bg-slate-100 text-slate-500 border-slate-200'
   if (text.includes('WhatsApp')) return 'bg-emerald-100 text-emerald-600 border-emerald-200'
   if (text.includes('Email')) return 'bg-brand-100 text-brand-600 border-brand-200'
-  if (text.includes('Telegram')) return 'bg-sky-100 text-sky-600 border-sky-200'
+  if (text.includes('Telegram') || isSystemLog(text)) return 'bg-slate-200 text-slate-700 border-slate-300'
   return 'bg-slate-100 text-slate-500 border-slate-200'
 }
 
@@ -88,7 +93,7 @@ const getChannelIcon = (text) => {
   if (!text) return Bell
   if (text.includes('WhatsApp')) return MessageCircle
   if (text.includes('Email')) return Mail
-  if (text.includes('Telegram')) return SendIcon
+  if (text.includes('Telegram') || isSystemLog(text)) return Server
   return Bell
 }
 

@@ -16,7 +16,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Rol inválido. Opciones permitidas: Director, Administrador, Lead/Manager.' })
   }
 
-  if (channel === 'WHATSAPP' && phone) {
+  const resolvedChannel = channel || 'EMAIL'
+  if (!['EMAIL', 'WHATSAPP'].includes(resolvedChannel)) {
+    throw createError({ statusCode: 400, message: 'Canal de distribución inválido. Solo se permite EMAIL o WHATSAPP.' })
+  }
+
+  if (resolvedChannel === 'WHATSAPP' && phone) {
     try {
       await updateWorkspaceUserPhone(email, `521${phone}@c.us`)
     } catch (e) {
@@ -28,7 +33,7 @@ export default defineEventHandler(async (event) => {
   try {
     await db.execute(
       'INSERT INTO hr_directory (plantel, email, role, puesto, channel) VALUES (?, ?, ?, NULL, ?)', 
-      [cleanPlantelName(plantel), email, role, channel || 'EMAIL']
+      [cleanPlantelName(plantel), email, role, resolvedChannel]
     )
     return { success: true }
   } catch (error: any) {

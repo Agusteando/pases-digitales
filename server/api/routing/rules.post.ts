@@ -11,7 +11,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Falta el destinatario de la notificación.' })
   }
 
-  if (channel === 'WHATSAPP' && phone) {
+  const resolvedChannel = channel || 'EMAIL'
+  if (!['EMAIL', 'WHATSAPP'].includes(resolvedChannel)) {
+    throw createError({ statusCode: 400, message: 'Canal de distribución inválido. Solo se permite EMAIL o WHATSAPP.' })
+  }
+
+  if (resolvedChannel === 'WHATSAPP' && phone) {
     try {
       await updateWorkspaceUserPhone(target_val, `521${phone}@c.us`)
     } catch (e) {
@@ -28,7 +33,7 @@ export default defineEventHandler(async (event) => {
         condition_puesto || 'ALL', 
         'CONTACT', 
         target_val,
-        channel || 'EMAIL'
+        resolvedChannel
       ]
     )
     return { success: true }

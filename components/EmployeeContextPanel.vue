@@ -159,7 +159,7 @@ const { data: historyData, pending: pendingHistory } = useFetch('/api/passes/emp
 
 const displayPic = computed(() => useFallbackImage.value || !enrichment.value?.picture ? getFallbackAvatar(props.employee.name) : enrichment.value.picture)
 const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
-const displayPlantel = computed(() => enrichment.value?.plantelId || props.employee.plantel || null)
+const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.plantel || null)
 
 const isToday = (dateStr) => {
   if (!dateStr) return false

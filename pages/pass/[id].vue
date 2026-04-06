@@ -172,7 +172,7 @@
             <div v-if="pass.status === 'pendiente'" class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-200 flex gap-3 items-start shadow-sm">
               <Info class="w-5 h-5 text-amber-600 shrink-0" />
               <p class="text-xs text-amber-800 font-bold leading-relaxed">
-                Este documento es de uso estrictamente digital. Su resolución ocurre a través del enlace notificado externamente.
+                Este documento es de uso estrictamente digital. Su resolución ocurre a través del enlace notificado externamente a los responsables.
               </p>
             </div>
           </div>
@@ -180,27 +180,36 @@
           <!-- Notification Delivery Log -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Bell class="w-4 h-4 text-brand-500" /> Entrega de Notificaciones
+              <Bell class="w-4 h-4 text-brand-500" /> Auditoría de Notificaciones
             </h3>
 
             <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
               <p class="text-sm font-bold text-slate-400">Sin registros de distribución.</p>
             </div>
             <div v-else class="space-y-4">
-              <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start justify-between gap-4 transition-colors hover:bg-white hover:shadow-sm">
+              <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 rounded-2xl border flex items-start justify-between gap-4 transition-colors"
+                   :class="isSystemLog(log.error_text) ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-sm'">
                 <div class="flex items-center gap-3 w-full min-w-0">
                   <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm" :class="getChannelColor(log.error_text)">
                     <component :is="getChannelIcon(log.error_text)" class="w-4 h-4" />
                   </div>
                   <div class="min-w-0 flex-1">
-                    <p class="text-sm font-black text-slate-800 tracking-tight truncate">{{ extractTargetName(log.error_text) }}</p>
-                    <p class="text-[10px] font-bold text-slate-500 mt-0.5 truncate">{{ getDeliveryDetail(log) }}</p>
-                    <p class="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{{ formatDateLong(log.created_at) }}</p>
+                    <p class="text-sm font-black tracking-tight truncate" :class="isSystemLog(log.error_text) ? 'text-white' : 'text-slate-800'">
+                      {{ extractTargetName(log.error_text) }}
+                    </p>
+                    <p class="text-[10px] font-bold mt-0.5 truncate" :class="isSystemLog(log.error_text) ? 'text-slate-400' : 'text-slate-500'">
+                      {{ getDeliveryDetail(log) }}
+                    </p>
+                    <p class="text-[9px] font-bold mt-1.5 uppercase tracking-widest" :class="isSystemLog(log.error_text) ? 'text-slate-500' : 'text-slate-400'">
+                      {{ formatDateLong(log.created_at) }}
+                    </p>
                   </div>
                 </div>
                 <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border shadow-sm shrink-0"
-                      :class="log.status === 'sent' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'">
-                  {{ log.status === 'sent' ? 'Entregado' : 'Fallido' }}
+                      :class="isSystemLog(log.error_text) && log.status === 'sent' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                             isSystemLog(log.error_text) && log.status !== 'sent' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                             log.status === 'sent' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'">
+                  {{ log.status === 'sent' ? 'OK' : 'Fail' }}
                 </span>
               </div>
             </div>
@@ -217,7 +226,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, Share2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, MessageCircle, Mail, Send as SendIcon, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -269,41 +278,47 @@ const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY
 const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : 'N/A'
 
 // Explicit Notification Parsing
+const isSystemLog = (text) => {
+  return text && text.includes('Auditoría Global')
+}
+
 const extractTargetName = (text) => {
   if (!text) return 'Desconocido'
+  if (isSystemLog(text)) return 'Auditoría Global (Sistema)'
   const match = text.match(/Destinatario:\s*([^|]+)/)
   return match ? match[1].trim() : 'Sistema'
 }
 
 const getChannelColor = (text) => {
   if (!text) return 'bg-slate-100 text-slate-500 border-slate-200'
+  if (text.includes('Telegram') || isSystemLog(text)) return 'bg-slate-800 text-slate-300 border-slate-700'
   if (text.includes('WhatsApp')) return 'bg-emerald-100 text-emerald-600 border-emerald-200'
   if (text.includes('Email')) return 'bg-brand-100 text-brand-600 border-brand-200'
-  if (text.includes('Telegram')) return 'bg-sky-100 text-sky-600 border-sky-200'
   return 'bg-slate-100 text-slate-500 border-slate-200'
 }
 
 const getChannelIcon = (text) => {
   if (!text) return Bell
+  if (text.includes('Telegram') || isSystemLog(text)) return Server
   if (text.includes('WhatsApp')) return MessageCircle
   if (text.includes('Email')) return Mail
-  if (text.includes('Telegram')) return SendIcon
   return Bell
 }
 
 const getDeliveryDetail = (log) => {
   const text = log.error_text || ''
   const isOk = log.status === 'sent'
+  const isSystem = isSystemLog(text)
   
-  let channelStr = 'Canal Desconocido'
-  if (text.includes('WhatsApp')) channelStr = 'WhatsApp'
-  else if (text.includes('Email')) channelStr = 'Correo Electrónico'
-  else if (text.includes('Telegram')) channelStr = 'Telegram'
+  let methodStr = 'Canal Desconocido'
+  if (text.includes('WhatsApp')) methodStr = 'WhatsApp'
+  else if (text.includes('Email')) methodStr = 'Correo Electrónico'
+  else if (text.includes('Telegram') || isSystem) methodStr = 'Red Interna (Telegram)'
 
-  if (isOk) return `Entregado vía ${channelStr} a ${log.chat_id}`
+  if (isOk) return isSystem ? `Confirmación de respaldo en ${methodStr}` : `Entregado vía ${methodStr} a ${log.chat_id}`
   
   const errMatch = text.split('| Error:')[1]
-  return `Fallo en ${channelStr}: ${errMatch ? errMatch.trim() : 'Destino inalcanzable'}`
+  return `Fallo en ${methodStr}: ${errMatch ? errMatch.trim() : 'Destino inalcanzable'}`
 }
 
 const refreshPass = () => {

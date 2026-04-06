@@ -35,7 +35,7 @@ export async function dispatchNotificationsForPass(passId: number) {
 
   const authUrlBase = `${config.appUrl}/authorize/${pass.auth_token}`
 
-  // 1. Global Telegram Audit
+  // 1. Mandatory Global Infrastructure Audit (Fixed, Non-Configurable)
   const telegramGlobalId = '-1003057962499'
   const tgMessage = `*REQUERIMIENTO OPERATIVO*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg}\nFolio *${paddedId}*\nEmitido por: ${pass.user}`
 
@@ -46,16 +46,16 @@ export async function dispatchNotificationsForPass(passId: number) {
     })
     await db.execute(
       'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-      [pass.id, telegramGlobalId, 'sent', `Destinatario: Auditoría Global | Canal: Telegram`]
+      [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
     )
   } catch (e: any) {
     await db.execute(
       'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-      [pass.id, telegramGlobalId, 'failed', `Destinatario: Auditoría Global | Canal: Telegram | Error: ${e.message || 'Fallo de red'}`]
+      [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
     )
   }
 
-  // 2. Individual Target Resolution
+  // 2. Individual Target Resolution (Configurable Routing)
   const empData = await getSigniaEnrichment(pass.employee_name)
   const empPuesto = (empData.puesto || '').trim()
   const empPlantel = pass.plantel || ''
@@ -70,7 +70,10 @@ export async function dispatchNotificationsForPass(passId: number) {
       current = { email, name: gw.name || email.split('@')[0], phone: gw.phone, channels: new Set() }
       targets.set(email, current)
     }
-    current.channels.add(channel || 'EMAIL')
+    // Only accept user-facing configurable channels
+    if (channel === 'WHATSAPP' || channel === 'EMAIL') {
+      current.channels.add(channel)
+    }
   }
 
   // Bind Base Plantel Contacts
@@ -88,7 +91,7 @@ export async function dispatchNotificationsForPass(passId: number) {
      }
   }
 
-  // 3. Dispatch & Audit Trail
+  // 3. Dispatch Configurable Channels & Audit Trail
   for (const [email, target] of targets.entries()) {
     const rToken = jwt.sign(
       { passId: pass.id, email: target.email, name: target.name }, 

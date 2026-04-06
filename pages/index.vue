@@ -16,12 +16,29 @@
           <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Localizar Colaborador</label>
           <EmployeeSearch @select="addEmployee" />
           
-          <div v-if="selectedEmployees.length > 0" class="flex flex-wrap gap-3 mt-5">
-            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex items-center gap-3 bg-white border border-slate-200 pl-4 pr-1.5 py-1.5 rounded-2xl group shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
-              <span class="text-sm font-black text-slate-800">{{ emp.name.split(' ')[0] }} {{ emp.name.split(' ')[1] || '' }}</span>
-              <button type="button" @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-white bg-slate-50 hover:bg-red-500 w-7 h-7 flex items-center justify-center rounded-full transition-colors focus:outline-none border border-slate-100">
-                <XIcon class="w-4 h-4" />
-              </button>
+          <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
+            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full gap-3 bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
+              <div class="flex items-center justify-between">
+                <span class="text-base font-black text-slate-800">{{ emp.name }}</span>
+                <button type="button" @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-white bg-slate-50 hover:bg-red-500 w-8 h-8 flex items-center justify-center rounded-full transition-colors focus:outline-none border border-slate-100 shrink-0">
+                  <XIcon class="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div v-if="emp._enriching" class="flex gap-2">
+                <div class="h-6 w-24 bg-slate-100 animate-pulse rounded-lg"></div>
+                <div class="h-6 w-32 bg-slate-100 animate-pulse rounded-lg"></div>
+              </div>
+              <div v-else class="flex flex-wrap items-center gap-2">
+                <span v-if="emp.plantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5">
+                  <Building2 class="w-3.5 h-3.5 text-slate-400" />
+                  {{ emp.plantel }}
+                </span>
+                <span v-if="emp.puesto" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
+                  <Briefcase class="w-3.5 h-3.5 text-brand-400" />
+                  {{ emp.puesto }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -181,7 +198,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { Loader2, X as XIcon, Cake, ArrowRight, LogOut, PenTool, Send } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, ArrowRight, LogOut, PenTool, Send, Building2, Briefcase } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -233,8 +250,8 @@ function onSetupCancelled() {
 
 async function addEmployee(emp) {
   if (!selectedEmployees.value.find(e => e.id === emp.id)) {
-    // Optimistic UI insert
-    const tempEmp = { ...emp }
+    // Optimistic UI insert with enrichment skeleton
+    const tempEmp = { ...emp, _enriching: true }
     selectedEmployees.value.push(tempEmp)
 
     // Server-side enrichment query
@@ -244,7 +261,9 @@ async function addEmployee(emp) {
     const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
     if (actualEmp) {
       actualEmp.curp = enriched.curp || emp.curp || null
-      actualEmp.plantel = enriched.plantelId || emp.plantel || null
+      actualEmp.plantel = enriched.plantel || emp.plantel || null
+      actualEmp.puesto = enriched.puesto || emp.puesto || null
+      actualEmp._enriching = false
 
       await checkPlantelCoverage(actualEmp.plantel)
     }
