@@ -1,33 +1,26 @@
-# Pases Digitales - Guía Operativa
+# Pases Digitales - Manual Operativo
 
-Bienvenido a la plataforma de **Pases Digitales**. Este sistema automatiza la emisión y autorización de incidencias del personal mediante un flujo de aprobación externo vía notificaciones, eliminando los formatos impresos.
+Plataforma institucional de **Pases Digitales** diseñada para la gestión, emisión y autorización remota de justificaciones de incidencias laborales. El sistema elimina los procesos manuales y centraliza el control mediante notificaciones distribuidas individualizadas.
 
-## 1. Ingreso y Usuarios
-*   El acceso requiere una cuenta institucional de Google Workspace.
-*   Todo usuario que inicie sesión exitosamente se registra automáticamente en el sistema.
-*   La cuenta `desarrollo.tecnologico@casitaiedis.edu.mx` es Administrador principal por defecto para asegurar el acceso inicial de configuración.
-*   **Permisos Estándar**: Permitido emitir pases, visualizar historial, inspeccionar detalle de pases y exportar reportes.
-*   **Permisos de Administrador**: Acceso a configuración de rutas, directorio operativo, métricas y gestión de otros usuarios. Los administradores pueden otorgar o revocar permisos de administrador a cualquier otro operador directamente desde el módulo "Usuarios".
+## 1. Modelo de Autorización Descentralizada (Sin Login)
+El sistema emplea un esquema de seguridad de vanguardia diseñado para la fricción cero en las jefaturas. 
+*   **Aprobación Directa**: Cuando se emite un pase, el motor de enrutamiento genera un **enlace criptográfico único y firmado (JWT)** exclusivo para cada responsable notificado. 
+*   **Fricción Cero**: El director o responsable que recibe el WhatsApp **no necesita iniciar sesión** en la plataforma. Al hacer clic en el enlace, el sistema valida la firma del token para saber de manera irrefutable qué persona está accediendo a la solicitud.
+*   **Trazabilidad Intacta**: Al autorizar o rechazar, el registro se graba permanentemente a nombre de ese destinatario, manteniendo un expediente de auditoría perfecto sin requerir gestión de contraseñas.
+*   **Regla de Seguridad**: El sistema detecta y bloquea matemáticamente los intentos de "auto-aprobación" (si el creador del pase o el empleado afectado intenta abrir el enlace, el acceso será denegado).
 
-## 2. Emisión de Pases
-*   Se pueden seleccionar uno o múltiples colaboradores buscando por nombre (con integración ultrarrápida a la base de datos de empleados y Signia).
-*   Si el colaborador ya tiene un pase en el día actual, el sistema despliega una alerta preventiva visual en su expediente.
-*   Al emitir la justificación, el pase nace en estado **Pendiente** y se envían de inmediato las notificaciones para su resolución.
-*   **Restricción Estricta**: No existen atajos internos. Toda autorización debe realizarse exclusivamente a través del enlace seguro enviado mediante la notificación oficial.
+## 2. Flujo de Notificaciones (WhatsApp y Telegram)
+Cada pase generado se distribuye automáticamente según el modelo de responsabilidades del plantel:
+*   **Notificaciones Individualizadas (WhatsApp)**: Por defecto, el sistema localiza a los responsables vinculados al plantel del colaborador en el *Directorio Operativo*. Si existen 3 directivos, se envían 3 mensajes individuales por separado, cada uno con su propio token de autorización personalizado.
+*   **Enrutamiento Inteligente (Reglas)**: Se pueden definir reglas de excepción. Ej. "Si el puesto es 'Vigilante', además de los directores, notificar específicamente al Coordinador de Operaciones". Las reglas y el directorio se combinan de forma inteligente.
+*   **Auditoría Global (Telegram)**: Simultáneamente, se envía una notificación maestra de solo-lectura al canal directivo de Telegram para mantener un registro histórico global.
 
-## 3. Flujo de Notificaciones y Autorización
-*   **Telegram**: Notificación global y obligatoria para cada pase emitido. Se envía al grupo maestro operativo para control directivo.
-*   **WhatsApp**: Enrutamiento dinámico. Las notificaciones viajan directamente al WhatsApp del responsable designado, según las configuraciones del sistema.
-*   **Segregación de Funciones**: Por seguridad operativa, un pase **nunca** podrá ser autorizado por la misma persona que lo capturó, ni por el colaborador al que se le asigna dicho pase.
-*   **Estado Final**: Una vez que el responsable abre el enlace y autoriza o rechaza el requerimiento, el registro se vuelve definitivo, grabando inalterablemente quién tomó la decisión y a qué hora.
+## 3. Directorio Operativo y Workspace
+*   El directorio es la columna vertebral del enrutamiento. Se organiza estrictamente por **Plantel**.
+*   **Vinculación Workspace**: Los contactos se agregan buscándolos directamente en la base de datos de correos institucionales de Google Workspace. Esto garantiza que las identidades y fotografías sean oficiales.
+*   **Formato Chat ID**: El sistema requiere que el teléfono se configure como un ID de destino para la API de WhatsApp (`521XXXXXXXXXX@c.us`). La plataforma asiste al usuario auto-formateando números estándar a este protocolo técnico de manera automática.
 
-## 4. Directorio y Reglas (Administradores)
-*   **Mapa Operativo**: El sistema organiza visualmente a los contactos y responsables por Plantel, combinando el directorio oficial de Google Workspace con las reglas lógicas de enrutamiento. 
-*   **Directorio (Workspace)**: Los contactos encargados de recibir notificaciones se vinculan directamente mediante una búsqueda real en Google Workspace. Se asignan a un Plantel con un nivel de responsabilidad (`PRINCIPAL`, `ADMON`, `OTRO`). 
-*   **Reglas de WhatsApp**: El motor de reglas de notificaciones es altamente visual. Define condiciones exactas: "Si el empleado pertenece a este Plantel y tiene este Puesto, notificar a este Contacto". En caso contrario, la notificación recurre a contactar a los responsables generales del directorio del plantel.
-
-## 5. Historial, Modificaciones y Auditoría
-*   **Visualización Rápida**: El expediente lateral despliega de manera visual el recuento de eventos y la cronología segmentada por ciclo escolar.
-*   **Modificación / Anulación**: Si hubo error de captura, **sólo el creador original** del pase tiene permisos para editarlo o anularlo permanentemente.
-*   **Tiempo Límite**: El sistema concede una ventana de 48 horas desde la fecha de inicio del evento para realizar modificaciones, siempre que el pase no se encuentre ya rechazado o anulado.
-*   **Impresión**: La acción de impresión fue eliminada sistemáticamente para asegurar un seguimiento puramente digital y validado.
+## 4. Usuarios y Acceso al Dashboard
+*   La captura y emisión de pases (acceso al panel web) sí requiere autenticación obligatoria mediante **Google Sign-In** con cuenta institucional.
+*   Todo colaborador que ingresa con éxito se registra en la base de datos de usuarios. 
+*   **Expedientes Visuales**: La plataforma cruza continuamente los datos con el catálogo de *Signia* y *Google Workspace* para inferir cumpleaños, roles y obtener fotografías reales, haciendo que la experiencia administrativa sea altamente visual y humana.

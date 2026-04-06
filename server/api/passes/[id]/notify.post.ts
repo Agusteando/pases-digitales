@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import jwt from 'jsonwebtoken'
 import { defineEventHandler, getRouterParam, createError, useRuntimeConfig } from '#imports'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { getSigniaEnrichment } from '~/server/utils/employee-engine'
@@ -33,14 +34,15 @@ export default defineEventHandler(async (event) => {
   const motivoMsg = pass.comentarios ? `\nMotivo: ${pass.comentarios}` : ''
   const timeMsg = pass.time ? `\nHora: ${pass.time}` : ''
 
-  // Secure Internal Authorization Link
-  const authUrl = `${config.appUrl}/authorize/${pass.auth_token}`
+  // Secure Public Auth URL Base
+  const authUrlBase = `${config.appUrl}/authorize/${pass.auth_token}`
 
   const results: any[] = []
 
-  // 1. Global Telegram Notification (Operational Master Log)
+  // 1. Global Telegram Notification (Auditable Operations Path)
   const telegramGlobalId = '-1003057962499'
-  const tgMessage = `*REQUERIMIENTO DE AUTORIZACIÓN*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg}\nFolio *${paddedId}*\n\nAutorizar Pase: ${authUrl}`
+  // No ?r= token here since this channel is readonly notification for broad audiences.
+  const tgMessage = `*REQUERIMIENTO OPERATIVO*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg}\nFolio *${paddedId}*\nEmitido por: ${pass.user}`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -53,55 +55,58 @@ export default defineEventHandler(async (event) => {
     results.push({ platform: 'telegram', status: 'error' })
   }
 
-  // 2. Dynamic WhatsApp Notification using Configurable Rule Engine
+  // 2. Map Collection for Individualized Notification Over WhatsApp
   const empData = await getSigniaEnrichment(pass.employee_name)
   const empPuesto = (empData.puesto || '').trim()
   const empPlantel = (pass.plantel || '').trim()
 
-  const [rules]: any = await db.execute('SELECT * FROM notification_rules')
+  const targets = new Map<string, { email: string, name: string }>()
   
-  const waTargets = new Set<string>()
-  let matchedAnyRule = false
+  async function addTarget(email: string) {
+    if (!email) return
+    const gw = await getCachedWorkspaceUser(email)
+    const chat = toWhatsAppChatId(gw.phone)
+    if (chat && chat.length > 10) {
+      targets.set(chat, { email, name: gw.name || email.split('@')[0] })
+    }
+  }
 
+  // Directives from Directory
+  const [contacts]: any = await db.execute('SELECT email FROM hr_directory WHERE plantel = ?', [empPlantel])
+  for (const contact of contacts) await addTarget(contact.email)
+
+  // Directives from Rules
+  const [rules]: any = await db.execute('SELECT * FROM notification_rules')
   for (const rule of rules) {
      const matchPlantel = rule.condition_plantel === 'ALL' || rule.condition_plantel === empPlantel
      const matchPuesto = rule.condition_puesto === 'ALL' || rule.condition_puesto.toLowerCase() === empPuesto.toLowerCase()
-     
-     if (matchPlantel && matchPuesto) {
-         matchedAnyRule = true
-         if (rule.target_type === 'CONTACT') {
-             const gwData = await getCachedWorkspaceUser(rule.target_val)
-             if (gwData.phone && gwData.phone.length >= 10) waTargets.add(toWhatsAppChatId(gwData.phone))
-         } else if (rule.target_type === 'CUSTOM') {
-             waTargets.add(toWhatsAppChatId(rule.target_val))
-         }
+     if (matchPlantel && matchPuesto && rule.target_val) {
+         await addTarget(rule.target_val)
      }
   }
 
-  // Fallback: Notify all contacts in that plantel directory
-  if (!matchedAnyRule && empPlantel) {
-      const [contacts]: any = await db.execute('SELECT email FROM hr_directory WHERE plantel = ?', [empPlantel])
-      for (const contact of contacts) {
-          if (contact.email) {
-            const gwData = await getCachedWorkspaceUser(contact.email)
-            if (gwData.phone && gwData.phone.length >= 10) waTargets.add(toWhatsAppChatId(gwData.phone))
-          }
-      }
-  }
+  // 3. Dispatch Decentralized Auth Notifications
+  for (const [chatId, target] of targets) {
+    // We sign a highly specific JWT for this exact user/pass combination allowing login-free interaction
+    const rToken = jwt.sign(
+      { passId: pass.id, email: target.email, name: target.name }, 
+      config.jwtSecret, 
+      { expiresIn: '7d' }
+    )
+    const targetAuthUrl = `${authUrlBase}?r=${rToken}`
+    
+    const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
 
-  const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nAutorizar/Rechazar:\n${authUrl}`
-
-  for (const chatId of waTargets) {
     try {
       await $fetch('https://pumpea.shop/whatsapp-manager/bot/send/jurado', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ chatId, message: waMessage }).toString()
       })
-      results.push({ platform: 'whatsapp', chatId, status: 'success' })
+      results.push({ platform: 'whatsapp', chatId, target: target.name, status: 'success' })
     } catch (e) {
       console.error('WhatsApp dispatch failed', e)
-      results.push({ platform: 'whatsapp', chatId, status: 'error' })
+      results.push({ platform: 'whatsapp', chatId, target: target.name, status: 'error' })
     }
   }
 

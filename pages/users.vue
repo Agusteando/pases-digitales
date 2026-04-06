@@ -15,14 +15,14 @@
         
         <div class="flex flex-col items-center text-center gap-3">
           <div class="relative shrink-0">
-            <img v-if="sysUser.picture" :src="sysUser.picture" class="w-20 h-20 rounded-2xl object-cover border border-slate-200 shadow-sm bg-white" />
-            <div v-else class="w-20 h-20 rounded-2xl bg-brand-100 border border-slate-200 shadow-sm flex items-center justify-center font-black text-brand-700 text-2xl">
+            <img v-if="sysUser.picture" :src="sysUser.picture" class="w-20 h-20 rounded-3xl object-cover border border-slate-200/60 shadow-sm bg-white ring-4 ring-white" />
+            <div v-else class="w-20 h-20 rounded-3xl bg-brand-50 border border-brand-100 shadow-sm flex items-center justify-center font-black text-brand-600 text-2xl ring-4 ring-white">
               {{ sysUser.name.slice(0, 2).toUpperCase() }}
             </div>
             <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full shadow-sm" title="Cuenta Activa"></div>
           </div>
           
-          <div class="w-full">
+          <div class="w-full mt-1">
             <h3 class="text-base font-black text-slate-900 truncate tracking-tight px-2">{{ sysUser.name }}</h3>
             <p class="text-[10px] font-bold text-slate-500 truncate mt-1 px-2">{{ sysUser.email }}</p>
           </div>

@@ -1,9 +1,24 @@
 import { useDB } from '~/server/utils/db'
-import { defineEventHandler, getRouterParam, createError } from '#imports'
+import jwt from 'jsonwebtoken'
+import { defineEventHandler, getRouterParam, getQuery, createError, useRuntimeConfig } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const token = getRouterParam(event, 'token')
-  if (!token) throw createError({ statusCode: 400, message: 'Token requerido' })
+  const query = getQuery(event)
+  const rToken = query.r as string
+
+  if (!token) throw createError({ statusCode: 400, message: 'Enlace malformado.' })
+  if (!rToken) throw createError({ statusCode: 401, message: 'Token de destinatario ausente. Asegúrate de usar el enlace exacto enviado a tu dispositivo.' })
+
+  const config = useRuntimeConfig()
+  let recipientName = null
+
+  try {
+    const decoded: any = jwt.verify(rToken, config.jwtSecret)
+    if (decoded && decoded.name) recipientName = decoded.name
+  } catch (e) {
+    throw createError({ statusCode: 401, message: 'Firma de enlace inválida o expirada.' })
+  }
 
   const db = useDB()
   
@@ -13,11 +28,14 @@ export default defineEventHandler(async (event) => {
        FROM hr_entries WHERE auth_token = ?`, 
       [token]
     )
-    if (!rows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado o enlace inválido.' })
+    if (!rows.length) throw createError({ statusCode: 404, message: 'Documento seguro no encontrado.' })
 
-    return rows[0]
+    return {
+      ...rows[0],
+      _viewer: recipientName // Allows the frontend to acknowledge who is attempting the action
+    }
   } catch (error: any) {
     if (error.statusCode) throw error
-    throw createError({ statusCode: 500, message: 'Fallo al recuperar los datos del pase.' })
+    throw createError({ statusCode: 500, message: 'Fallo al recuperar los datos del documento.' })
   }
 })

@@ -1,4 +1,6 @@
 import { useDB } from '~/server/utils/db'
+import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
+import { defineEventHandler } from '#imports'
 
 export default defineEventHandler(async () => {
   const db = useDB()
@@ -13,13 +15,21 @@ export default defineEventHandler(async () => {
     const emitMap = emissions.reduce((acc: any, row: any) => { acc[row.name] = row.count; return acc }, {})
     const authMap = authorizations.reduce((acc: any, row: any) => { acc[row.name] = row.count; return acc }, {})
 
-    return users.map((u: any) => ({
-      ...u,
-      is_admin: Boolean(u.is_admin),
-      passesGenerated: emitMap[u.name] || 0,
-      passesAuthorized: authMap[u.name] || 0
-    }))
+    // Enrich users with live Google Workspace profile pictures
+    const enrichedUsers = await Promise.all(
+      users.map(async (u: any) => {
+        const gw = await getCachedWorkspaceUser(u.email)
+        return {
+          ...u,
+          picture: gw.photoUrl || u.picture,
+          is_admin: Boolean(u.is_admin),
+          passesGenerated: emitMap[u.name] || 0,
+          passesAuthorized: authMap[u.name] || 0
+        }
+      })
+    )
 
+    return enrichedUsers
   } catch (error) {
     console.error('Users stats error:', error)
     return []
