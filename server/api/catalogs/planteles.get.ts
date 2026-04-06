@@ -12,13 +12,13 @@ export default defineEventHandler(async () => {
     console.warn('Options API fallback engaged for planteles')
   }
 
-  // Graceful fallback: extract from authoritative employees list
+  // Graceful fallback: extract from authoritative employees list mapping nested prisma payload
   const data = await getSigniaData()
   const planteles = new Set<string>()
   
   data.forEach(e => {
-    if (e.plantelName && typeof e.plantelName === 'string') {
-      planteles.add(e.plantelName.trim())
+    if (e.plantel?.name && typeof e.plantel.name === 'string') {
+      planteles.add(e.plantel.name.trim())
     }
   })
   

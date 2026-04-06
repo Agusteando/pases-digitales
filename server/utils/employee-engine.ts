@@ -101,7 +101,7 @@ export async function getFastSoapEmployees() {
 
      return {
         ...emp,
-        plantel: match?.plantelName || null, // Authoritative clean name
+        plantel: cleanPlantelName(match?.plantel?.name) || emp.plantel, // Authoritative clean name from the nested prisma payload
         puesto: match?.puesto || emp.puesto,
         email: match?.email || emp.email
      }
@@ -114,7 +114,7 @@ export async function getFastSoapEmployees() {
       name: e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`.trim(),
       rfc: e.rfc,
       curp: e.curp,
-      plantel: cleanPlantelName(e.plantelName),
+      plantel: cleanPlantelName(e.plantel?.name),
       email: e.email,
       puesto: e.puesto || null
     }))
@@ -158,7 +158,7 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     return { 
       ...match, 
       picture: pictureUrl, 
-      plantelId: cleanPlantelName(match.plantelName) 
+      plantelName: cleanPlantelName(match.plantel?.name) 
     }
   }
 
