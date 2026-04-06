@@ -1,14 +1,28 @@
 <template>
   <div class="p-6 md:p-10 max-w-6xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
-    <div class="mb-8 shrink-0 flex items-center justify-between">
-      <button @click="$router.back()" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 -ml-4 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-200">
-        <ArrowLeft class="w-4 h-4" /> Volver al listado
+    <div class="mb-8 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <button @click="$router.push('/history')" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 sm:-ml-4 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-200 self-start">
+        <ArrowLeft class="w-4 h-4" /> Volver al Historial
       </button>
       
-      <div v-if="pass && isOwner" class="flex gap-3">
-        <button v-if="isEditable" @click="showEditModal = true" class="px-5 py-2.5 bg-white border border-slate-200/80 text-slate-700 text-sm font-black rounded-xl shadow-sm hover:border-brand-500 hover:text-brand-600 transition-all flex items-center gap-2 outline-none">
-          <Edit2 class="w-4 h-4" /> Modificar Registro
+      <!-- Actionable Operations Hub -->
+      <div v-if="pass && isOwner" class="flex flex-wrap items-center gap-3 bg-white/50 p-2 rounded-2xl border border-slate-200/60 backdrop-blur-md shadow-sm">
+        
+        <button v-if="pass.status === 'pendiente'" @click="handleResend" :disabled="isResending" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 outline-none disabled:opacity-70 disabled:hover:bg-brand-600">
+          <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
+          <Send v-else class="w-4 h-4" />
+          <span>{{ isResending ? 'Enviando...' : 'Reenviar Notificación' }}</span>
+        </button>
+
+        <button v-if="isEditable" @click="showEditModal = true" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-black rounded-xl shadow-sm hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
+          <Edit2 class="w-4 h-4" /> Editar
+        </button>
+
+        <button v-if="isEditable && pass.status === 'pendiente'" @click="handleCancel" :disabled="isCancelling" class="px-5 py-2.5 bg-white border border-slate-200 text-red-600 text-sm font-black rounded-xl shadow-sm hover:border-red-300 hover:text-red-700 hover:bg-red-50 transition-all flex items-center gap-2 outline-none disabled:opacity-70">
+          <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
+          <Trash2 v-else class="w-4 h-4" />
+          <span>Anular</span>
         </button>
       </div>
     </div>
@@ -17,15 +31,16 @@
       <Loader2 class="w-12 h-12 animate-spin text-brand-600" />
     </div>
 
-    <div v-else-if="error" class="flex-1 flex flex-col items-center justify-center text-center">
+    <div v-else-if="error || !pass" class="flex-1 flex flex-col items-center justify-center text-center">
       <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100">
         <AlertTriangle class="w-12 h-12 text-red-500" />
       </div>
       <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tight">Expediente Inaccesible</h2>
-      <p class="text-slate-500 font-bold">El documento seguro que intentas visualizar no existe o fue eliminado.</p>
+      <p class="text-slate-500 font-bold max-w-md mx-auto">El documento seguro que intentas visualizar no existe en la base de datos o fue eliminado permanentemente.</p>
+      <button @click="$router.push('/history')" class="mt-6 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors shadow-md">Regresar al Buscador</button>
     </div>
 
-    <div v-else-if="pass" class="space-y-8 flex-1">
+    <div v-else class="space-y-8 flex-1">
       
       <!-- Header Premium Card -->
       <div class="glass-card bg-white p-8 md:p-10 rounded-[2.5rem] border border-white/80 shadow-2xl relative overflow-hidden">
@@ -172,7 +187,7 @@
             <div v-if="pass.status === 'pendiente'" class="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-200 flex gap-3 items-start shadow-sm">
               <Info class="w-5 h-5 text-amber-600 shrink-0" />
               <p class="text-xs text-amber-800 font-bold leading-relaxed">
-                Este documento es de uso estrictamente digital. Su resolución ocurre a través del enlace notificado externamente a los responsables.
+                Este documento es de uso estrictamente digital. Su resolución ocurre a través del enlace notificado externamente a los responsables. Utiliza el botón <strong>Reenviar Notificación</strong> arriba si el destinatario no lo recibió.
               </p>
             </div>
           </div>
@@ -186,7 +201,7 @@
             <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
               <p class="text-sm font-bold text-slate-400">Sin registros de distribución.</p>
             </div>
-            <div v-else class="space-y-4">
+            <div v-else class="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
               <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 rounded-2xl border flex items-start justify-between gap-4 transition-colors"
                    :class="isSystemLog(log.error_text) ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-sm'">
                 <div class="flex items-center gap-3 w-full min-w-0">
@@ -197,7 +212,7 @@
                     <p class="text-sm font-black tracking-tight truncate" :class="isSystemLog(log.error_text) ? 'text-white' : 'text-slate-800'">
                       {{ extractTargetName(log.error_text) }}
                     </p>
-                    <p class="text-[10px] font-bold mt-0.5 truncate" :class="isSystemLog(log.error_text) ? 'text-slate-400' : 'text-slate-500'">
+                    <p class="text-[10px] font-bold mt-0.5 truncate" :class="isSystemLog(log.error_text) ? 'text-slate-400' : 'text-slate-500'" :title="getDeliveryDetail(log)">
                       {{ getDeliveryDetail(log) }}
                     </p>
                     <p class="text-[9px] font-bold mt-1.5 uppercase tracking-widest" :class="isSystemLog(log.error_text) ? 'text-slate-500' : 'text-slate-400'">
@@ -226,7 +241,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, ArrowRight } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -234,11 +249,15 @@ import 'dayjs/locale/es'
 dayjs.locale('es')
 
 const route = useRoute()
-const passId = route.params.id
+const passId = computed(() => route.params.id)
 const { user } = useAuth()
 
-const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
+// Using computed ref in useFetch ensures high reliability across navigation bounds
+const { data: pass, pending, error, refresh } = useFetch(() => `/api/passes/${passId.value}`)
+
 const showEditModal = ref(false)
+const isResending = ref(false)
+const isCancelling = ref(false)
 
 const isOwner = computed(() => {
   return user.value && pass.value && user.value.name === pass.value.user
@@ -251,6 +270,40 @@ const isEditable = computed(() => {
   const hoursDiff = dayjs().diff(passDate, 'hour')
   return hoursDiff <= 48
 })
+
+const handleResend = async () => {
+  if (isResending.value || !pass.value) return
+  isResending.value = true
+  try {
+    await $fetch(`/api/passes/${passId.value}/notify`, { method: 'POST' })
+    alert('Las notificaciones han sido generadas y reenviadas exitosamente.')
+    refresh()
+  } catch (err) {
+    console.error('Resend error', err)
+    alert(err.data?.message || 'Ocurrió un error al intentar reenviar las notificaciones.')
+  } finally {
+    isResending.value = false
+  }
+}
+
+const handleCancel = async () => {
+  if (isCancelling.value || !pass.value) return
+  if (!confirm('¿Estás seguro de que deseas anular permanentemente este pase? Esta acción no se puede deshacer.')) return
+  
+  isCancelling.value = true
+  try {
+    await $fetch(`/api/passes/${passId.value}/action`, { 
+      method: 'POST', 
+      body: { action: 'cancel' } 
+    })
+    refresh()
+  } catch (err) {
+    console.error('Cancel error', err)
+    alert(err.data?.message || 'Error al intentar anular el registro.')
+  } finally {
+    isCancelling.value = false
+  }
+}
 
 const getCategoryIcon = (id) => {
   const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope }

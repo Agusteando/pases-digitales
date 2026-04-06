@@ -23,16 +23,22 @@
       </div>
     </div>
 
-    <!-- Active Warning: Duplicate Prevention -->
+    <!-- Active Warning: Duplicate Prevention & Quick Action Router -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="bg-amber-50 rounded-2xl p-4 flex gap-4 border border-amber-200/60 shadow-sm relative z-10 items-start">
-        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 border border-amber-200">
-          <AlertTriangle class="w-5 h-5 text-amber-600" />
+      <div v-if="todayPasses.length > 0" class="bg-amber-50 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 border border-amber-200/80 shadow-sm relative z-10 items-start sm:items-center justify-between">
+        <div class="flex gap-4 items-start">
+          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 border border-amber-200 mt-0.5 sm:mt-0">
+            <AlertTriangle class="w-5 h-5 text-amber-600" />
+          </div>
+          <div class="flex-1">
+            <h4 class="text-sm font-black text-amber-900 tracking-tight">Pase previo detectado hoy</h4>
+            <p class="text-xs text-amber-800/90 mt-1 font-medium leading-relaxed">El colaborador ya tiene un registro generado durante esta jornada. Para editar o notificar de nuevo, ingresa al expediente.</p>
+          </div>
         </div>
-        <div class="flex-1 pt-0.5">
-          <h4 class="text-sm font-black text-amber-900 tracking-tight">Pase previo detectado</h4>
-          <p class="text-xs text-amber-800/80 mt-1 font-medium leading-relaxed">El colaborador ya tiene un registro generado durante esta jornada operativa. Verifica antes de duplicar.</p>
-        </div>
+        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 w-full sm:w-auto">
+          <span>Abrir Expediente</span>
+          <ArrowRight class="w-4 h-4" />
+        </NuxtLink>
       </div>
     </transition>
 
@@ -79,11 +85,11 @@
                 </div>
                 
                 <!-- Pass Card -->
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 hover:shadow-md transition-all">
+                <NuxtLink :to="`/pass/${pass.id}`" class="block bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 hover:shadow-md transition-all outline-none">
                   <div class="flex items-start justify-between mb-3 gap-4">
                     <div class="flex flex-col gap-1.5">
                       <div class="flex items-center gap-2">
-                        <span class="font-mono text-sm font-black tracking-tight" :class="isToday(pass.date) ? 'text-brand-600' : 'text-slate-900'">#{{ String(pass.id).padStart(5, '0') }}</span>
+                        <span class="font-mono text-sm font-black tracking-tight group-hover:text-brand-600 transition-colors" :class="isToday(pass.date) ? 'text-brand-600' : 'text-slate-900'">#{{ String(pass.id).padStart(5, '0') }}</span>
                         <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border"
                               :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
                                        'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
@@ -104,7 +110,7 @@
                       Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by : '' }}
                     </span>
                   </div>
-                </div>
+                </NuxtLink>
               </div>
             </div>
           </div>
@@ -116,7 +122,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { AlertTriangle, Loader2, ShieldCheck, History, Building2, Briefcase } from 'lucide-vue-next'
+import { AlertTriangle, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'

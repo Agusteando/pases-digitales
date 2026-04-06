@@ -52,7 +52,7 @@
               <th class="px-6 py-5">Fecha</th>
               <th class="px-6 py-5">Plantel</th>
               <th class="px-6 py-5">Estado</th>
-              <th class="px-6 py-5 text-right rounded-tr-3xl">Acciones</th>
+              <th class="px-6 py-5 text-right rounded-tr-3xl">Acciones Rápidas</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -101,13 +101,23 @@
                 </span>
               </td>
               <td class="px-6 py-5 text-right">
-                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <NuxtLink :to="`/pass/${pass.id}`" class="p-2 text-slate-400 hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-slate-100 hover:border-brand-200" title="Ver Detalles">
+                <div class="flex items-center justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                  <NuxtLink :to="`/pass/${pass.id}`" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Abrir Expediente">
                     <Eye class="w-4 h-4" />
                   </NuxtLink>
-                  <button v-if="user?.name === pass.user" @click="openEditModal(pass)" class="p-2 text-slate-400 hover:text-brand-600 bg-slate-50 hover:bg-brand-50 rounded-xl transition-colors border border-slate-100 hover:border-brand-200" title="Editar Rápidamente">
-                    <Edit2 class="w-4 h-4" />
-                  </button>
+                  <template v-if="user?.name === pass.user">
+                    <button v-if="pass.status === 'pendiente'" @click="quickResend(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm disabled:opacity-50" title="Reenviar Notificación">
+                      <Loader2 v-if="actionLoading === pass.id && actionType === 'resend'" class="w-4 h-4 animate-spin" />
+                      <Send v-else class="w-4 h-4" />
+                    </button>
+                    <button v-if="isEditable(pass)" @click="openEditModal(pass)" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Editar">
+                      <Edit2 class="w-4 h-4" />
+                    </button>
+                    <button v-if="isEditable(pass) && pass.status === 'pendiente'" @click="quickCancel(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 shadow-sm disabled:opacity-50" title="Anular Registro">
+                      <Loader2 v-if="actionLoading === pass.id && actionType === 'cancel'" class="w-4 h-4 animate-spin" />
+                      <Trash2 v-else class="w-4 h-4" />
+                    </button>
+                  </template>
                 </div>
               </td>
             </tr>
@@ -123,7 +133,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Download, Edit2, Check, Loader2, Eye } from 'lucide-vue-next'
+import { Search, Download, Edit2, Check, Loader2, Eye, Send, Trash2 } from 'lucide-vue-next'
 import PassExportModal from '~/components/PassExportModal.vue'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
@@ -143,6 +153,8 @@ const filters = ref({
 
 const passes = ref([])
 const pending = ref(false)
+const actionLoading = ref(null)
+const actionType = ref(null)
 let searchTimeout = null
 
 const getCategoryName = (id) => {
@@ -153,6 +165,13 @@ const getCategoryName = (id) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
   return dayjs(dateStr).format('DD/MM/YYYY')
+}
+
+const isEditable = (pass) => {
+  if (pass.status === 'cancelado' || pass.status === 'rechazado') return false
+  const passDate = dayjs(pass.date)
+  const hoursDiff = dayjs().diff(passDate, 'hour')
+  return hoursDiff <= 48
 }
 
 const search = async () => {
@@ -174,6 +193,37 @@ const debounceSearch = () => {
 
 const openEditModal = (pass) => {
   selectedPass.value = pass
+}
+
+const quickResend = async (id) => {
+  if (actionLoading.value) return
+  actionLoading.value = id
+  actionType.value = 'resend'
+  try {
+    await $fetch(`/api/passes/${id}/notify`, { method: 'POST' })
+    alert('Notificaciones reenviadas exitosamente.')
+  } catch (err) {
+    alert(err?.data?.message || 'Error al reenviar notificaciones.')
+  } finally {
+    actionLoading.value = null
+    actionType.value = null
+  }
+}
+
+const quickCancel = async (id) => {
+  if (actionLoading.value) return
+  if (!confirm('¿Seguro que deseas anular este pase? Esta acción no se puede deshacer.')) return
+  actionLoading.value = id
+  actionType.value = 'cancel'
+  try {
+    await $fetch(`/api/passes/${id}/action`, { method: 'POST', body: { action: 'cancel' } })
+    search()
+  } catch (err) {
+    alert(err?.data?.message || 'Error al anular el pase.')
+  } finally {
+    actionLoading.value = null
+    actionType.value = null
+  }
 }
 
 onMounted(() => {
