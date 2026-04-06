@@ -52,6 +52,7 @@ export default defineNuxtConfig({
     
     public: {
       googleClientIdPublic: process.env.GOOGLE_CLIENT_ID,
+      debugFace: process.env.DEBUG_FACE === 'true',
     }
   }
 })

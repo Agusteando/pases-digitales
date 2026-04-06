@@ -268,8 +268,9 @@ const passId = route.params.id
 const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
 
 // Fetch enrichment dynamically when the pass employee name is known
+// FIX: Returning a stable empty object prevents "useAsyncData must return a value" warnings.
 const { data: enrichment } = useAsyncData(`enrich-pass-${passId}`, async () => {
-  if (!pass.value?.employee_name) return null
+  if (!pass.value?.employee_name) return {}
   return await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
 }, { watch: [pass] })
 
