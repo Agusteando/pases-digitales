@@ -55,37 +55,30 @@
         <template v-else-if="!currentCoverageTask && selectedEmployees.length > 0">
           <!-- Intelligent Quick Actions Layer -->
           <div class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Acciones Rápidas</label>
-            
-            <div class="flex flex-col gap-4">
-              <!-- Birthday Inference Banner -->
-              <button v-if="hasBirthday()" @click="triggerBirthdayQuickAction" class="w-full relative overflow-hidden bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-5 text-left transition-transform hover:scale-[1.01] hover:shadow-lg outline-none group border border-orange-400/50">
+            <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Accesos Rápidos</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Birthday Action -->
+              <button v-if="hasBirthday()" @click="triggerBirthdayQuickAction" type="button" class="relative overflow-hidden bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl p-4 text-left transition-transform hover:scale-[1.02] hover:shadow-lg outline-none group border border-orange-400/50 flex items-center gap-4">
                 <div class="absolute right-0 top-0 bottom-0 w-32 bg-white/20 blur-2xl transform skew-x-12 translate-x-10 group-hover:translate-x-0 transition-transform duration-700"></div>
-                <div class="relative z-10 flex items-center justify-between">
-                  <div>
-                    <div class="flex items-center gap-2 text-white/90 mb-1">
-                      <Cake class="w-4 h-4" />
-                      <span class="text-[10px] font-black uppercase tracking-widest">Día Festivo</span>
-                    </div>
-                    <h3 class="text-lg font-black text-white tracking-tight">{{ selectedEmployees.length > 1 ? '¡Hoy hay cumpleaños! 🎉' : '¡Hoy es su cumpleaños! 🎉' }}</h3>
-                    <p class="text-xs font-bold text-orange-100 mt-0.5">Generar pase de ausencia por cumpleaños.</p>
-                  </div>
-                  <ArrowRight class="w-6 h-6 text-white" />
+                <div class="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0">
+                  <Cake class="w-5 h-5" />
+                </div>
+                <div class="relative z-10">
+                  <h3 class="text-sm font-black text-white tracking-tight">Pase de Cumpleaños 🎉</h3>
+                  <p class="text-[10px] font-bold text-orange-100 mt-0.5">Prellenar salida temprano (2:00 PM)</p>
                 </div>
               </button>
 
-              <!-- Regular Quick Action -->
-              <div class="flex gap-4">
-                <button @click="triggerEarlyLeaveQuickAction" class="flex-1 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group">
-                  <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <LogOut class="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 class="text-sm font-black text-slate-800">Salida Temprano</h4>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Prellenar formato</p>
-                  </div>
-                </button>
-              </div>
+              <!-- Early Leave Quick Action -->
+              <button @click="triggerEarlyLeaveQuickAction" type="button" class="bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group" :class="!hasBirthday() ? 'sm:col-span-2' : ''">
+                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                  <LogOut class="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-slate-800">Salida Temprano</h4>
+                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Atajo de uso frecuente</p>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -330,7 +323,7 @@ function selectScenario(scenario) {
   })
 }
 
-// Birthday Logic
+// Corrected Birthday Behavior
 function isBirthday(emp) {
   if (!emp || !emp.curp || emp.curp.length < 10) return false;
   const mm = emp.curp.substring(6, 8);
@@ -346,15 +339,28 @@ function hasBirthday() {
 }
 
 function triggerBirthdayQuickAction() {
-  const ausenciaScenario = predefinedScenarios.find(s => s.categoryId === 3)
-  selectScenario(ausenciaScenario)
-  form.comentarios = 'Pase por día de cumpleaños.'
+  const salidaScenario = predefinedScenarios.find(s => s.categoryId === 2)
+  selectScenario(salidaScenario)
+  form.date = todayDate
+  form.endDate = todayDate
+  form.time = '14:00'
+  
+  const emp = selectedEmployees.value.find(e => isBirthday(e))
+  let birthdayStr = ''
+  if (emp && emp.curp && emp.curp.length >= 10) {
+    const dd = emp.curp.substring(8, 10)
+    const mm = emp.curp.substring(6, 8)
+    birthdayStr = ` (Fecha de nacimiento: ${dd}/${mm})`
+  }
+  
+  form.comentarios = `Pase de salida temprano con motivo de celebración de cumpleaños del colaborador${birthdayStr}.`
 }
 
 function triggerEarlyLeaveQuickAction() {
   const salidaScenario = predefinedScenarios.find(s => s.categoryId === 2)
   selectScenario(salidaScenario)
   form.time = getCurrentTime()
+  form.comentarios = ''
 }
 
 async function submitPass() {

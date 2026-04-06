@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
 
   try {
-    const [rows]: any = await db.execute(`SELECT user FROM hr_entries WHERE id = ?`, [id])
+    const [rows]: any = await db.execute(`SELECT user, status FROM hr_entries WHERE id = ?`, [id])
     if (!rows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado' })
 
     const pass = rows[0]
@@ -40,6 +40,10 @@ export default defineEventHandler(async (event) => {
     if (action === 'cancel') {
       if (pass.user !== actingUser) {
         throw createError({ statusCode: 403, message: 'Solo el creador original puede anular este pase.' })
+      }
+      // Server-side strict immutability check
+      if (pass.status !== 'pendiente') {
+         throw createError({ statusCode: 403, message: 'No se puede anular un pase que ya ha sido resuelto.' })
       }
       await db.execute(`UPDATE hr_entries SET status = 'cancelado' WHERE id = ?`, [id])
       return { success: true }

@@ -105,11 +105,7 @@ export async function dispatchNotificationsForPass(passId: number) {
       if (chatId && chatId.length > 10) {
         const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
         try {
-          const waRes: any = await $fetch('https://pumpea.shop/whatsapp-manager/bot/send/jurado', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ chatId, message: waMessage }).toString()
-          })
+          const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
           const msgId = waRes?.messageId || waRes?.id || 'delivered'
           await db.execute(
             'INSERT INTO notification_logs (pass_id, chat_id, status, message_id, error_text) VALUES (?, ?, ?, ?, ?)', 

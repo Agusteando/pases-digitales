@@ -33,8 +33,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 403, message: 'Solo el creador original puede modificar este pase.' })
     }
     
-    if (pass.status === 'cancelado') {
-      throw createError({ statusCode: 403, message: 'No se permite modificar un pase anulado.' })
+    // Server-side strict immutability check
+    if (pass.status !== 'pendiente') {
+      throw createError({ statusCode: 403, message: 'No se permite modificar un pase que ya ha sido resuelto o anulado.' })
     }
 
     const hoursDiff = dayjs().diff(dayjs(pass.date), 'hour')
@@ -46,6 +47,7 @@ export default defineEventHandler(async (event) => {
     const mysqlEndDate = body.endDate ? dayjs(body.endDate).startOf('day') : mysqlDate
     const todayObj = dayjs().startOf('day')
 
+    // Strict future/present date check
     if (mysqlDate.isBefore(todayObj) || mysqlEndDate.isBefore(todayObj)) {
       throw createError({ statusCode: 400, message: 'No se permite actualizar pases con fechas en el pasado.' })
     }
