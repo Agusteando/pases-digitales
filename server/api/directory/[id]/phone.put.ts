@@ -1,5 +1,4 @@
 import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
-import { useDB } from '~/server/utils/db'
 import { updateWorkspaceUserPhone } from '~/server/utils/googleWorkspace'
 
 export default defineEventHandler(async (event) => {
@@ -22,11 +21,9 @@ export default defineEventHandler(async (event) => {
   try {
     await updateWorkspaceUserPhone(email, finalPhone)
     
-    // Auto-migrate the database channel to ensure operational routing triggers correctly
-    // once a valid phone number is actively attached.
-    const db = useDB()
-    await db.execute('UPDATE hr_directory SET channel = ? WHERE id = ?', ['WHATSAPP', id])
-
+    // Explicit removal of legacy channel auto-migration. 
+    // Phone capture is purely profile enrichment, Email remains the default routing mode.
+    
     return { success: true }
   } catch (error) {
     console.error('Phone sync error:', error)

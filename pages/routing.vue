@@ -79,7 +79,7 @@
             <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de responsables base. Agrega un contacto para que reciba las notificaciones por defecto.</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div v-else class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
             <div v-for="contact in currentContacts" :key="contact.id" class="glass-card p-5 rounded-3xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow relative group">
               <div class="flex items-start gap-4">
                 <div class="relative shrink-0">
@@ -103,12 +103,22 @@
                       {{ contact.channel === 'WHATSAPP' ? 'WhatsApp' : 'Correo' }}
                     </span>
                   </div>
+                  
+                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-slate-600">
+                    <Smartphone class="w-4 h-4 text-slate-400" />
+                    {{ formatPhoneDisplay(contact.gw?.phone) || 'Sin celular registrado' }}
+                  </div>
                 </div>
               </div>
 
-              <button v-if="isAdmin" @click="deleteContact(contact.id)" class="absolute top-4 right-4 text-slate-300 hover:text-red-600 bg-white p-2 rounded-full hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 shadow-sm border border-slate-100 focus:outline-none" title="Remover Responsable">
-                <Trash2 class="w-4 h-4" />
-              </button>
+              <div class="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button v-if="isAdmin" @click="openEditModal(contact)" class="text-slate-400 hover:text-brand-600 bg-white p-2 rounded-full hover:bg-brand-50 transition-all shadow-sm border border-slate-100 focus:outline-none" title="Editar Configuración">
+                  <Edit2 class="w-4 h-4" />
+                </button>
+                <button v-if="isAdmin" @click="deleteContact(contact.id)" class="text-slate-400 hover:text-red-600 bg-white p-2 rounded-full hover:bg-red-50 transition-all shadow-sm border border-slate-100 focus:outline-none" title="Remover Responsable">
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -193,12 +203,14 @@
     <!-- Interactive Backdrops -->
     <div v-if="uiState.showPuesto" @click="uiState.showPuesto = false" class="fixed inset-0 z-40"></div>
 
-    <!-- Unified Modal for Directory/Rule Linkage -->
+    <!-- Unified Modal for Directory/Rule Linkage & Editing -->
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20 relative">
         <header class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white relative">
           <div>
-            <h3 class="text-xl font-black text-slate-900 tracking-tight">{{ modalType === 'DIRECTORY' ? 'Agregar Responsable' : 'Agregar Regla Específica' }}</h3>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">
+              {{ modalType === 'DIRECTORY' ? 'Agregar Responsable' : modalType === 'EDIT_DIRECTORY' ? 'Configurar Destinatario' : 'Agregar Regla Específica' }}
+            </h3>
             <p class="text-xs font-bold text-slate-500 mt-1">Plantel: <span class="text-brand-600">{{ form.plantel === 'ALL' ? 'Nivel Institucional' : form.plantel }}</span></p>
           </div>
           <button @click="closeModal" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
@@ -231,8 +243,8 @@
             </div>
           </div>
 
-          <!-- WS User Identity Search -->
-          <div class="space-y-3 relative">
+          <!-- WS User Identity Search (Hidden if editing an existing contact) -->
+          <div v-if="modalType !== 'EDIT_DIRECTORY'" class="space-y-3 relative">
             <label class="block text-[11px] font-black text-brand-600 uppercase tracking-widest flex items-center gap-2">
               <Search class="w-3 h-3" /> Seleccionar Destinatario (Workspace)
             </label>
@@ -248,26 +260,27 @@
                  </div>
               </button>
             </div>
-            
-            <div v-if="form.email" class="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-4 shadow-sm animate-in zoom-in-95">
-              <div class="w-12 h-12 rounded-xl bg-white border border-emerald-200 overflow-hidden shrink-0 shadow-sm">
-                <img v-if="selectedGwPhoto" :src="selectedGwPhoto" class="w-full h-full object-cover" />
-                <div v-else class="w-full h-full flex items-center justify-center font-black text-emerald-500 text-lg">{{ selectedGwName.slice(0,2).toUpperCase() }}</div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-black text-emerald-900 truncate">{{ selectedGwName }}</p>
-                <p class="text-xs font-bold text-emerald-700 truncate mt-0.5">{{ form.email }}</p>
-              </div>
-              <button type="button" @click="clearGw" class="text-emerald-500 hover:text-red-600 hover:bg-white p-2 rounded-full transition-colors focus:outline-none shadow-sm">
-                <X class="w-4 h-4" />
-              </button>
-            </div>
           </div>
           
+          <!-- Selected Identity Locked Block -->
+          <div v-if="form.email" class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-4 shadow-sm animate-in zoom-in-95">
+            <div class="w-12 h-12 rounded-xl bg-white border border-emerald-200 overflow-hidden shrink-0 shadow-sm">
+              <img v-if="selectedGwPhoto" :src="selectedGwPhoto" class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full flex items-center justify-center font-black text-emerald-500 text-lg">{{ selectedGwName.slice(0,2).toUpperCase() }}</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-black text-emerald-900 truncate">{{ selectedGwName }}</p>
+              <p class="text-xs font-bold text-emerald-700 truncate mt-0.5">{{ form.email }}</p>
+            </div>
+            <button v-if="modalType !== 'EDIT_DIRECTORY'" type="button" @click="clearGw" class="text-emerald-500 hover:text-red-600 hover:bg-white p-2 rounded-full transition-colors focus:outline-none shadow-sm">
+              <X class="w-4 h-4" />
+            </button>
+          </div>
+
           <!-- Only for Directory: Role selection -->
-          <div v-if="modalType === 'DIRECTORY'" class="space-y-3">
+          <div v-if="modalType === 'DIRECTORY' || modalType === 'EDIT_DIRECTORY'" class="space-y-3">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Nivel de Responsabilidad</label>
-            <select v-model="form.role" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-white shadow-sm transition-all">
+            <select v-model="form.role" required :disabled="modalType === 'EDIT_DIRECTORY'" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-white shadow-sm transition-all disabled:opacity-50 disabled:bg-slate-50">
               <option value="Director">Director</option>
               <option value="Administrador">Administrador</option>
               <option value="Lead/Manager">Lead/Manager</option>
@@ -291,10 +304,10 @@
             </div>
           </div>
 
-          <!-- Mandatory Phone check if WHATSAPP is selected -->
-          <div v-if="form.channel === 'WHATSAPP'" class="space-y-3 p-5 bg-slate-50 rounded-2xl border border-slate-200/80 animate-in fade-in slide-in-from-top-4 duration-300">
+          <!-- Phone capture (Shown everywhere to allow pre-configuration) -->
+          <div class="space-y-3 p-5 bg-slate-50 rounded-2xl border border-slate-200/80 animate-in fade-in slide-in-from-top-4 duration-300">
             <label class="block text-[11px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
-              <Smartphone class="w-3.5 h-3.5" /> Número de Teléfono
+              <Smartphone class="w-3.5 h-3.5" /> Teléfono Celular
             </label>
             <div class="flex items-center">
               <div class="bg-emerald-100 border border-emerald-200 border-r-0 px-4 py-3 rounded-l-xl text-emerald-800 font-black text-sm flex items-center gap-1.5 shadow-sm">
@@ -302,8 +315,8 @@
               </div>
               <input v-model="form.displayPhone" type="tel" maxlength="10" placeholder="10 dígitos..." @input="enforcePhoneDigits" class="flex-1 px-4 py-3 rounded-r-xl border border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-black text-slate-900 shadow-sm transition-all bg-white placeholder:text-slate-400 placeholder:font-medium" />
             </div>
-            <p v-if="!form.displayPhone || form.displayPhone.length < 10" class="text-[10px] font-bold text-amber-600">Requerido para la ruta de entrega vía WhatsApp.</p>
-            <p v-else class="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 class="w-3 h-3" /> Formato válido para sincronización Workspace.</p>
+            <p v-if="form.channel === 'WHATSAPP' && (!form.displayPhone || form.displayPhone.length < 10)" class="text-[10px] font-bold text-amber-600">Requerido para habilitar entrega vía WhatsApp.</p>
+            <p v-else-if="form.displayPhone && form.displayPhone.length === 10" class="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 class="w-3 h-3" /> Formato válido para sincronización Workspace.</p>
           </div>
 
         </form>
@@ -312,7 +325,7 @@
           <button type="button" @click="closeModal" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none border border-transparent hover:border-slate-200">Cancelar</button>
           <button type="submit" form="linkageForm" :disabled="isSaving || !isValid" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 outline-none disabled:opacity-70">
             <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-            <span>{{ modalType === 'DIRECTORY' ? 'Vincular Responsable' : 'Guardar Regla' }}</span>
+            <span>Guardar Configuración</span>
           </button>
         </footer>
       </div>
@@ -322,7 +335,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { Building2, Globe, ChevronRight, ChevronDown, Filter, Users, Network, Search, X, UserX, Mail, MessageCircle, Plus, Smartphone, Trash2, GitMerge, ArrowRight, ArrowDown, User, Loader2, CheckCircle2 } from 'lucide-vue-next'
+import { Building2, Globe, ChevronRight, ChevronDown, Filter, Users, Network, Search, X, UserX, Mail, MessageCircle, Plus, Smartphone, Trash2, Edit2, GitMerge, ArrowRight, ArrowDown, User, Loader2, CheckCircle2 } from 'lucide-vue-next'
 
 const { user } = useAuth()
 const isAdmin = computed(() => user.value?.is_admin || false)
@@ -349,6 +362,16 @@ const getInitials = (name) => {
   return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
 }
 
+const formatPhoneDisplay = (phoneRaw) => {
+  if (!phoneRaw) return ''
+  const digits = phoneRaw.replace(/\D/g, '')
+  if (digits.length >= 10) {
+    const num = digits.slice(-10)
+    return `+52 1 ${num.slice(0,2)} ${num.slice(2,6)} ${num.slice(6)}`
+  }
+  return phoneRaw
+}
+
 // Custom Selects Logic
 const uiState = reactive({
   showPuesto: false,
@@ -369,10 +392,11 @@ const selectPuesto = (val) => {
 
 // Unified Modal Logic
 const showModal = ref(false)
-const modalType = ref('DIRECTORY') // 'DIRECTORY' or 'RULE'
+const modalType = ref('DIRECTORY') // 'DIRECTORY', 'EDIT_DIRECTORY' or 'RULE'
 const isSaving = ref(false)
 
 const form = ref({
+  id: null,
   plantel: '',
   email: '',
   role: 'Director',
@@ -442,13 +466,27 @@ const isValid = computed(() => {
 
 const openAddModal = (type) => {
   modalType.value = type
+  form.value.id = null
   form.value.plantel = selectedPlantel.value
   form.value.email = ''
   form.value.role = 'Director'
   form.value.puesto = 'ALL'
-  form.value.channel = 'EMAIL'
+  form.value.channel = 'EMAIL' // Default notification mode is strictly Email
   form.value.displayPhone = ''
   clearGw()
+  showModal.value = true
+}
+
+const openEditModal = (contact) => {
+  modalType.value = 'EDIT_DIRECTORY'
+  form.value.id = contact.id
+  form.value.plantel = contact.plantel
+  form.value.email = contact.email
+  form.value.role = contact.role
+  form.value.channel = contact.channel || 'EMAIL'
+  form.value.displayPhone = contact.gw?.phone ? contact.gw.phone.replace(/\D/g, '').slice(-10) : ''
+  selectedGwName.value = contact.gw?.name || contact.email
+  selectedGwPhoto.value = contact.gw?.photoUrl || ''
   showModal.value = true
 }
 
@@ -462,30 +500,26 @@ const submitForm = async () => {
   
   const payload = {
     channel: form.value.channel,
-    phone: form.value.channel === 'WHATSAPP' ? form.value.displayPhone : undefined
+    phone: form.value.displayPhone || undefined
   }
 
   try {
-    if (modalType.value === 'DIRECTORY') {
+    if (modalType.value === 'EDIT_DIRECTORY') {
+      await $fetch(`/api/directory/${form.value.id}`, { 
+        method: 'PUT', 
+        body: { ...payload, email: form.value.email } 
+      })
+      refreshContacts()
+    } else if (modalType.value === 'DIRECTORY') {
       await $fetch('/api/directory', { 
         method: 'POST', 
-        body: { 
-          ...payload, 
-          plantel: form.value.plantel, 
-          email: form.value.email, 
-          role: form.value.role 
-        } 
+        body: { ...payload, plantel: form.value.plantel, email: form.value.email, role: form.value.role } 
       })
       refreshContacts()
     } else {
       await $fetch('/api/routing/rules', {
         method: 'POST',
-        body: {
-          ...payload,
-          condition_plantel: form.value.plantel,
-          condition_puesto: form.value.puesto,
-          target_val: form.value.email
-        }
+        body: { ...payload, condition_plantel: form.value.plantel, condition_puesto: form.value.puesto, target_val: form.value.email }
       })
       refreshRules()
     }

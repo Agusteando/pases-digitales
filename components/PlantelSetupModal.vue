@@ -1,6 +1,5 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-    <!-- Removed overflow-hidden here to allow dropdowns to break out of the modal boundaries -->
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200 border border-white/20 relative">
       
       <header class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white relative rounded-t-3xl z-10">
@@ -22,12 +21,10 @@
             <p class="text-sm font-medium text-slate-600 mb-2 leading-relaxed">
               Para continuar con el pase de <strong class="text-slate-900 font-black">{{ employeeFirstName }}</strong>, selecciona al <strong class="text-slate-900 font-black">{{ coverageData.role }}</strong> de <strong class="text-slate-900 font-black">{{ plantel }}</strong>.
             </p>
-            <!-- Elevated z-index and explicit relative context for the search container -->
             <div class="relative z-50">
               <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Search class="w-4 h-4" /></div>
               <input v-model="setupForm.gwQuery" @input="searchSetupGw" placeholder="Buscar por nombre o correo..." class="w-full pl-10 pr-4 py-3.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-slate-50 transition-all shadow-sm" />
               
-              <!-- Results Popover: Allowed to overflow modal thanks to removed overflow-hidden on parent -->
               <div v-if="setupForm.gwResults.length > 0" class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl z-[100] max-h-60 overflow-y-auto custom-scrollbar py-2">
                 <button type="button" v-for="res in setupForm.gwResults" :key="res.email" @click="selectSetupGw(res)" class="w-full text-left px-4 py-3 hover:bg-brand-50 border-b border-slate-50 flex items-center gap-3 transition-colors last:border-0 group">
                   <img v-if="res.photoUrl" :src="res.photoUrl" class="w-8 h-8 rounded-full object-cover border border-slate-200" />
@@ -166,7 +163,7 @@ async function saveSetupData() {
             plantel,
             email: setupForm.selectedUser.email,
             role,
-            channel: 'WHATSAPP',
+            channel: 'EMAIL', // Email remains default mode, phone is kept purely as configuration
             phone: setupForm.phone
          }
        })
