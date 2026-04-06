@@ -268,9 +268,9 @@
           <div v-if="modalType === 'DIRECTORY'" class="space-y-3">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Nivel de Responsabilidad</label>
             <select v-model="form.role" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-white shadow-sm transition-all">
-              <option value="PRINCIPAL">Autoridad Principal</option>
-              <option value="ADMON">Administrador Secundario</option>
-              <option value="OTRO">Staff / Otro</option>
+              <option value="Director">Director</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Lead/Manager">Lead/Manager</option>
             </select>
           </div>
 
@@ -375,7 +375,7 @@ const isSaving = ref(false)
 const form = ref({
   plantel: '',
   email: '',
-  role: 'PRINCIPAL',
+  role: 'Director',
   puesto: 'ALL',
   channel: 'EMAIL',
   displayPhone: ''
@@ -444,7 +444,7 @@ const openAddModal = (type) => {
   modalType.value = type
   form.value.plantel = selectedPlantel.value
   form.value.email = ''
-  form.value.role = 'PRINCIPAL'
+  form.value.role = 'Director'
   form.value.puesto = 'ALL'
   form.value.channel = 'EMAIL'
   form.value.displayPhone = ''

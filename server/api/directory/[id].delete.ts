@@ -11,8 +11,8 @@ export default defineEventHandler(async (event) => {
     
     const contact = contactRows[0]
     
-    // Safeguard: Do not allow deletion of the last PRINCIPAL or ADMON of a given plantel
-    if (contact.role === 'PRINCIPAL' || contact.role === 'ADMON') {
+    // Safeguard: Do not allow deletion of the last Director or Administrador of a given plantel
+    if (['Director', 'Administrador'].includes(contact.role)) {
       const [countRows]: any = await db.execute(
         'SELECT COUNT(*) as count FROM hr_directory WHERE plantel = ? AND role = ?', 
         [contact.plantel, contact.role]

@@ -10,6 +10,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Datos incompletos. Faltan campos requeridos.' })
   }
 
+  const allowedRoles = ['Director', 'Administrador', 'Lead/Manager']
+  if (!allowedRoles.includes(role)) {
+    throw createError({ statusCode: 400, message: 'Rol inválido. Opciones permitidas: Director, Administrador, Lead/Manager.' })
+  }
+
   // Update phone bidirectionally to Workspace if provided and channel requires it
   if (channel === 'WHATSAPP' && phone) {
     try {
