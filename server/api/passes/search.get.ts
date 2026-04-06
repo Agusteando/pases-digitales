@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -12,7 +13,6 @@ export default defineEventHandler(async (event) => {
   const params: any[] = []
 
   if (q && q.trim() !== '') {
-    // If q looks like a number, search id or name, else just name
     if (!isNaN(Number(q))) {
       sql += ` AND (employee_name LIKE ? OR id = ?)`
       params.push(`%${q.trim()}%`, Number(q))
@@ -22,9 +22,11 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Si se busca un plantel limpiado, intentamos hacer match con comodines en caso de que 
+  // la BD aún contenga datos antiguos con prefijos numéricos que no hayan sido migrados.
   if (plantel && plantel !== '') {
-    sql += ` AND plantel = ?`
-    params.push(plantel)
+    sql += ` AND plantel LIKE ?`
+    params.push(`%${plantel}`)
   }
 
   if (startDate) {
@@ -40,8 +42,8 @@ export default defineEventHandler(async (event) => {
   sql += ` ORDER BY id DESC LIMIT 100`
 
   try {
-    const [rows] = await db.execute(sql, params)
-    return rows
+    const [rows]: any = await db.execute(sql, params)
+    return rows.map((r: any) => ({ ...r, plantel: cleanPlantelName(r.plantel) }))
   } catch (error) {
     console.error('Search error:', error)
     return []

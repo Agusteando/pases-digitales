@@ -1,7 +1,4 @@
-/**
- * WhatsApp Notification API Engine.
- * Implements the explicit contract for sending and editing WhatsApp messages via wweb/casitaapps.
- */
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 
 interface SendMessagePayload {
   chatId: string;
@@ -46,9 +43,6 @@ export const editWhatsAppMessage = async (payload: EditMessagePayload): Promise<
   }
 }
 
-/**
- * Standard formatting function for a Pass digital.
- */
 export const buildWhatsAppTemplate = (data: any, isCancelled = false): string => {
   const categoryNames: Record<number, string> = {
     1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad Médica'
@@ -57,7 +51,8 @@ export const buildWhatsAppTemplate = (data: any, isCancelled = false): string =>
   const categoryStr = categoryNames[data.categoryId] || 'Operación'
   
   const motivoStr = data.comentarios ? `\n✍️ *Nota:* ${data.comentarios}` : ''
-  const plantelStr = data.plantel ? `\n🏢 *Plantel:* ${data.plantel}` : ''
+  const cleanPlantel = cleanPlantelName(data.plantel)
+  const plantelStr = cleanPlantel ? `\n🏢 *Plantel:* ${cleanPlantel}` : ''
   
   return `🎫 *PASE DIGITAL | #${String(data.id).padStart(5, '0')}*
 ${statusMark}

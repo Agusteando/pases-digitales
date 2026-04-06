@@ -1,4 +1,5 @@
-import { getInternalEmployeeList, normalizeName } from '~/server/utils/employee-engine'
+import { getFastSoapEmployees, normalizeName } from '~/server/utils/employee-engine'
+import { defineEventHandler, getQuery } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const searchName = normalizeName(q)
-  const dataset = await getInternalEmployeeList()
+  const dataset = await getFastSoapEmployees()
 
   const results = dataset
     .filter(emp => normalizeName(emp.name).includes(searchName))

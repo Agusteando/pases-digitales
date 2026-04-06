@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { updateWorkspaceUserPhone } from '~/server/utils/googleWorkspace'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler, readBody, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
@@ -15,13 +16,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Rol inválido. Opciones permitidas: Director, Administrador, Lead/Manager.' })
   }
 
-  // Update phone bidirectionally to Workspace if provided and channel requires it
   if (channel === 'WHATSAPP' && phone) {
     try {
       await updateWorkspaceUserPhone(email, `521${phone}@c.us`)
     } catch (e) {
       console.warn(`Failed to sync phone for ${email}`, e)
-      // Allow proceeding even if sync fails
     }
   }
 
@@ -29,7 +28,7 @@ export default defineEventHandler(async (event) => {
   try {
     await db.execute(
       'INSERT INTO hr_directory (plantel, email, role, puesto, channel) VALUES (?, ?, ?, NULL, ?)', 
-      [plantel, email, role, channel || 'EMAIL']
+      [cleanPlantelName(plantel), email, role, channel || 'EMAIL']
     )
     return { success: true }
   } catch (error: any) {

@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
 
 export default defineEventHandler(async () => {
@@ -21,7 +22,7 @@ export default defineEventHandler(async () => {
       const count = Number(row.count)
       totalToday += count
       catMap[row.category_id] = (catMap[row.category_id] || 0) + count
-      const p = row.plantel || 'Sin Plantel'
+      const p = cleanPlantelName(row.plantel) || 'Sin Plantel'
       plantelMap[p] = (plantelMap[p] || 0) + count
     })
 

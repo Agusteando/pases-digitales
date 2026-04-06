@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler, getRouterParam, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
@@ -13,11 +14,11 @@ export default defineEventHandler(async (event) => {
 
     const pass = passRows[0]
 
-    // Fetch related notification logs for context
     const [logRows]: any = await db.execute('SELECT chat_id, status, error_text, created_at FROM notification_logs WHERE pass_id = ? ORDER BY id DESC', [id])
 
     return {
       ...pass,
+      plantel: cleanPlantelName(pass.plantel),
       notifications: logRows
     }
   } catch (error: any) {

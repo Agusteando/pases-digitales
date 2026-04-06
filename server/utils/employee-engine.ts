@@ -2,9 +2,19 @@ import { LRUCache } from 'lru-cache'
 
 const cache = new LRUCache<string, any[]>({ max: 5, ttl: 1000 * 60 * 30 }) 
 
-export function normalizeName(name: string) {
+export function normalizeName(name: any) {
   if (!name) return ''
-  return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ').trim();
+  return String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Ensures strict removal of any indexed numeric prefixes from plantel names
+ * Safely converts `raw` to string in case JSON APIs return numbers (e.g. `plantelId: 4`)
+ */
+export function cleanPlantelName(raw: any): string | null {
+  if (raw === null || raw === undefined || raw === '') return null;
+  const cleaned = String(raw).replace(/^\d+\s*-\s*/, '').trim();
+  return cleaned === '' ? null : cleaned;
 }
 
 function parseSoapXML(xmlString: string) {
@@ -19,15 +29,12 @@ function parseSoapXML(xmlString: string) {
 
     if (getTag('EsActivo') !== 'true') continue
 
-    let rawPlantel = getTag('ClaveArea')
-    let plantel = rawPlantel.includes('-') ? rawPlantel.split('-')[1].trim() : rawPlantel
-
     employees.push({
       id: getTag('ID_Empleado'),
       name: getTag('NombreCompleto'),
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
-      plantel: plantel || null,
+      plantel: cleanPlantelName(getTag('ClaveArea')),
       email: getTag('Correo')
     })
   }
@@ -68,36 +75,29 @@ export async function getSigniaData() {
   }
 }
 
-export async function getInternalEmployeeList() {
-  if (cache.has('internal_list')) return cache.get('internal_list')!
+export async function getFastSoapEmployees() {
+  if (cache.has('soap_list')) return cache.get('soap_list')!
 
   let employees = await fetchSoapEmployees()
-  const signiaData = await getSigniaData()
 
-  if (!employees) {
+  // Safe fallback if the fast SOAP API breaks completely
+  if (!employees || employees.length === 0) {
+    const signiaData = await getSigniaData()
     employees = signiaData.filter(e => e.isActive).map(e => ({
       id: e.id,
       name: e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`.trim(),
       rfc: e.rfc,
       curp: e.curp,
-      plantel: e.plantelId || null,
+      plantel: cleanPlantelName(e.plantelId),
       email: e.email,
       puesto: e.puesto || null
     }))
-  } else {
-    // Enrich SOAP data with mandatory structured elements from Signia (Puesto, Email fallback)
-    employees = employees.map(emp => {
-      const sMatch = signiaData.find(s => s.rfc === emp.rfc || s.curp === emp.curp || normalizeName(s.name) === normalizeName(emp.name))
-      return {
-         ...emp,
-         puesto: sMatch?.puesto || null,
-         email: sMatch?.email || emp.email
-      }
-    })
   }
 
-  cache.set('internal_list', employees)
-  return employees
+  if (employees && employees.length > 0) {
+    cache.set('soap_list', employees)
+  }
+  return employees || []
 }
 
 export async function getSigniaEnrichment(name: string, rfc?: string, curp?: string) {
@@ -108,11 +108,17 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   const normRfc = rfc?.trim().toLowerCase()
   const normCurp = curp?.trim().toLowerCase()
 
-  let match = signia.find(e => 
-    (normCurp && e.curp?.toLowerCase() === normCurp) || 
-    (normRfc && e.rfc?.toLowerCase() === normRfc)
-  )
+  let match = null;
 
+  // 1. Primary robust match: CURP or RFC if available
+  if (normCurp || normRfc) {
+    match = signia.find(e => 
+      (normCurp && e.curp && String(e.curp).toLowerCase() === normCurp) || 
+      (normRfc && e.rfc && String(e.rfc).toLowerCase() === normRfc)
+    )
+  }
+
+  // 2. Fallback: strict name matching
   if (!match) {
     match = signia.find(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
@@ -120,12 +126,17 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     })
   }
 
+  // Map and return standard payload
   if (match) {
     let pictureUrl = match.picture
     if (pictureUrl && !pictureUrl.startsWith('http')) {
       pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`
     }
-    return { ...match, picture: pictureUrl }
+    return { 
+      ...match, 
+      picture: pictureUrl, 
+      plantelId: cleanPlantelName(match.plantelId) 
+    }
   }
 
   return {}

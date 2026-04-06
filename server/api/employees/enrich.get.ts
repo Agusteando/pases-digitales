@@ -1,4 +1,5 @@
-import { getInternalEmployeeList, getSigniaEnrichment } from '~/server/utils/employee-engine'
+import { getFastSoapEmployees, getSigniaEnrichment } from '~/server/utils/employee-engine'
+import { defineEventHandler, getQuery } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -7,12 +8,14 @@ export default defineEventHandler(async (event) => {
 
   if (!id && !name) return {}
 
-  const dataset = await getInternalEmployeeList()
+  // 1. Get identity baseline from SOAP to reliably retrieve RFC/CURP for matching
+  const dataset = await getFastSoapEmployees()
   const empMatch = dataset.find(e => e.id === id || e.name === name)
 
-  let localRfc: string | undefined = empMatch?.rfc
-  let localCurp: string | undefined = empMatch?.curp
+  const localRfc: string | undefined = empMatch?.rfc
+  const localCurp: string | undefined = empMatch?.curp
 
+  // 2. Query Signia exclusively to fetch the real picture and correct operational status
   const enriched = await getSigniaEnrichment(name, localRfc, localCurp)
 
   return {

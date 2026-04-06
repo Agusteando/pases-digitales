@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import jwt from 'jsonwebtoken'
 import { getCookie, createError, defineEventHandler, readBody } from '#imports'
 import dayjs from 'dayjs'
@@ -47,7 +48,7 @@ export default defineEventHandler(async (event) => {
       mysqlEndDate, 
       time || null, 
       comentarios || null, 
-      plantel || null, 
+      cleanPlantelName(plantel) || null, 
       regreso ? 1 : 0, 
       horaRegreso || null,
       initialStatus,

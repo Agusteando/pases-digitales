@@ -2,7 +2,7 @@ import { useDB } from '~/server/utils/db'
 import jwt from 'jsonwebtoken'
 import { defineEventHandler, getRouterParam, createError, useRuntimeConfig } from '#imports'
 import { getCachedWorkspaceUser, sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
-import { getSigniaEnrichment } from '~/server/utils/employee-engine'
+import { getSigniaEnrichment, cleanPlantelName } from '~/server/utils/employee-engine'
 
 const toWhatsAppChatId = (phone: string) => {
   if (phone.includes('@')) return phone
@@ -22,6 +22,7 @@ export default defineEventHandler(async (event) => {
   if (!rows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado' })
 
   const pass = rows[0]
+  pass.plantel = cleanPlantelName(pass.plantel)
 
   const categories: Record<number, string> = {
     1: 'Pase de entrada', 2: 'Pase de salida', 3: 'Pase para faltar', 4: 'Pase cambio de horario', 5: 'Incapacidad'
@@ -38,7 +39,6 @@ export default defineEventHandler(async (event) => {
 
   const results: any[] = []
 
-  // Global Telegram Notification (Auditable Operations Path)
   const telegramGlobalId = '-1003057962499'
   const tgMessage = `*REQUERIMIENTO OPERATIVO*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg}\nFolio *${paddedId}*\nEmitido por: ${pass.user}`
 
@@ -52,10 +52,9 @@ export default defineEventHandler(async (event) => {
     results.push({ platform: 'telegram', status: 'error' })
   }
 
-  // Determine Individual Routing
   const empData = await getSigniaEnrichment(pass.employee_name)
   const empPuesto = (empData.puesto || '').trim()
-  const empPlantel = (pass.plantel || '').trim()
+  const empPlantel = pass.plantel || ''
 
   const targets = new Map<string, { email: string, name: string, phone: string, channels: Set<string> }>()
   
@@ -70,21 +69,19 @@ export default defineEventHandler(async (event) => {
     current.channels.add(channel || 'EMAIL')
   }
 
-  // From hr_directory
   const [contacts]: any = await db.execute('SELECT email, channel FROM hr_directory WHERE plantel = ?', [empPlantel])
   for (const contact of contacts) await addTarget(contact.email, contact.channel)
 
-  // From notification_rules
   const [rules]: any = await db.execute('SELECT * FROM notification_rules')
   for (const rule of rules) {
-     const matchPlantel = rule.condition_plantel === 'ALL' || rule.condition_plantel === empPlantel
+     const rulePlantel = cleanPlantelName(rule.condition_plantel) || 'ALL'
+     const matchPlantel = rulePlantel === 'ALL' || rulePlantel === empPlantel
      const matchPuesto = rule.condition_puesto === 'ALL' || rule.condition_puesto.toLowerCase() === empPuesto.toLowerCase()
      if (matchPlantel && matchPuesto && rule.target_val) {
          await addTarget(rule.target_val, rule.channel)
      }
   }
 
-  // Dispatch Notifications based on configured channels
   for (const [email, target] of targets.entries()) {
     const rToken = jwt.sign(
       { passId: pass.id, email: target.email, name: target.name }, 
@@ -93,7 +90,6 @@ export default defineEventHandler(async (event) => {
     )
     const targetAuthUrl = `${authUrlBase}?r=${rToken}`
 
-    // WHATSAPP
     if (target.channels.has('WHATSAPP')) {
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
@@ -113,7 +109,6 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // EMAIL
     if (target.channels.has('EMAIL')) {
       const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">

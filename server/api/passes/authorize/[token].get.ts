@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import jwt from 'jsonwebtoken'
 import { defineEventHandler, getRouterParam, getQuery, createError, useRuntimeConfig } from '#imports'
 
@@ -32,7 +33,8 @@ export default defineEventHandler(async (event) => {
 
     return {
       ...rows[0],
-      _viewer: recipientName // Allows the frontend to acknowledge who is attempting the action
+      plantel: cleanPlantelName(rows[0].plantel),
+      _viewer: recipientName
     }
   } catch (error: any) {
     if (error.statusCode) throw error

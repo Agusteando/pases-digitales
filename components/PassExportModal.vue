@@ -59,14 +59,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const planteles = [
-  '001 - Default', '4 - CT Fiscal', '3 - ST Fiscal', '8 - DM Fiscal', '2 - PT Fiscal', 
-  '7 - CM Fiscal', '5 - PM Fiscal', '14 - CM Asimilados', '16 - ISM', '10 - ST Asimilados', 
-  '23 - ISM Fiscal', '15 - DM Asimilados', '9 - Asimilados', '12 - PM Asimilados', 
-  '6 - SM Fiscal', '25 - CO Fiscal', '24 - Pres Met Fiscal', '11 - CT Asimilados', 
-  '13 - SM Asimilados', '26 - CO Asimilados', '22 - PT Asimilados', '28 - DC FISCAL',
-  'PT', 'PM', 'ST', 'SM', 'CT', 'CM', 'DM', 'CO', 'KT', 'KM'
-]
+const { data: planteles } = useFetch('/api/catalogs/planteles', { default: () => [] })
 
 const form = ref({
   plantel: '',

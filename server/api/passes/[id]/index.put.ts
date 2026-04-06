@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
 import jwt from 'jsonwebtoken'
 import { defineEventHandler, getRouterParam, readBody, getCookie, createError } from '#imports'
@@ -28,7 +29,6 @@ export default defineEventHandler(async (event) => {
 
     const pass = rows[0]
 
-    // Strict ownership rule for editing
     if (pass.user !== actingUser) {
       throw createError({ statusCode: 403, message: 'Solo el creador original puede modificar este pase.' })
     }
@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
        body.time || null,
        body.comentarios || null,
        body.categoryId,
-       body.plantel || null,
+       cleanPlantelName(body.plantel) || null,
        body.regreso ? 1 : 0,
        body.horaRegreso || null,
        body.imss || null,

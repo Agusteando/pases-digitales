@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
 
 export default defineEventHandler(async (event) => {
@@ -9,11 +10,11 @@ export default defineEventHandler(async (event) => {
 
   const now = dayjs()
   const currentYear = now.year()
-  const currentMonth = now.month() // 0-11
+  const currentMonth = now.month()
   
   let startYear = currentYear
   let endYear = currentYear + 1
-  if (currentMonth < 7) { // Before August
+  if (currentMonth < 7) { 
     startYear = currentYear - 1
     endYear = currentYear
   }
@@ -34,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       cycle: `${startYear}-${endYear}`,
-      history: rows
+      history: rows.map((r: any) => ({ ...r, plantel: cleanPlantelName(r.plantel) }))
     }
   } catch (error) {
     console.error("Database read error:", error)

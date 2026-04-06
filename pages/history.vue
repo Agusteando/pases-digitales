@@ -132,11 +132,7 @@ const { user } = useAuth()
 const showExportModal = ref(false)
 const selectedPass = ref(null)
 
-const planteles = [
-  'PT', 'PM', 'ST', 'SM', 'CT', 'CM', 'DM', 'CO', 'KT', 'KM',
-  '4 - CT Fiscal', '3 - ST Fiscal', '8 - DM Fiscal', '2 - PT Fiscal', 
-  '7 - CM Fiscal', '5 - PM Fiscal', '14 - CM Asimilados', '16 - ISM'
-]
+const { data: planteles } = useFetch('/api/catalogs/planteles', { default: () => [] })
 
 const filters = ref({
   q: '',

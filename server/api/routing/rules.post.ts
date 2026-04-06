@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { updateWorkspaceUserPhone } from '~/server/utils/googleWorkspace'
+import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler, readBody, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
@@ -10,7 +11,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Falta el destinatario de la notificación.' })
   }
 
-  // Update phone to Workspace if WhatsApp is chosen and a new phone was provided
   if (channel === 'WHATSAPP' && phone) {
     try {
       await updateWorkspaceUserPhone(target_val, `521${phone}@c.us`)
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     await db.execute(
       'INSERT INTO notification_rules (condition_plantel, condition_puesto, target_type, target_val, channel) VALUES (?, ?, ?, ?, ?)', 
       [
-        condition_plantel || 'ALL', 
+        cleanPlantelName(condition_plantel) || 'ALL', 
         condition_puesto || 'ALL', 
         'CONTACT', 
         target_val,
