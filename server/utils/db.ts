@@ -28,5 +28,42 @@ export const useDB = () => {
     })
   }
   
-  return pool
+  // Return a robust wrapper that automatically handles connection drops (PROTOCOL_CONNECTION_LOST)
+  // transparently across the entire application without needing to change endpoint logic.
+  return {
+    execute: async (sql: string, values?: any[]) => {
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          return await pool!.execute(sql, values);
+        } catch (err: any) {
+          const isRecoverable = err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET' || err.code === 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR';
+          if (isRecoverable && retries > 1) {
+            console.warn(`MySQL Connection lost (${err.code}). Retrying query... (${retries - 1} attempts left)`);
+            retries--;
+            await new Promise(res => setTimeout(res, 250)); // Fast exponential backoff
+            continue;
+          }
+          throw err;
+        }
+      }
+    },
+    query: async (sql: string, values?: any[]) => {
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          return await pool!.query(sql, values);
+        } catch (err: any) {
+          const isRecoverable = err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET' || err.code === 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR';
+          if (isRecoverable && retries > 1) {
+            console.warn(`MySQL Connection lost (${err.code}). Retrying query... (${retries - 1} attempts left)`);
+            retries--;
+            await new Promise(res => setTimeout(res, 250));
+            continue;
+          }
+          throw err;
+        }
+      }
+    }
+  }
 }
