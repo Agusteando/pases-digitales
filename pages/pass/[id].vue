@@ -1,23 +1,10 @@
 <template>
   <div class="p-6 md:p-10 max-w-6xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
-    <div class="mb-8 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <button @click="$router.push('/history')" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 sm:-ml-4 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-200 self-start">
+    <div class="mb-8 shrink-0 flex items-center justify-between">
+      <button @click="$router.push('/history')" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 sm:-ml-4 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-200">
         <ArrowLeft class="w-4 h-4" /> Volver al Historial
       </button>
-      
-      <!-- Administrative Actions -->
-      <div v-if="pass && isOwner && isEditable" class="flex flex-wrap items-center gap-3">
-        <button @click="showEditModal = true" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-black rounded-xl shadow-sm hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
-          <Edit2 class="w-4 h-4" /> Editar Pase
-        </button>
-
-        <button v-if="pass.status === 'pendiente'" @click="handleCancel" :disabled="isCancelling" class="px-5 py-2.5 bg-white border border-slate-200 text-red-600 text-sm font-black rounded-xl shadow-sm hover:border-red-300 hover:text-red-700 hover:bg-red-50 transition-all flex items-center gap-2 outline-none disabled:opacity-70">
-          <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
-          <Trash2 v-else class="w-4 h-4" />
-          <span>Anular</span>
-        </button>
-      </div>
     </div>
 
     <div v-if="pending" class="flex-1 flex items-center justify-center">
@@ -28,9 +15,9 @@
       <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100">
         <AlertTriangle class="w-12 h-12 text-red-500" />
       </div>
-      <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tight">Expediente Inaccesible</h2>
-      <p class="text-slate-500 font-bold max-w-md mx-auto">El documento seguro que intentas visualizar no existe en la base de datos o fue eliminado permanentemente.</p>
-      <button @click="$router.push('/history')" class="mt-6 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors shadow-md">Regresar al Buscador</button>
+      <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tight">Folio Inaccesible</h2>
+      <p class="text-slate-500 font-bold max-w-md mx-auto">El registro que intentas visualizar no existe en la base de datos o fue eliminado.</p>
+      <button @click="$router.push('/history')" class="mt-6 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors shadow-md outline-none">Regresar al Historial</button>
     </div>
 
     <div v-else class="space-y-8 flex-1">
@@ -140,20 +127,57 @@
         <!-- Right Column: Status & System -->
         <div class="space-y-8">
           
-          <!-- Authorization State -->
-          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
-              <ShieldCheck class="w-4 h-4 text-brand-500" /> Trazabilidad de Autorización
+          <!-- Acciones Operativas -->
+          <div v-if="pass && canManage" class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <Zap class="w-4 h-4 text-brand-500" /> Acciones Operativas
             </h3>
 
-            <div class="relative pl-8 space-y-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+            <div v-if="pass.status !== 'pendiente'" class="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-4 flex items-start gap-3">
+               <Lock class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+               <div>
+                 <p class="text-sm font-black text-slate-700">Folio Inalterable</p>
+                 <p class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
+                   El registro ya ha sido resuelto ({{pass.status}}). Por reglas de auditoría y seguridad, no es posible modificar, anular ni reenviar notificaciones en este estado.
+                 </p>
+               </div>
+            </div>
+
+            <div class="space-y-3">
+              <button @click="handleResend" :disabled="pass.status !== 'pendiente' || isResending" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:bg-brand-600 disabled:shadow-none outline-none">
+                <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
+                <Send v-else class="w-4 h-4" />
+                <span>Reenviar Notificación</span>
+              </button>
+              
+              <button @click="showEditModal = true" :disabled="pass.status !== 'pendiente' || isExpired" class="w-full py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white outline-none">
+                <Edit2 class="w-4 h-4 text-slate-400" />
+                <span>Editar Datos</span>
+              </button>
+              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">Edición bloqueada: Han transcurrido más de 48 horas desde la fecha del evento.</p>
+
+              <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200 outline-none">
+                <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
+                <Trash2 v-else class="w-4 h-4 text-red-400" />
+                <span>Anular Folio</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Estado y Trazabilidad -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <ShieldCheck class="w-4 h-4 text-brand-500" /> Estado del Folio
+            </h3>
+
+            <div class="relative pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
               <!-- Step 1: Emission -->
               <div class="relative">
-                <div class="absolute -left-[39px] w-6 h-6 rounded-full border-4 border-white bg-slate-200 shadow-sm flex items-center justify-center">
+                <div class="absolute -left-[39px] w-6 h-6 rounded-full border-4 border-white bg-slate-200 shadow-sm flex items-center justify-center z-10">
                   <div class="w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Documento Emitido</p>
+                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Registro Creado</p>
                   <p class="text-xs font-bold text-slate-500">Por: <span class="text-slate-700">{{ pass.user }}</span></p>
                   <p class="text-[10px] font-bold text-slate-400 mt-2">{{ formatDateLong(pass.created_at) }}</p>
                 </div>
@@ -161,63 +185,32 @@
 
               <!-- Step 2: Resolution -->
               <div class="relative">
-                <div class="absolute -left-[39px] w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"
+                <div class="absolute -left-[39px] w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10"
                      :class="{'bg-amber-100': pass.status === 'pendiente', 'bg-emerald-100': pass.status === 'autorizado', 'bg-red-100': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                   <div class="w-1.5 h-1.5 rounded-full" :class="{'bg-amber-500': pass.status === 'pendiente', 'bg-emerald-500': pass.status === 'autorizado', 'bg-red-500': pass.status === 'rechazado' || pass.status === 'cancelado'}"></div>
                 </div>
                 <div class="p-4 rounded-2xl border" :class="{'bg-amber-50/50 border-amber-100': pass.status === 'pendiente', 'bg-emerald-50/50 border-emerald-100': pass.status === 'autorizado', 'bg-red-50/50 border-red-100': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                   <p class="text-xs font-black uppercase tracking-widest mb-1"
                      :class="{'text-amber-700': pass.status === 'pendiente', 'text-emerald-700': pass.status === 'autorizado', 'text-red-700': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                    {{ pass.status === 'pendiente' ? 'Esperando Resolución' : `Estado: ${pass.status}` }}
+                    {{ pass.status === 'pendiente' ? 'Pendiente de Autorización' : `Estado: ${pass.status}` }}
                   </p>
                   <p v-if="pass.authorized_by" class="text-xs font-bold text-slate-600 mt-1">Por: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
                   <p v-if="pass.authorized_at" class="text-[10px] font-bold text-slate-500 mt-2 opacity-80">{{ formatDateLong(pass.authorized_at) }}</p>
                 </div>
               </div>
             </div>
-
-            <!-- Operational Recovery: Resend Action -->
-            <div v-if="pass.status === 'pendiente'" class="mt-8 p-6 bg-brand-50 rounded-3xl border border-brand-100 shadow-sm flex flex-col gap-5 relative overflow-hidden group">
-              <div class="absolute top-0 right-0 w-32 h-32 bg-brand-200/30 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none transition-transform group-hover:scale-110"></div>
-              
-              <div class="flex gap-4 items-start relative z-10">
-                <div class="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center shrink-0 border border-brand-200 mt-0.5">
-                  <BellRing class="w-5 h-5 text-brand-600" />
-                </div>
-                <div>
-                  <h4 class="text-sm font-black text-brand-900 tracking-tight">Recuperación Operativa</h4>
-                  <p class="text-xs text-brand-800/90 font-medium leading-relaxed mt-1">
-                    Si el responsable no recibió el acceso, emite una nueva copia segura de este folio. <strong class="font-black text-brand-900">No dupliques el pase.</strong>
-                  </p>
-                  
-                  <div v-if="recentTargets.length > 0" class="mt-4 flex flex-wrap gap-2">
-                    <span class="text-[9px] font-black uppercase tracking-widest text-brand-700 w-full mb-0.5">Se notificará nuevamente a:</span>
-                    <span v-for="t in recentTargets" :key="t" class="px-2.5 py-1.5 bg-white text-brand-800 text-[10px] font-bold rounded-lg border border-brand-200 shadow-sm flex items-center gap-1.5">
-                      <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
-                      {{ t }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <button @click="handleResend" :disabled="isResending" class="relative z-10 w-full py-3.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 outline-none disabled:opacity-70">
-                <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
-                <Send v-else class="w-4 h-4" />
-                <span>Reenviar Notificación Original</span>
-              </button>
-            </div>
           </div>
 
           <!-- Notification Delivery Log -->
-          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Bell class="w-4 h-4 text-brand-500" /> Auditoría de Notificaciones
+              <Bell class="w-4 h-4 text-brand-500" /> Envíos de Notificación
             </h3>
 
-            <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+            <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
               <p class="text-sm font-bold text-slate-400">Sin registros de distribución.</p>
             </div>
-            <div v-else class="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+            <div v-else class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
               <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 rounded-2xl border flex items-start justify-between gap-4 transition-colors"
                    :class="isSystemLog(log.error_text) ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-sm'">
                 <div class="flex items-center gap-3 w-full min-w-0">
@@ -257,7 +250,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, BellRing, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, ArrowRight } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -268,48 +261,19 @@ const route = useRoute()
 const passId = computed(() => route.params.id)
 const { user } = useAuth()
 
-// Using computed ref in useFetch ensures high reliability across navigation bounds
 const { data: pass, pending, error, refresh } = useFetch(() => `/api/passes/${passId.value}`)
 
 const showEditModal = ref(false)
 const isResending = ref(false)
 const isCancelling = ref(false)
 
-const isOwner = computed(() => {
-  return user.value && pass.value && user.value.name === pass.value.user
-})
+const isAdmin = computed(() => user.value?.is_admin || false)
+const isOwner = computed(() => user.value && pass.value && user.value.name === pass.value.user)
+const canManage = computed(() => isOwner.value || isAdmin.value)
 
-const isEditable = computed(() => {
-  if (!isOwner.value || !pass.value) return false
-  if (pass.value.status === 'cancelado' || pass.value.status === 'rechazado') return false
-  const passDate = dayjs(pass.value.date)
-  const hoursDiff = dayjs().diff(passDate, 'hour')
-  return hoursDiff <= 48
-})
-
-const recentTargets = computed(() => {
-  if (!pass.value?.notifications) return []
-  const targets = new Map()
-  
-  pass.value.notifications.forEach(log => {
-    if (isSystemLog(log.error_text)) return
-    const name = extractTargetName(log.error_text)
-    if (name === 'Sistema' || name === 'Desconocido') return
-    
-    let channel = 'Correo'
-    if (log.error_text.includes('WhatsApp')) channel = 'WhatsApp'
-    
-    if (!targets.has(name)) {
-      targets.set(name, channel)
-    } else {
-      const existing = targets.get(name)
-      if (existing !== channel && !existing.includes(channel)) {
-         targets.set(name, `${existing} & ${channel}`)
-      }
-    }
-  })
-  
-  return Array.from(targets.entries()).map(([name, channel]) => `${name} (${channel})`)
+const isExpired = computed(() => {
+  if (!pass.value) return true
+  return dayjs().diff(dayjs(pass.value.date), 'hour') > 48
 })
 
 const handleResend = async () => {
@@ -320,7 +284,7 @@ const handleResend = async () => {
     refresh()
   } catch (err) {
     console.error('Resend error', err)
-    alert(err.data?.message || 'Ocurrió un error al intentar reenviar las notificaciones.')
+    alert(err.data?.message || 'Ocurrió un error al intentar reenviar la notificación.')
   } finally {
     isResending.value = false
   }
@@ -370,7 +334,6 @@ const formatDateOnly = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMMM YYY
 const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY, HH:mm') : 'N/A'
 const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : 'N/A'
 
-// Explicit Notification Parsing
 const isSystemLog = (text) => {
   return text && text.includes('Auditoría Global')
 }

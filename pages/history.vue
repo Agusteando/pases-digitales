@@ -102,18 +102,18 @@
               </td>
               <td class="px-6 py-5 text-right">
                 <div class="flex items-center justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                  <NuxtLink :to="`/pass/${pass.id}`" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Abrir Expediente">
+                  <NuxtLink :to="`/pass/${pass.id}`" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Abrir Folio">
                     <Eye class="w-4 h-4" />
                   </NuxtLink>
-                  <template v-if="user?.name === pass.user">
+                  <template v-if="user?.name === pass.user || user?.is_admin">
                     <button v-if="pass.status === 'pendiente'" @click="quickResend(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm disabled:opacity-50" title="Reenviar Notificación">
                       <Loader2 v-if="actionLoading === pass.id && actionType === 'resend'" class="w-4 h-4 animate-spin" />
                       <Send v-else class="w-4 h-4" />
                     </button>
-                    <button v-if="isEditable(pass)" @click="openEditModal(pass)" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Editar">
+                    <button v-if="isEditable(pass)" @click="openEditModal(pass)" class="p-2 text-slate-500 hover:text-brand-600 bg-white hover:bg-brand-50 rounded-xl transition-all border border-slate-200 hover:border-brand-200 shadow-sm" title="Editar Datos">
                       <Edit2 class="w-4 h-4" />
                     </button>
-                    <button v-if="isEditable(pass) && pass.status === 'pendiente'" @click="quickCancel(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 shadow-sm disabled:opacity-50" title="Anular Registro">
+                    <button v-if="pass.status === 'pendiente'" @click="quickCancel(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-red-600 bg-white hover:bg-red-50 rounded-xl transition-all border border-slate-200 hover:border-red-200 shadow-sm disabled:opacity-50" title="Anular Folio">
                       <Loader2 v-if="actionLoading === pass.id && actionType === 'cancel'" class="w-4 h-4 animate-spin" />
                       <Trash2 v-else class="w-4 h-4" />
                     </button>
@@ -168,7 +168,7 @@ const formatDate = (dateStr) => {
 }
 
 const isEditable = (pass) => {
-  if (pass.status === 'cancelado' || pass.status === 'rechazado') return false
+  if (pass.status !== 'pendiente') return false
   const passDate = dayjs(pass.date)
   const hoursDiff = dayjs().diff(passDate, 'hour')
   return hoursDiff <= 48

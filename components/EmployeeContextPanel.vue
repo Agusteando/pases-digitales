@@ -23,20 +23,20 @@
       </div>
     </div>
 
-    <!-- Active Warning: Duplicate Prevention & Quick Action Router -->
+    <!-- Active Folio Detection: Directs users to reuse rather than duplicate -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="bg-amber-50 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 border border-amber-200/80 shadow-sm relative z-10 items-start sm:items-center justify-between">
-        <div class="flex gap-4 items-start">
-          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0 border border-amber-200 mt-0.5 sm:mt-0">
-            <AlertTriangle class="w-5 h-5 text-amber-600" />
+      <div v-if="todayPasses.length > 0" class="bg-brand-50/50 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 border border-brand-100/80 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-colors hover:bg-brand-50">
+        <div class="flex gap-4 items-center">
+          <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-brand-200 shadow-sm transition-transform group-hover:scale-105">
+            <FileText class="w-5 h-5 text-brand-600" />
           </div>
-          <div class="flex-1">
-            <h4 class="text-sm font-black text-amber-900 tracking-tight">Pase previo detectado hoy</h4>
-            <p class="text-xs text-amber-800/90 mt-1 font-medium leading-relaxed">El colaborador ya tiene un registro generado durante esta jornada. Para editar o notificar de nuevo, ingresa al expediente.</p>
+          <div>
+            <h4 class="text-sm font-black text-brand-900 tracking-tight">Folio Activo</h4>
+            <p class="text-xs text-brand-700/90 mt-0.5 font-medium">Registro abierto en esta jornada.</p>
           </div>
         </div>
-        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 w-full sm:w-auto">
-          <span>Abrir Expediente</span>
+        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 w-full sm:w-auto outline-none">
+          <span>Abrir Folio</span>
           <ArrowRight class="w-4 h-4" />
         </NuxtLink>
       </div>
@@ -122,7 +122,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { AlertTriangle, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight } from 'lucide-vue-next'
+import { FileText, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'

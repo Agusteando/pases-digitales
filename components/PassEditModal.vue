@@ -18,12 +18,12 @@
 
       <div class="p-8 overflow-y-auto custom-scrollbar space-y-6 flex-1 bg-slate-50/30">
         
-        <div v-if="!isEditable" class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex gap-4 items-start shadow-sm">
-          <Lock class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+        <div v-if="!isEditable" class="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex gap-4 items-start shadow-sm">
+          <Lock class="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <h4 class="text-sm font-black text-slate-700">Edición Bloqueada</h4>
-            <p class="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-              El periodo permitido (48h) ha concluido, el registro se encuentra en un estado inalterable, o no posees los permisos del creador original.
+            <h4 class="text-sm font-black text-amber-900">Edición Bloqueada</h4>
+            <p class="text-xs text-amber-700 font-medium mt-1 leading-relaxed">
+              La modificación de datos está inhabilitada. Esto ocurre cuando el folio ya ha sido resuelto (autorizado/rechazado/anulado), han transcurrido más de 48 horas desde el evento, o no cuentas con los permisos administrativos necesarios.
             </p>
           </div>
         </div>
@@ -93,22 +93,14 @@
 
       </div>
 
-      <footer class="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-between shrink-0">
-        <button v-if="isEditable" @click="handleCancel" :disabled="isSaving" class="px-4 py-2.5 text-sm font-black text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors outline-none disabled:opacity-50 flex items-center gap-2 border border-transparent hover:border-red-100">
-          <Trash2 class="w-4 h-4" />
-          Anular Registro
+      <footer class="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-end shrink-0 gap-3">
+        <button @click="$emit('close')" :disabled="isSaving" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none disabled:opacity-50 border border-transparent hover:border-slate-200">
+          Cerrar
         </button>
-        <div v-else></div>
-
-        <div class="flex items-center gap-3">
-          <button @click="$emit('close')" :disabled="isSaving" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none disabled:opacity-50 border border-transparent hover:border-slate-200">
-            Cancelar
-          </button>
-          <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
-            <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-            <span>{{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}</span>
-          </button>
-        </div>
+        <button v-if="isEditable" type="submit" form="editPassForm" :disabled="isSaving" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-60 disabled:hover:bg-brand-600 flex items-center gap-2 outline-none">
+          <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+          <span>{{ isSaving ? 'Guardando...' : 'Guardar Cambios' }}</span>
+        </button>
       </footer>
 
     </div>
@@ -129,13 +121,13 @@ const emit = defineEmits(['close', 'updated'])
 const { user } = useAuth()
 const todayDate = dayjs().format('YYYY-MM-DD')
 
-const isOwner = computed(() => {
-  return user.value && user.value.name === props.pass.user
-})
+const isAdmin = computed(() => user.value?.is_admin || false)
+const isOwner = computed(() => user.value && props.pass && user.value.name === props.pass.user)
+const canManage = computed(() => isOwner.value || isAdmin.value)
 
 const isEditable = computed(() => {
-  if (!isOwner.value) return false
-  if (props.pass.status === 'cancelado' || props.pass.status === 'rechazado') return false
+  if (!canManage.value) return false
+  if (props.pass.status !== 'pendiente') return false
   const passDate = dayjs(props.pass.date)
   const now = dayjs()
   const hoursDiff = now.diff(passDate, 'hour')
@@ -199,26 +191,6 @@ const handleSave = async () => {
   } catch (error) {
     console.error('Update error:', error)
     alert(error?.data?.message || 'Ocurrió un error al intentar actualizar el registro.')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-const handleCancel = async () => {
-  if (!confirm('¿Estás seguro de anular permanentemente este pase? Esta acción no se puede deshacer y el registro quedará inhabilitado.')) return
-  if (isSaving.value) return
-  isSaving.value = true
-
-  try {
-    await $fetch(`/api/passes/${props.pass.id}/action`, {
-      method: 'POST',
-      body: { action: 'cancel' }
-    })
-    emit('updated')
-    emit('close')
-  } catch (error) {
-    console.error('Cancel error:', error)
-    alert(error?.data?.message || 'Ocurrió un error al intentar anular el registro.')
   } finally {
     isSaving.value = false
   }

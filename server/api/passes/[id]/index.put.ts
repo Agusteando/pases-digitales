@@ -13,34 +13,40 @@ export default defineEventHandler(async (event) => {
   const token = getCookie(event, 'auth-token')
   if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida' })
 
-  let actingUser = null
+  let actingName = null
+  let actingEmail = null
   try {
     const decoded: any = jwt.decode(token)
-    if (decoded && decoded.name) actingUser = decoded.name
+    if (decoded && decoded.name) actingName = decoded.name
+    if (decoded && decoded.email) actingEmail = decoded.email
   } catch (e) {}
 
-  if (!actingUser) throw createError({ statusCode: 401, message: 'Sesión inválida' })
+  if (!actingName || !actingEmail) throw createError({ statusCode: 401, message: 'Sesión inválida' })
 
   const db = useDB()
 
   try {
+    // Verify admin privileges strictly through the database
+    const [adminRows]: any = await db.execute('SELECT is_admin FROM system_users WHERE email = ?', [actingEmail])
+    const isAdmin = adminRows.length > 0 && adminRows[0].is_admin === 1
+
     const [rows]: any = await db.execute('SELECT date, status, user FROM hr_entries WHERE id = ?', [id])
     if (!rows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado.' })
 
     const pass = rows[0]
 
-    if (pass.user !== actingUser) {
-      throw createError({ statusCode: 403, message: 'Solo el creador original puede modificar este pase.' })
+    if (pass.user !== actingName && !isAdmin) {
+      throw createError({ statusCode: 403, message: 'Permisos insuficientes. Solo el creador original o un administrador pueden modificar este pase.' })
     }
     
     // Server-side strict immutability check
     if (pass.status !== 'pendiente') {
-      throw createError({ statusCode: 403, message: 'No se permite modificar un pase que ya ha sido resuelto o anulado.' })
+      throw createError({ statusCode: 403, message: 'Operación denegada. No se permite modificar un pase que ya ha sido resuelto o anulado.' })
     }
 
     const hoursDiff = dayjs().diff(dayjs(pass.date), 'hour')
     if (hoursDiff > 48) {
-      throw createError({ statusCode: 403, message: 'El tiempo permitido para edición ha concluido.' })
+      throw createError({ statusCode: 403, message: 'Operación denegada. El tiempo permitido para edición (48 horas) ha concluido.' })
     }
 
     const mysqlDate = body.date ? dayjs(body.date).startOf('day') : dayjs().startOf('day')
