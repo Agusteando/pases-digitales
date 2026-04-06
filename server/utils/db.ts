@@ -7,6 +7,10 @@ export const useDB = () => {
   if (!pool) {
     const config = useRuntimeConfig()
     
+    // Architectural fix for PROTOCOL_CONNECTION_LOST:
+    // Native connection lifecycle management. By using idleTimeout, the Node.js pool 
+    // proactively reaps idle connections BEFORE the MySQL server or firewall aggressively 
+    // drops them, ensuring we never fetch a dead connection from the pool.
     pool = mysql.createPool({
       host: config.mysqlHost || 'localhost',
       user: config.mysqlUser || 'root',
@@ -14,13 +18,14 @@ export const useDB = () => {
       database: config.mysqlDatabase || 'Sistemas',
       waitForConnections: true,
       connectionLimit: 10,
+      maxIdle: 10, // Max idle connections, matching connectionLimit for safe scaling
+      idleTimeout: 30000, // Reap connections idle for >30 seconds
       queueLimit: 0,
-      // Enable TCP Keep-Alive to prevent the database or firewalls from dropping idle connections
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
     })
 
-    // Listen to connection errors on the pool to prevent unhandled rejections
+    // Catch and log any stray errors to prevent unhandled process rejections
     pool.on('connection', (connection) => {
       connection.on('error', (err: any) => {
         console.error('MySQL Pool Connection Error:', err.code, err.message)
@@ -28,42 +33,5 @@ export const useDB = () => {
     })
   }
   
-  // Return a robust wrapper that automatically handles connection drops (PROTOCOL_CONNECTION_LOST)
-  // transparently across the entire application without needing to change endpoint logic.
-  return {
-    execute: async (sql: string, values?: any[]) => {
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          return await pool!.execute(sql, values);
-        } catch (err: any) {
-          const isRecoverable = err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET' || err.code === 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR';
-          if (isRecoverable && retries > 1) {
-            console.warn(`MySQL Connection lost (${err.code}). Retrying query... (${retries - 1} attempts left)`);
-            retries--;
-            await new Promise(res => setTimeout(res, 250)); // Fast exponential backoff
-            continue;
-          }
-          throw err;
-        }
-      }
-    },
-    query: async (sql: string, values?: any[]) => {
-      let retries = 3;
-      while (retries > 0) {
-        try {
-          return await pool!.query(sql, values);
-        } catch (err: any) {
-          const isRecoverable = err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET' || err.code === 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR';
-          if (isRecoverable && retries > 1) {
-            console.warn(`MySQL Connection lost (${err.code}). Retrying query... (${retries - 1} attempts left)`);
-            retries--;
-            await new Promise(res => setTimeout(res, 250));
-            continue;
-          }
-          throw err;
-        }
-      }
-    }
-  }
+  return pool
 }

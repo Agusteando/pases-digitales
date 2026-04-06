@@ -149,10 +149,8 @@ export async function updateWorkspaceUserPhone(email: string, newPhone: string) 
       }
     })
     
-    // CRITICAL FIX: Google Workspace APIs suffer from slight eventual-consistency propagation delays.
-    // If we merely delete the cache here, the next immediate read during the onboarding flow loop
-    // could fetch the OLD empty phone number from Google and cache it again, creating an infinite loop.
-    // By optimistically applying the phone number to the local cache, the system successfully sees it as complete instantly.
+    // Ensure optimistic cache updates to prevent immediate re-reads 
+    // from triggering infinite onboarding loops before Workspace APIs fully propagate.
     const existing = userCache.get(email) || { name: email.split('@')[0], photoUrl: null, email }
     userCache.set(email, { ...existing, phone: newPhone })
     
