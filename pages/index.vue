@@ -17,8 +17,8 @@
           <EmployeeSearch @select="addEmployee" />
           
           <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
-            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full gap-3 bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
-              <div class="flex items-center justify-between">
+            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300 hover:shadow-md">
+              <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-3">
                    <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="shrink-0" />
                    <span class="text-base font-black text-slate-800">{{ emp.name }}</span>
@@ -28,19 +28,52 @@
                 </button>
               </div>
               
-              <div v-if="emp._enriching" class="flex gap-2">
+              <div v-if="emp._enriching" class="flex gap-2 mt-2">
                 <div class="h-6 w-24 bg-slate-100 animate-pulse rounded-lg"></div>
                 <div class="h-6 w-32 bg-slate-100 animate-pulse rounded-lg"></div>
               </div>
-              <div v-else class="flex flex-wrap items-center gap-2">
-                <span v-if="emp.plantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5">
-                  <Building2 class="w-3.5 h-3.5 text-slate-400" />
-                  {{ emp.plantel }}
-                </span>
-                <span v-if="emp.puesto" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
-                  <Briefcase class="w-3.5 h-3.5 text-brand-400" />
-                  {{ emp.puesto }}
-                </span>
+              <div v-else class="flex flex-col gap-3 w-full mt-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <!-- Role -->
+                  <span v-if="emp.puesto" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
+                    <Briefcase class="w-3.5 h-3.5 text-brand-400" />
+                    {{ emp.puesto }}
+                  </span>
+
+                  <!-- Origin Plantel -->
+                  <span v-if="emp.originPlantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5 transition-opacity duration-300" :class="{'opacity-50': emp.operationalPlantel && emp.operationalPlantel !== emp.originPlantel}">
+                    <Building2 class="w-3.5 h-3.5 text-slate-400" />
+                    {{ emp.originPlantel }}
+                  </span>
+
+                  <!-- Destination Transition -->
+                  <template v-if="emp.operationalPlantel && emp.operationalPlantel !== emp.originPlantel">
+                    <ArrowRight class="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                    <span class="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-black rounded-lg border border-purple-200/80 shadow-sm flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-300">
+                      <MapPin class="w-3.5 h-3.5 text-purple-500" />
+                      Destino: {{ emp.operationalPlantel }}
+                      <button type="button" @click.stop="resetDestino(emp)" class="ml-1 hover:text-purple-900 bg-purple-100/50 p-0.5 rounded-md transition-colors outline-none"><XIcon class="w-3 h-3"/></button>
+                    </span>
+                  </template>
+                  
+                  <!-- Trigger for movement -->
+                  <button v-else-if="!emp._selectingDestino" type="button" @click.stop="emp._selectingDestino = true" class="text-[10px] font-black text-slate-400 hover:text-purple-600 px-2 py-1 rounded-lg hover:bg-purple-50 transition-colors flex items-center gap-1 border border-transparent hover:border-purple-200 outline-none">
+                    <MapPin class="w-3 h-3" /> Moverse
+                  </button>
+                </div>
+
+                <!-- Inline Selector for Destination Plantel -->
+                <div v-if="emp._selectingDestino" class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-end gap-3 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
+                   <div class="flex-1">
+                      <label class="text-[10px] uppercase font-black text-slate-500 tracking-widest mb-2 block flex items-center gap-1.5"><MapPin class="w-3 h-3 text-purple-500"/> Base Operativa Destino</label>
+                      <select v-model="emp.operationalPlantel" @change="onDestinoSelected(emp)" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-purple-100 focus:border-purple-500 outline-none shadow-sm cursor-pointer transition-all">
+                         <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+                      </select>
+                   </div>
+                   <button type="button" @click="emp._selectingDestino = false" class="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors border border-transparent outline-none">
+                      <XIcon class="w-4 h-4" />
+                   </button>
+                </div>
               </div>
             </div>
           </div>
@@ -70,13 +103,24 @@
               </button>
 
               <!-- Early Leave Quick Action -->
-              <button @click="triggerEarlyLeaveQuickAction" type="button" class="bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group" :class="!hasBirthday() ? 'sm:col-span-2' : ''">
+              <button @click="triggerEarlyLeaveQuickAction" type="button" class="bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group">
                 <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
                   <LogOut class="w-5 h-5" />
                 </div>
                 <div>
                   <h4 class="text-sm font-black text-slate-800">Salida Temprano</h4>
                   <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Atajo de uso frecuente</p>
+                </div>
+              </button>
+
+              <!-- Moverse de Plantel Quick Action -->
+              <button @click="triggerMoverseQuickAction" type="button" class="bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group" :class="hasBirthday() ? 'sm:col-span-2' : ''">
+                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                  <ArrowRightLeft class="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 class="text-sm font-black text-slate-800">Moverse de Plantel</h4>
+                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Asignar nueva base operativa</p>
                 </div>
               </button>
             </div>
@@ -195,7 +239,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import dayjs from 'dayjs'
-import { Loader2, X as XIcon, Cake, ArrowRight, LogOut, PenTool, Send, Building2, Briefcase } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, ArrowRight, LogOut, PenTool, Send, Building2, Briefcase, MapPin, ArrowRightLeft } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -203,6 +247,7 @@ import RecentActivityPanel from '~/components/RecentActivityPanel.vue'
 import PlantelSetupModal from '~/components/PlantelSetupModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
+const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
 const todayDate = dayjs().format('YYYY-MM-DD')
 
 const selectedEmployees = ref([])
@@ -217,7 +262,7 @@ const verifiedPlanteles = ref(new Set())
 const currentCoverageTask = computed(() => coverageQueue.value[0] || null)
 
 async function checkCoverageQueue(emp) {
-  const plantel = emp.plantel
+  const plantel = emp.operationalPlantel || emp.originPlantel
   if (!plantel || plantel === 'N/A') return
   
   if (verifiedPlanteles.value.has(plantel)) return
@@ -253,7 +298,15 @@ function onSetupCancelled() {
   if (currentCoverageTask.value) {
     const plantel = currentCoverageTask.value.plantel
     coverageQueue.value.shift()
-    selectedEmployees.value = selectedEmployees.value.filter(e => e.plantel !== plantel)
+    // Find all employees that were pointing to this cancelled destination and reset them or remove them
+    selectedEmployees.value = selectedEmployees.value.filter(e => {
+       if (e.operationalPlantel === plantel && e.originPlantel !== plantel) {
+          e.operationalPlantel = e.originPlantel; // Graceful rollback to origin
+          return true;
+       }
+       return e.operationalPlantel !== plantel;
+    })
+    
     if (selectedEmployees.value.length === 0) {
       activeScenario.value = null
     }
@@ -263,7 +316,7 @@ function onSetupCancelled() {
 async function addEmployee(emp) {
   if (!selectedEmployees.value.find(e => e.id === emp.id)) {
     // Optimistic UI insert with enrichment skeleton
-    const tempEmp = { ...emp, _enriching: true }
+    const tempEmp = { ...emp, _enriching: true, _selectingDestino: false }
     selectedEmployees.value.push(tempEmp)
 
     // Server-side enrichment query
@@ -273,9 +326,11 @@ async function addEmployee(emp) {
     const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
     if (actualEmp) {
       actualEmp.curp = enriched.curp || emp.curp || null
-      actualEmp.plantel = enriched.plantel || emp.plantel || null
+      actualEmp.originPlantel = enriched.plantel || emp.plantel || null
+      actualEmp.operationalPlantel = actualEmp.originPlantel
       actualEmp.puesto = enriched.puesto || emp.puesto || null
       actualEmp.picture = enriched.picture || emp.picture || null
+      actualEmp._selectingDestino = false
       actualEmp._enriching = false
 
       await checkCoverageQueue(actualEmp)
@@ -289,6 +344,23 @@ function removeEmployee(id) {
     activeScenario.value = null
     coverageQueue.value = []
   }
+}
+
+async function onDestinoSelected(emp) {
+  emp._selectingDestino = false
+  await checkCoverageQueue(emp)
+}
+
+async function resetDestino(emp) {
+  emp.operationalPlantel = emp.originPlantel
+  emp._selectingDestino = false
+  await checkCoverageQueue(emp)
+}
+
+function triggerMoverseQuickAction() {
+  selectedEmployees.value.forEach(emp => {
+    emp._selectingDestino = true
+  })
 }
 
 const getCurrentTime = () => {
@@ -323,7 +395,6 @@ function selectScenario(scenario) {
   })
 }
 
-// Corrected Birthday Behavior
 function isBirthday(emp) {
   if (!emp || !emp.curp || emp.curp.length < 10) return false;
   const mm = emp.curp.substring(6, 8);
@@ -373,7 +444,7 @@ async function submitPass() {
         method: 'POST',
         body: { 
           employeeName: emp.name, 
-          plantel: emp.plantel || 'N/A', 
+          plantel: emp.operationalPlantel || emp.originPlantel || 'N/A', 
           categoryId: activeScenario.value.categoryId, 
           ...form 
         }

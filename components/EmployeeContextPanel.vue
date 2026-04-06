@@ -146,14 +146,9 @@ const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/en
   query: { id: props.employee.id, name: props.employee.name }
 })
 
-const { data: historyData, pending: pendingHistory } = useFetch('/api/passes/employee', {
-  query: { name: props.employee.name },
-  lazy: true
-})
-
 const displayPic = computed(() => enrichment.value?.picture || props.employee.picture || null)
 const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
-const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.plantel || null)
+const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.originPlantel || props.employee.plantel || null)
 
 const isToday = (dateStr) => {
   if (!dateStr) return false
