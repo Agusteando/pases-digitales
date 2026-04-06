@@ -10,7 +10,12 @@ export default defineEventHandler(async () => {
     const enriched = await Promise.all(rows.map(async (r: any) => {
       if (r.target_type === 'CONTACT') {
          const gw = await getCachedWorkspaceUser(r.target_val)
-         return { ...r, gw_name: gw.name, gw_photo: gw.photoUrl }
+         return { 
+           ...r, 
+           channel: r.channel || 'EMAIL',
+           gw_name: gw.name, 
+           gw_photo: gw.photoUrl 
+         }
       }
       return r
     }))

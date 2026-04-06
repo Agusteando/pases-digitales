@@ -42,9 +42,9 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/routing' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Mapa Operativo (Directorio y Rutas)"
+          title="Configurar Notificaciones"
         >
-          <Network class="w-6 h-6" />
+          <BellRing class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
           v-if="user?.is_admin"
@@ -87,8 +87,8 @@
         <span class="text-[10px] font-bold">Historial</span>
       </NuxtLink>
       <NuxtLink v-if="user?.is_admin" to="/routing" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/routing' ? '' : 'text-slate-400'">
-        <Network class="w-5 h-5" />
-        <span class="text-[10px] font-bold">Operativo</span>
+        <BellRing class="w-5 h-5" />
+        <span class="text-[10px] font-bold">Avisos</span>
       </NuxtLink>
       <NuxtLink v-if="user?.is_admin" to="/users" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/users' ? '' : 'text-slate-400'">
         <Shield class="w-5 h-5" />
@@ -103,7 +103,7 @@
 </template>
 
 <script setup>
-import { Plus, BarChart2, History, Network, Shield, LogOut } from 'lucide-vue-next'
+import { Plus, BarChart2, History, BellRing, Shield, LogOut } from 'lucide-vue-next'
 const { user, logout } = useAuth()
 
 const handleLogout = async () => {

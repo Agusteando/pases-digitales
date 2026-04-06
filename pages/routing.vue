@@ -3,12 +3,12 @@
     
     <header class="mb-8 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Mapa Operativo</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Directorio y reglas de enrutamiento distribuidos por Plantel.</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Configurar Notificaciones</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Gestión de canales y reglas de distribución por plantel.</p>
       </div>
     </header>
 
-    <div v-if="pendingContacts || pendingRules" class="flex-1 flex items-center justify-center">
+    <div v-if="pendingContacts || pendingRules || pendingPlanteles" class="flex-1 flex items-center justify-center">
       <Loader2 class="w-12 h-12 animate-spin text-brand-600" />
     </div>
 
@@ -23,20 +23,20 @@
         </div>
         <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
           <button 
-            @click="selectedPlantel = 'GLOBAL'"
+            @click="selectedPlantel = 'ALL'"
             class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all outline-none flex items-center justify-between group"
-            :class="selectedPlantel === 'GLOBAL' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'"
+            :class="selectedPlantel === 'ALL' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'"
           >
             <div class="flex items-center gap-3">
-              <Globe class="w-4 h-4" :class="selectedPlantel === 'GLOBAL' ? 'text-brand-200' : 'text-slate-400 group-hover:text-brand-500'" />
-              Reglas Globales
+              <Globe class="w-4 h-4" :class="selectedPlantel === 'ALL' ? 'text-brand-200' : 'text-slate-400 group-hover:text-brand-500'" />
+              Nivel Institucional
             </div>
           </button>
           
           <div class="my-2 border-t border-slate-200/60 mx-4"></div>
           
           <button 
-            v-for="plantel in FULL_PLANTELES_CATALOG" :key="plantel"
+            v-for="plantel in dynamicPlanteles" :key="plantel"
             @click="selectedPlantel = plantel"
             class="w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all outline-none flex items-center justify-between group"
             :class="selectedPlantel === plantel ? 'bg-brand-50 border-brand-200 text-brand-800 shadow-sm border' : 'text-slate-600 hover:bg-slate-100 border border-transparent'"
@@ -47,27 +47,27 @@
         </div>
       </aside>
 
-      <!-- Right Main Panel: Detail View for Selected Plantel -->
+      <!-- Right Main Panel: Detail View -->
       <main class="flex-1 flex flex-col min-h-0 custom-scrollbar overflow-y-auto pb-10">
         
         <div class="mb-8">
           <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <span v-if="selectedPlantel === 'GLOBAL'">Configuración Global</span>
-            <span v-else>Plantel {{ selectedPlantel }}</span>
+            <span v-if="selectedPlantel === 'ALL'">Notificaciones a Nivel Institucional</span>
+            <span v-else>Plantel: {{ selectedPlantel }}</span>
           </h2>
           <p class="text-sm font-medium text-slate-500 mt-1">
-            {{ selectedPlantel === 'GLOBAL' ? 'Reglas de enrutamiento que aplican genéricamente.' : 'Organigrama y reglas de notificación para este origen.' }}
+            {{ selectedPlantel === 'ALL' ? 'Reglas maestras que se evaluarán para toda la organización.' : 'Responsables y reglas específicas para este plantel.' }}
           </p>
         </div>
 
-        <!-- Section: Directorio -->
-        <section v-if="selectedPlantel !== 'GLOBAL'" class="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <!-- Section: Responsables Base -->
+        <section v-if="selectedPlantel !== 'ALL'" class="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Users class="w-4 h-4" /> Directorio Operativo
+              <Users class="w-4 h-4" /> Responsables Base del Plantel
             </h3>
-            <button @click="openAddModal" class="px-4 py-2 bg-white border border-slate-200 text-brand-600 text-xs font-black rounded-xl shadow-sm hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
-              <Plus class="w-3.5 h-3.5" /> Vincular Contacto
+            <button @click="openAddModal('DIRECTORY')" class="px-4 py-2 bg-white border border-slate-200 text-brand-600 text-xs font-black rounded-xl shadow-sm hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
+              <Plus class="w-3.5 h-3.5" /> Agregar Responsable
             </button>
           </div>
 
@@ -76,7 +76,7 @@
               <UserX class="w-6 h-6 text-slate-400" />
             </div>
             <p class="text-base font-black text-slate-700">Sin responsables asignados</p>
-            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de configuración. Agrega un contacto base para que reciba las notificaciones por defecto.</p>
+            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de responsables base. Agrega un contacto para que reciba las notificaciones por defecto.</p>
           </div>
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -92,123 +92,44 @@
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-black text-slate-900 truncate tracking-tight">{{ contact.gw?.name || 'Sincronizando...' }}</p>
                   <p class="text-[10px] font-bold text-slate-500 truncate mt-0.5" :title="contact.email">{{ contact.email }}</p>
-                  <div class="mt-2 inline-block px-2 py-0.5 rounded-md text-[9px] font-black tracking-widest uppercase border bg-slate-50 border-slate-200 text-slate-600">
-                    Rol: {{ contact.role }}
+                  <div class="mt-2 flex gap-2 items-center flex-wrap">
+                    <span class="inline-block px-2 py-0.5 rounded-md text-[9px] font-black tracking-widest uppercase border bg-slate-50 border-slate-200 text-slate-600">
+                      Rol: {{ contact.role }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black tracking-widest uppercase border shadow-sm"
+                          :class="contact.channel === 'WHATSAPP' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-brand-50 text-brand-700 border-brand-200'">
+                      <MessageCircle v-if="contact.channel === 'WHATSAPP'" class="w-3 h-3" />
+                      <Mail v-else class="w-3 h-3" />
+                      {{ contact.channel === 'WHATSAPP' ? 'WhatsApp' : 'Correo' }}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <!-- Explicit WhatsApp Chat ID UI -->
-              <div class="flex items-center gap-3 mt-5 bg-slate-50/50 p-3 rounded-2xl border border-slate-100 group-hover:bg-white transition-colors">
-                <Smartphone class="w-4 h-4 text-emerald-500 shrink-0" />
-                <div class="flex-1">
-                  <input 
-                    type="text" 
-                    v-model="contact.gw.phone"
-                    @focus="contact._isEditing = true"
-                    placeholder="Ej: 5215512345678@c.us"
-                    class="w-full bg-transparent text-xs font-bold text-slate-700 placeholder:text-slate-400 outline-none transition-all focus:bg-white focus:px-3 focus:py-1.5 focus:-ml-3 focus:ring-2 focus:ring-emerald-100 focus:rounded-xl focus:border-emerald-300 border border-transparent"
-                  />
-                  <p v-if="contact._isEditing" class="text-[9px] font-bold text-emerald-600 mt-1 -ml-2">Formato estricto API WhatsApp.</p>
-                </div>
-                
-                <button v-if="contact._isEditing" @click="syncPhone(contact)" :disabled="contact._isSyncing" class="shrink-0 p-2 bg-brand-600 text-white hover:bg-brand-700 rounded-xl transition-all shadow-sm focus:outline-none" title="Guardar">
-                  <Loader2 v-if="contact._isSyncing" class="w-3 h-3 animate-spin" />
-                  <Save v-else class="w-3 h-3" />
-                </button>
-              </div>
-
-              <button v-if="canEdit" @click="deleteContact(contact.id)" class="absolute top-4 right-4 text-slate-300 hover:text-red-600 bg-white p-2 rounded-full hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 shadow-sm border border-slate-100 focus:outline-none" title="Desvincular">
+              <button v-if="isAdmin" @click="deleteContact(contact.id)" class="absolute top-4 right-4 text-slate-300 hover:text-red-600 bg-white p-2 rounded-full hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 shadow-sm border border-slate-100 focus:outline-none" title="Remover Responsable">
                 <Trash2 class="w-4 h-4" />
               </button>
             </div>
           </div>
         </section>
 
-        <!-- Section: Reglas de Enrutamiento -->
+        <!-- Section: Reglas de Notificación -->
         <section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Network class="w-4 h-4" /> Enrutamiento de Excepciones
+              <Network class="w-4 h-4" /> Reglas Específicas
             </h3>
-          </div>
-
-          <!-- Smart Rule Builder Form -->
-          <form @submit.prevent="saveRule" class="glass-card bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm mb-6 flex flex-col lg:flex-row gap-4 items-end relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-slate-900"></div>
-            
-            <div class="w-full lg:flex-1 space-y-2 relative">
-              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Condición: Si el Puesto es</label>
-              
-              <!-- Searchable Select UI: Puesto -->
-              <div class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 cursor-pointer flex items-center justify-between group hover:border-brand-300 transition-colors" @click="uiState.showPuesto = true">
-                <span class="text-sm font-bold text-slate-800 truncate">{{ ruleForm.condition_puesto === 'ALL' ? 'CUALQUIER PUESTO (Fallback)' : ruleForm.condition_puesto }}</span>
-                <ChevronDown class="w-4 h-4 text-slate-400 group-hover:text-brand-500" />
-              </div>
-
-              <!-- Puesto Dropdown -->
-              <div v-if="uiState.showPuesto" class="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden max-h-72 flex flex-col">
-                <div class="p-3 border-b border-slate-100 bg-slate-50/50">
-                  <input v-model="uiState.searchPuesto" ref="puestoInput" placeholder="Buscar catálogo..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
-                </div>
-                <div class="overflow-y-auto custom-scrollbar flex-1 p-2 space-y-1">
-                  <button type="button" @click="selectPuesto('ALL')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-black text-brand-600 hover:bg-brand-50 transition-colors">
-                    CUALQUIER PUESTO (Fallback)
-                  </button>
-                  <button type="button" v-for="p in filteredPuestos" :key="p" @click="selectPuesto(p)" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors">
-                    {{ p }}
-                  </button>
-                  <p v-if="!filteredPuestos.length" class="text-center text-xs text-slate-400 py-4 font-bold">Sin coincidencias.</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="hidden lg:flex pb-3 px-2">
-              <ArrowRight class="w-5 h-5 text-slate-300" />
-            </div>
-
-            <!-- Custom User Search for Notification Target -->
-            <div class="w-full lg:flex-1 space-y-2 relative">
-              <label class="block text-[10px] font-black text-brand-600 uppercase tracking-widest flex items-center gap-1.5"><Search class="w-3 h-3" /> Notificar Individualmente a</label>
-              
-              <div v-if="ruleForm.target_val" class="w-full px-4 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center font-black text-emerald-600 text-xs border border-emerald-200">{{ ruleForm.target_name.slice(0,2).toUpperCase() }}</div>
-                  <div class="flex flex-col min-w-0">
-                    <span class="text-xs font-black text-emerald-900 truncate">{{ ruleForm.target_name }}</span>
-                    <span class="text-[9px] font-bold text-emerald-700 truncate">{{ ruleForm.target_val }}</span>
-                  </div>
-                </div>
-                <button type="button" @click="clearRuleTarget" class="p-1 text-emerald-500 hover:text-red-500 bg-white rounded-md transition-colors"><X class="w-4 h-4" /></button>
-              </div>
-
-              <input v-else v-model="uiState.searchRuleUser" @input="searchRuleGw" placeholder="Buscar correo o nombre..." class="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-500 outline-none text-sm font-bold shadow-sm transition-all bg-white" autocomplete="off" />
-              
-              <div v-if="uiState.ruleUserResults.length && !ruleForm.target_val" class="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 shadow-xl rounded-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar py-2">
-                <button type="button" v-for="res in uiState.ruleUserResults" :key="res.email" @click="selectRuleTarget(res)" class="w-full text-left px-5 py-3 hover:bg-brand-50 flex items-center gap-4 transition-colors border-b border-slate-50 last:border-0 group">
-                   <img v-if="res.photoUrl" :src="res.photoUrl" class="w-8 h-8 rounded-full border border-slate-200 object-cover" />
-                   <div v-else class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-black text-slate-400 text-xs group-hover:bg-brand-100 group-hover:text-brand-600">{{ res.name.slice(0,2).toUpperCase() }}</div>
-                   <div class="flex-1 min-w-0">
-                     <p class="text-sm font-black text-slate-900 truncate">{{ res.name }}</p>
-                     <p class="text-[10px] font-bold text-slate-500 truncate">{{ res.email }}</p>
-                   </div>
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" :disabled="isSavingRule || !ruleForm.target_val" class="w-full lg:w-auto px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl text-sm transition-all shadow-md disabled:opacity-50 flex justify-center items-center gap-2 outline-none">
-              <Loader2 v-if="isSavingRule" class="w-4 h-4 animate-spin" />
-              <Plus v-else class="w-4 h-4" />
-              <span>Añadir</span>
+            <button @click="openAddModal('RULE')" class="px-4 py-2 bg-white border border-slate-200 text-brand-600 text-xs font-black rounded-xl shadow-sm hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
+              <Plus class="w-3.5 h-3.5" /> Agregar Regla
             </button>
-          </form>
+          </div>
 
           <div v-if="!currentRules.length" class="bg-white/60 border border-slate-200/80 border-dashed rounded-3xl p-10 flex flex-col items-center text-center">
             <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
               <GitMerge class="w-6 h-6 text-slate-400" />
             </div>
-            <p class="text-base font-black text-slate-700">Flujo lineal</p>
-            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">No existen excepciones de enrutamiento. Todas las notificaciones fluirán exclusivamente hacia el Directorio Operativo.</p>
+            <p class="text-base font-black text-slate-700">Comportamiento estándar</p>
+            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">No existen reglas específicas de enrutamiento aquí. Las notificaciones fluirán hacia los Responsables Base.</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -221,9 +142,9 @@
                   <div class="absolute left-0 top-0 bottom-0 w-1 bg-slate-300"></div>
                   <Filter class="w-5 h-5 text-slate-400 shrink-0" />
                   <div class="flex flex-col min-w-0">
-                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Condición</span>
+                    <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest">Condición (Puesto)</span>
                     <span class="text-sm font-black text-slate-800 truncate mt-0.5" :class="rule.condition_puesto === 'ALL' ? 'text-brand-600' : ''">
-                      {{ rule.condition_puesto === 'ALL' ? 'CUALQUIER PUESTO' : rule.condition_puesto }}
+                      {{ rule.condition_puesto === 'ALL' ? 'Aplica a todos los puestos' : rule.condition_puesto }}
                     </span>
                   </div>
                 </div>
@@ -232,18 +153,27 @@
                 <ArrowDown class="sm:hidden w-6 h-6 text-slate-300 shrink-0" />
 
                 <!-- Action Box -->
-                <div class="flex items-center gap-4 px-5 py-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex-1 w-full sm:w-auto relative overflow-hidden">
-                  <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+                <div class="flex items-center gap-4 px-5 py-4 rounded-2xl border flex-1 w-full sm:w-auto relative overflow-hidden"
+                     :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-brand-50/50 border-brand-100'">
+                  <div class="absolute left-0 top-0 bottom-0 w-1" :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-500' : 'bg-brand-500'"></div>
+                  
                   <div v-if="rule.gw_photo" class="w-10 h-10 rounded-xl border-2 border-white shadow-sm shrink-0 overflow-hidden bg-white">
                     <img :src="rule.gw_photo" class="w-full h-full object-cover" />
                   </div>
-                  <div v-else class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-sm shrink-0 border border-emerald-200">
+                  <div v-else class="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 border"
+                       :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-brand-100 text-brand-600 border-brand-200'">
                     <User class="w-5 h-5" />
                   </div>
                   
                   <div class="flex flex-col min-w-0">
-                    <span class="text-[9px] font-black uppercase text-emerald-600 tracking-widest">Destinatario Específico</span>
-                    <p class="text-sm font-black text-emerald-900 truncate mt-0.5" :title="rule.gw_name || rule.target_val">
+                    <div class="flex items-center gap-2 mb-0.5">
+                      <span class="text-[9px] font-black uppercase tracking-widest" :class="rule.channel === 'WHATSAPP' ? 'text-emerald-600' : 'text-brand-600'">Destinatario Específico</span>
+                      <span class="text-[9px] font-black tracking-widest px-1.5 rounded uppercase border"
+                            :class="rule.channel === 'WHATSAPP' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-brand-100 text-brand-700 border-brand-200'">
+                        {{ rule.channel === 'WHATSAPP' ? 'WA' : 'Mail' }}
+                      </span>
+                    </div>
+                    <p class="text-sm font-black truncate" :class="rule.channel === 'WHATSAPP' ? 'text-emerald-900' : 'text-brand-900'" :title="rule.gw_name || rule.target_val">
                       {{ rule.gw_name || rule.target_val }}
                     </p>
                   </div>
@@ -260,30 +190,53 @@
       </main>
     </div>
 
-    <!-- Modals Backdrops (Handling outside clicks natively) -->
+    <!-- Interactive Backdrops -->
     <div v-if="uiState.showPuesto" @click="uiState.showPuesto = false" class="fixed inset-0 z-40"></div>
-    <div v-if="uiState.ruleUserResults.length && !ruleForm.target_val" @click="uiState.ruleUserResults = []" class="fixed inset-0 z-40"></div>
 
-    <!-- Modal: Vincular Contacto Directorio -->
-    <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20 relative">
+    <!-- Unified Modal for Directory/Rule Linkage -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20 relative">
         <header class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white relative">
           <div>
-            <h3 class="text-xl font-black text-slate-900 tracking-tight">Vincular Contacto</h3>
-            <p class="text-xs font-bold text-slate-500 mt-1">Directorio: <span class="text-brand-600">{{ form.plantel }}</span></p>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">{{ modalType === 'DIRECTORY' ? 'Agregar Responsable' : 'Agregar Regla Específica' }}</h3>
+            <p class="text-xs font-bold text-slate-500 mt-1">Plantel: <span class="text-brand-600">{{ form.plantel === 'ALL' ? 'Nivel Institucional' : form.plantel }}</span></p>
           </div>
-          <button @click="showAddModal = false" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
+          <button @click="closeModal" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
             <X class="w-5 h-5" />
           </button>
         </header>
 
-        <form @submit.prevent="saveContact" id="addContactForm" class="p-8 space-y-6 bg-slate-50/30">
+        <form @submit.prevent="submitForm" id="linkageForm" class="p-8 space-y-8 bg-slate-50/30 overflow-y-auto max-h-[70vh] custom-scrollbar">
           
-          <div class="space-y-2 relative">
+          <!-- Only for Rules: Puesto selection -->
+          <div v-if="modalType === 'RULE'" class="space-y-3 relative z-50">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Condición (Si el colaborador tiene el puesto)</label>
+            <div class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white cursor-pointer flex items-center justify-between group hover:border-brand-300 transition-colors shadow-sm" @click="uiState.showPuesto = true">
+              <span class="text-sm font-bold text-slate-800 truncate">{{ form.puesto === 'ALL' ? 'Aplica a todos los puestos' : form.puesto }}</span>
+              <ChevronDown class="w-4 h-4 text-slate-400 group-hover:text-brand-500" />
+            </div>
+            <div v-if="uiState.showPuesto" class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden max-h-60 flex flex-col">
+              <div class="p-3 border-b border-slate-100 bg-slate-50/50">
+                <input v-model="uiState.searchPuesto" ref="puestoInput" placeholder="Buscar catálogo..." class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100" />
+              </div>
+              <div class="overflow-y-auto custom-scrollbar flex-1 p-2 space-y-1">
+                <button type="button" @click="selectPuesto('ALL')" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-black text-brand-600 hover:bg-brand-50 transition-colors">
+                  Aplica a todos los puestos
+                </button>
+                <button type="button" v-for="p in filteredPuestos" :key="p" @click="selectPuesto(p)" class="w-full text-left px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                  {{ p }}
+                </button>
+                <p v-if="!filteredPuestos.length" class="text-center text-xs text-slate-400 py-4 font-bold">Sin coincidencias.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- WS User Identity Search -->
+          <div class="space-y-3 relative">
             <label class="block text-[11px] font-black text-brand-600 uppercase tracking-widest flex items-center gap-2">
-              <Search class="w-3 h-3" /> Buscar en Institución (Workspace)
+              <Search class="w-3 h-3" /> Seleccionar Destinatario (Workspace)
             </label>
-            <input v-model="gwSearchQuery" @input="searchGw" placeholder="Nombre o correo..." class="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold shadow-sm transition-all bg-white" autocomplete="off" />
+            <input v-model="gwSearchQuery" @input="searchGw" placeholder="Nombre o correo institucional..." class="w-full px-4 py-3 rounded-xl border border-brand-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold shadow-sm transition-all bg-white" autocomplete="off" />
             
             <div v-if="gwResults.length" class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl z-50 max-h-60 overflow-y-auto custom-scrollbar py-2">
               <button type="button" v-for="res in gwResults" :key="res.email" @click="selectGw(res)" class="w-full text-left px-5 py-3 hover:bg-brand-50 border-b border-slate-50 flex items-center gap-4 last:border-0 transition-colors group">
@@ -311,7 +264,8 @@
             </div>
           </div>
           
-          <div class="space-y-2">
+          <!-- Only for Directory: Role selection -->
+          <div v-if="modalType === 'DIRECTORY'" class="space-y-3">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Nivel de Responsabilidad</label>
             <select v-model="form.role" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-white shadow-sm transition-all">
               <option value="PRINCIPAL">Autoridad Principal</option>
@@ -319,13 +273,46 @@
               <option value="OTRO">Staff / Otro</option>
             </select>
           </div>
+
+          <!-- Channel Selection -->
+          <div class="space-y-3 pt-2 border-t border-slate-100">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Canal de Entrega</label>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" @click="form.channel = 'EMAIL'" class="p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all outline-none"
+                      :class="form.channel === 'EMAIL' ? 'border-brand-500 bg-brand-50 text-brand-700 shadow-sm' : 'border-slate-200 bg-white text-slate-500 hover:border-brand-200 hover:bg-slate-50'">
+                <Mail class="w-6 h-6" :class="form.channel === 'EMAIL' ? 'text-brand-600' : 'text-slate-400'" />
+                <span class="text-xs font-black">Correo Seguro</span>
+              </button>
+              <button type="button" @click="form.channel = 'WHATSAPP'" class="p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all outline-none"
+                      :class="form.channel === 'WHATSAPP' ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-sm' : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-200 hover:bg-slate-50'">
+                <MessageCircle class="w-6 h-6" :class="form.channel === 'WHATSAPP' ? 'text-emerald-600' : 'text-slate-400'" />
+                <span class="text-xs font-black">WhatsApp API</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mandatory Phone check if WHATSAPP is selected -->
+          <div v-if="form.channel === 'WHATSAPP'" class="space-y-3 p-5 bg-slate-50 rounded-2xl border border-slate-200/80 animate-in fade-in slide-in-from-top-4 duration-300">
+            <label class="block text-[11px] font-black text-emerald-700 uppercase tracking-widest flex items-center gap-2">
+              <Smartphone class="w-3.5 h-3.5" /> Número de Teléfono
+            </label>
+            <div class="flex items-center">
+              <div class="bg-emerald-100 border border-emerald-200 border-r-0 px-4 py-3 rounded-l-xl text-emerald-800 font-black text-sm flex items-center gap-1.5 shadow-sm">
+                +52 1
+              </div>
+              <input v-model="form.displayPhone" type="tel" maxlength="10" placeholder="10 dígitos..." @input="enforcePhoneDigits" class="flex-1 px-4 py-3 rounded-r-xl border border-emerald-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none text-sm font-black text-slate-900 shadow-sm transition-all bg-white placeholder:text-slate-400 placeholder:font-medium" />
+            </div>
+            <p v-if="!form.displayPhone || form.displayPhone.length < 10" class="text-[10px] font-bold text-amber-600">Requerido para la ruta de entrega vía WhatsApp.</p>
+            <p v-else class="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 class="w-3 h-3" /> Formato válido para sincronización Workspace.</p>
+          </div>
+
         </form>
 
         <footer class="px-8 py-5 bg-white border-t border-slate-100 flex items-center justify-end gap-3">
-          <button type="button" @click="showAddModal = false" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none border border-transparent hover:border-slate-200">Cancelar</button>
-          <button type="submit" form="addContactForm" :disabled="isSaving || !form.email" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 outline-none disabled:opacity-70">
+          <button type="button" @click="closeModal" class="px-5 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors outline-none border border-transparent hover:border-slate-200">Cancelar</button>
+          <button type="submit" form="linkageForm" :disabled="isSaving || !isValid" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2 outline-none disabled:opacity-70">
             <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
-            <span>Vincular Oficialmente</span>
+            <span>{{ modalType === 'DIRECTORY' ? 'Vincular Responsable' : 'Guardar Regla' }}</span>
           </button>
         </footer>
       </div>
@@ -334,88 +321,26 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
-import { Users, Plus, Building2, Trash2, X, Loader2, Smartphone, Save, ShieldCheck, GitMerge, ArrowRight, ArrowDown, User, Network, Globe, ChevronRight, ChevronDown, UserX, Search, Filter } from 'lucide-vue-next'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { Building2, Globe, ChevronRight, ChevronDown, Filter, Users, Network, Search, X, UserX, Mail, MessageCircle, Plus, Smartphone, Trash2, GitMerge, ArrowRight, ArrowDown, User, Loader2, CheckCircle2 } from 'lucide-vue-next'
 
 const { user } = useAuth()
+const isAdmin = computed(() => user.value?.is_admin || false)
 
-const FULL_PLANTELES_CATALOG = [
-  '001 - Default', '2 - PT Fiscal', '3 - ST Fiscal', '4 - CT Fiscal', '5 - PM Fiscal', 
-  '6 - SM Fiscal', '7 - CM Fiscal', '8 - DM Fiscal', '9 - Asimilados', '10 - ST Asimilados', 
-  '11 - CT Asimilados', '12 - PM Asimilados', '13 - SM Asimilados', '14 - CM Asimilados', 
-  '15 - DM Asimilados', '16 - ISM', '22 - PT Asimilados', '23 - ISM Fiscal', 
-  '24 - Pres Met Fiscal', '25 - CO Fiscal', '26 - CO Asimilados', '28 - DC FISCAL',
-  'CM', 'CO', 'CT', 'DCA', 'DM', 'ISSSTE MET', 'ISSSTE TOL', 'KM', 'KT', 'PM', 'PREES MET', 'PREES TOL', 'PT', 'SM', 'ST', 'U-0837'
-]
-
+const { data: dynamicPlanteles, pending: pendingPlanteles } = useFetch('/api/catalogs/planteles', { default: () => [] })
 const { data: contacts, pending: pendingContacts, refresh: refreshContacts } = useFetch('/api/directory', { default: () => [] })
 const { data: rules, pending: pendingRules, refresh: refreshRules } = useFetch('/api/routing/rules', { default: () => [] })
 const { data: catalogPuestos } = useFetch('/api/catalogs/puestos', { default: () => [] })
 
-const isAdmin = computed(() => user.value?.is_admin || false)
-const canEdit = computed(() => isAdmin.value)
+const selectedPlantel = ref('ALL')
 
-const selectedPlantel = ref('GLOBAL')
-
-// Interactive Custom Dropdowns State
-const uiState = reactive({
-  showPuesto: false,
-  searchPuesto: '',
-  searchRuleUser: '',
-  ruleUserResults: []
-})
-const puestoInput = ref(null)
-
-const filteredPuestos = computed(() => {
-  const q = uiState.searchPuesto.toLowerCase()
-  if (!q) return catalogPuestos.value || []
-  return (catalogPuestos.value || []).filter(p => p.toLowerCase().includes(q))
-})
-
-const selectPuesto = (val) => {
-  ruleForm.value.condition_puesto = val
-  uiState.showPuesto = false
-  uiState.searchPuesto = ''
-}
-
-let ruleGwTimeout = null
-const searchRuleGw = () => {
-  if (ruleGwTimeout) clearTimeout(ruleGwTimeout)
-  if (uiState.searchRuleUser.length < 2) {
-    uiState.ruleUserResults = []
-    return
-  }
-  ruleGwTimeout = setTimeout(async () => {
-    try {
-      const data = await $fetch('/api/workspace/search', { params: { q: uiState.searchRuleUser } })
-      uiState.ruleUserResults = data || []
-    } catch(e) {
-      uiState.ruleUserResults = []
-    }
-  }, 300)
-}
-
-const selectRuleTarget = (res) => {
-  ruleForm.value.target_val = res.email
-  ruleForm.value.target_name = res.name
-  uiState.searchRuleUser = ''
-  uiState.ruleUserResults = []
-}
-
-const clearRuleTarget = () => {
-  ruleForm.value.target_val = ''
-  ruleForm.value.target_name = ''
-}
-
-// Derived UI State
 const currentContacts = computed(() => {
-  if (selectedPlantel.value === 'GLOBAL') return []
-  return contacts.value.filter(c => c.plantel === selectedPlantel.value).map(c => ({ ...c, _isEditing: false, _isSyncing: false }))
+  if (selectedPlantel.value === 'ALL') return []
+  return contacts.value.filter(c => c.plantel === selectedPlantel.value)
 })
 
 const currentRules = computed(() => {
-  const condition = selectedPlantel.value === 'GLOBAL' ? 'ALL' : selectedPlantel.value
-  return rules.value.filter(r => r.condition_plantel === condition)
+  return rules.value.filter(r => r.condition_plantel === selectedPlantel.value)
 })
 
 const getInitials = (name) => {
@@ -424,10 +349,37 @@ const getInitials = (name) => {
   return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase()
 }
 
-// Modals & Contact Directory Add Logic
-const showAddModal = ref(false)
+// Custom Selects Logic
+const uiState = reactive({
+  showPuesto: false,
+  searchPuesto: ''
+})
+
+const filteredPuestos = computed(() => {
+  const q = uiState.searchPuesto.toLowerCase()
+  if (!q) return catalogPuestos.value || []
+  return (catalogPuestos.value || []).filter(p => p.toLowerCase().includes(q))
+})
+
+const selectPuesto = (val) => {
+  form.value.puesto = val
+  uiState.showPuesto = false
+  uiState.searchPuesto = ''
+}
+
+// Unified Modal Logic
+const showModal = ref(false)
+const modalType = ref('DIRECTORY') // 'DIRECTORY' or 'RULE'
 const isSaving = ref(false)
-const form = ref({ plantel: '', email: '', role: 'PRINCIPAL' })
+
+const form = ref({
+  plantel: '',
+  email: '',
+  role: 'PRINCIPAL',
+  puesto: 'ALL',
+  channel: 'EMAIL',
+  displayPhone: ''
+})
 
 const gwSearchQuery = ref('')
 const gwResults = ref([])
@@ -455,6 +407,18 @@ const selectGw = (res) => {
   form.value.email = res.email
   selectedGwName.value = res.name
   selectedGwPhoto.value = res.photoUrl
+  
+  // Clean phone logic for the input mask
+  let cleanPhone = ''
+  if (res.phone) {
+    cleanPhone = res.phone.replace(/\D/g, '')
+    if (cleanPhone.startsWith('521') && cleanPhone.length >= 13) {
+      cleanPhone = cleanPhone.substring(3)
+    }
+    if (cleanPhone.length > 10) cleanPhone = cleanPhone.substring(cleanPhone.length - 10)
+  }
+  form.value.displayPhone = cleanPhone
+
   gwSearchQuery.value = ''
   gwResults.value = []
 }
@@ -463,33 +427,78 @@ const clearGw = () => {
   form.value.email = ''
   selectedGwName.value = ''
   selectedGwPhoto.value = ''
+  form.value.displayPhone = ''
 }
 
-const openAddModal = () => {
-  if (selectedPlantel.value === 'GLOBAL') return
+const enforcePhoneDigits = () => {
+  form.value.displayPhone = form.value.displayPhone.replace(/\D/g, '').substring(0, 10)
+}
+
+const isValid = computed(() => {
+  if (!form.value.email) return false
+  if (form.value.channel === 'WHATSAPP' && form.value.displayPhone.length !== 10) return false
+  return true
+})
+
+const openAddModal = (type) => {
+  modalType.value = type
   form.value.plantel = selectedPlantel.value
   form.value.email = ''
   form.value.role = 'PRINCIPAL'
+  form.value.puesto = 'ALL'
+  form.value.channel = 'EMAIL'
+  form.value.displayPhone = ''
   clearGw()
-  showAddModal.value = true
+  showModal.value = true
 }
 
-const saveContact = async () => {
-  if (isSaving.value || !form.value.email) return
+const closeModal = () => {
+  showModal.value = false
+}
+
+const submitForm = async () => {
+  if (isSaving.value || !isValid.value) return
   isSaving.value = true
+  
+  const payload = {
+    channel: form.value.channel,
+    phone: form.value.channel === 'WHATSAPP' ? form.value.displayPhone : undefined
+  }
+
   try {
-    await $fetch('/api/directory', { method: 'POST', body: form.value })
-    showAddModal.value = false
-    refreshContacts()
+    if (modalType.value === 'DIRECTORY') {
+      await $fetch('/api/directory', { 
+        method: 'POST', 
+        body: { 
+          ...payload, 
+          plantel: form.value.plantel, 
+          email: form.value.email, 
+          role: form.value.role 
+        } 
+      })
+      refreshContacts()
+    } else {
+      await $fetch('/api/routing/rules', {
+        method: 'POST',
+        body: {
+          ...payload,
+          condition_plantel: form.value.plantel,
+          condition_puesto: form.value.puesto,
+          target_val: form.value.email
+        }
+      })
+      refreshRules()
+    }
+    closeModal()
   } catch (error) {
-    alert(error?.data?.message || 'Error al vincular el contacto.')
+    alert(error?.data?.message || 'Error al guardar la configuración.')
   } finally {
     isSaving.value = false
   }
 }
 
 const deleteContact = async (id) => {
-  if (!confirm('¿Desvincular permanentemente este contacto del directorio de este plantel?')) return
+  if (!confirm('¿Desvincular permanentemente este responsable del plantel?')) return
   try {
     await $fetch(`/api/directory/${id}`, { method: 'DELETE' })
     refreshContacts()
@@ -498,62 +507,8 @@ const deleteContact = async (id) => {
   }
 }
 
-// Explicit formatting enforcement for WhatsApp Chat IDs
-const syncPhone = async (contact) => {
-  if (contact._isSyncing) return
-  contact._isSyncing = true
-  try {
-    let phone = (contact.gw.phone || '').trim()
-    if (phone && !phone.includes('@c.us') && !phone.includes('@g.us')) {
-      let digits = phone.replace(/\D/g, '')
-      if (digits.length === 10) digits = '521' + digits
-      if (digits.length > 0) phone = `${digits}@c.us`
-      contact.gw.phone = phone
-    }
-
-    await $fetch(`/api/directory/${contact.id}/phone`, {
-      method: 'PUT',
-      body: { email: contact.email, phone: contact.gw.phone }
-    })
-    contact._isEditing = false
-  } catch (error) {
-    alert('Fallo al sincronizar el teléfono con Google Workspace.')
-  } finally {
-    contact._isSyncing = false
-  }
-}
-
-// RULES LOGIC
-const isSavingRule = ref(false)
-const ruleForm = ref({
-  condition_puesto: 'ALL',
-  target_val: '',
-  target_name: ''
-})
-
-const saveRule = async () => {
-  if (isSavingRule.value) return
-  isSavingRule.value = true
-  try {
-    await $fetch('/api/routing/rules', {
-      method: 'POST',
-      body: {
-        condition_plantel: selectedPlantel.value === 'GLOBAL' ? 'ALL' : selectedPlantel.value,
-        condition_puesto: ruleForm.value.condition_puesto || 'ALL',
-        target_val: ruleForm.value.target_val
-      }
-    })
-    ruleForm.value = { condition_puesto: 'ALL', target_val: '', target_name: '' }
-    refreshRules()
-  } catch (error) {
-    alert(error?.data?.message || 'Error al guardar regla.')
-  } finally {
-    isSavingRule.value = false
-  }
-}
-
 const deleteRule = async (id) => {
-  if (!confirm('¿Eliminar esta regla de enrutamiento?')) return
+  if (!confirm('¿Eliminar permanentemente esta regla de notificación?')) return
   try {
     await $fetch(`/api/routing/rules/${id}`, { method: 'DELETE' })
     refreshRules()
@@ -563,8 +518,8 @@ const deleteRule = async (id) => {
 }
 
 onMounted(() => {
-  if (FULL_PLANTELES_CATALOG.length > 0) {
-     selectedPlantel.value = FULL_PLANTELES_CATALOG[0]
+  if (!selectedPlantel.value && dynamicPlanteles.value?.length) {
+    selectedPlantel.value = dynamicPlanteles.value[0]
   }
 })
 </script>
