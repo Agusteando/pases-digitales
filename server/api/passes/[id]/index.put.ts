@@ -42,8 +42,13 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 403, message: 'El tiempo permitido para edición ha concluido.' })
     }
 
-    const mysqlDate = body.date ? dayjs(body.date).format('YYYY-MM-DD 00:00:00') : dayjs().format('YYYY-MM-DD 00:00:00')
-    const mysqlEndDate = body.endDate ? dayjs(body.endDate).format('YYYY-MM-DD 23:59:59') : mysqlDate
+    const mysqlDate = body.date ? dayjs(body.date).startOf('day') : dayjs().startOf('day')
+    const mysqlEndDate = body.endDate ? dayjs(body.endDate).startOf('day') : mysqlDate
+    const todayObj = dayjs().startOf('day')
+
+    if (mysqlDate.isBefore(todayObj) || mysqlEndDate.isBefore(todayObj)) {
+      throw createError({ statusCode: 400, message: 'No se permite actualizar pases con fechas en el pasado.' })
+    }
 
     const sql = `
       UPDATE hr_entries
@@ -51,8 +56,8 @@ export default defineEventHandler(async (event) => {
       WHERE id = ?
     `
     await db.execute(sql, [
-       mysqlDate,
-       mysqlEndDate,
+       mysqlDate.format('YYYY-MM-DD 00:00:00'),
+       mysqlEndDate.format('YYYY-MM-DD 23:59:59'),
        body.time || null,
        body.comentarios || null,
        body.categoryId,

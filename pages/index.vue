@@ -52,14 +52,14 @@
            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Verificando estado operativo...</p>
         </div>
         
-        <template v-else-if="directoryCoverage && directoryCoverage.isComplete">
+        <template v-else-if="!currentCoverageTask && selectedEmployees.length > 0">
           <!-- Intelligent Quick Actions Layer -->
-          <div v-if="selectedEmployees.length > 0" class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Acciones Rápidas</label>
             
             <div class="flex flex-col gap-4">
               <!-- Birthday Inference Banner -->
-              <button v-if="isBirthday(selectedEmployees[0])" @click="triggerBirthdayQuickAction" class="w-full relative overflow-hidden bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-5 text-left transition-transform hover:scale-[1.01] hover:shadow-lg outline-none group border border-orange-400/50">
+              <button v-if="hasBirthday()" @click="triggerBirthdayQuickAction" class="w-full relative overflow-hidden bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl p-5 text-left transition-transform hover:scale-[1.01] hover:shadow-lg outline-none group border border-orange-400/50">
                 <div class="absolute right-0 top-0 bottom-0 w-32 bg-white/20 blur-2xl transform skew-x-12 translate-x-10 group-hover:translate-x-0 transition-transform duration-700"></div>
                 <div class="relative z-10 flex items-center justify-between">
                   <div>
@@ -67,7 +67,7 @@
                       <Cake class="w-4 h-4" />
                       <span class="text-[10px] font-black uppercase tracking-widest">Día Festivo</span>
                     </div>
-                    <h3 class="text-lg font-black text-white tracking-tight">¡Hoy es su cumpleaños! 🎉</h3>
+                    <h3 class="text-lg font-black text-white tracking-tight">{{ selectedEmployees.length > 1 ? '¡Hoy hay cumpleaños! 🎉' : '¡Hoy es su cumpleaños! 🎉' }}</h3>
                     <p class="text-xs font-bold text-orange-100 mt-0.5">Generar pase de ausencia por cumpleaños.</p>
                   </div>
                   <ArrowRight class="w-6 h-6 text-white" />
@@ -90,7 +90,7 @@
           </div>
 
           <!-- Standard Scenarios Section -->
-          <div v-if="selectedEmployees.length > 0" class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Catálogo Estándar</label>
             <div class="grid grid-cols-2 gap-4">
               <ScenarioCard 
@@ -116,11 +116,11 @@
             <div class="grid grid-cols-2 gap-5">
               <div class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha Inicio</label>
-                <input type="date" v-model="form.date" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
+                <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
               </div>
               <div v-if="activeScenario.needsEndDate" class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha Fin</label>
-                <input type="date" v-model="form.endDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
+                <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
               </div>
               <div v-if="activeScenario.needsTime" class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora Evento</label>
@@ -188,11 +188,11 @@
 
     <!-- Context Check Setup Modal -->
     <PlantelSetupModal 
-      v-if="showSetupModal && directoryCoverage"
-      :is-open="showSetupModal"
-      :plantel="selectedEmployees[0]?.plantel || 'el plantel'"
-      :employee-name="selectedEmployees[0]?.name || 'el colaborador'"
-      :coverage-data="directoryCoverage"
+      v-if="currentCoverageTask"
+      :is-open="!!currentCoverageTask"
+      :plantel="currentCoverageTask.plantel"
+      :employee-name="currentCoverageTask.employeeName"
+      :coverage-data="currentCoverageTask"
       @cancel="onSetupCancelled"
       @completed="onSetupCompleted"
     />
@@ -200,7 +200,8 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
+import dayjs from 'dayjs'
 import { Loader2, X as XIcon, Cake, ArrowRight, LogOut, PenTool, Send, Building2, Briefcase } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
@@ -209,46 +210,60 @@ import RecentActivityPanel from '~/components/RecentActivityPanel.vue'
 import PlantelSetupModal from '~/components/PlantelSetupModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
+const todayDate = dayjs().format('YYYY-MM-DD')
+
 const selectedEmployees = ref([])
 const activeScenario = ref(null)
 const isSubmitting = ref(false)
 
-// Directory Completion Setup Logic
+// Directory Completion Setup Logic for multiple planteles
 const checkingCoverage = ref(false)
-const directoryCoverage = ref(null)
-const showSetupModal = ref(false)
+const coverageQueue = ref([])
+const verifiedPlanteles = ref(new Set())
 
-async function checkPlantelCoverage(plantel) {
-  if (!plantel || plantel === 'N/A') {
-    directoryCoverage.value = { isComplete: true }
-    return
-  }
+const currentCoverageTask = computed(() => coverageQueue.value[0] || null)
+
+async function checkCoverageQueue(emp) {
+  const plantel = emp.plantel
+  if (!plantel || plantel === 'N/A') return
+  
+  if (verifiedPlanteles.value.has(plantel)) return
+  if (coverageQueue.value.find(c => c.plantel === plantel)) return
+
   checkingCoverage.value = true
   try {
     const res = await $fetch('/api/directory/coverage', { params: { plantel } })
-    directoryCoverage.value = res
     if (!res.isComplete) {
-      showSetupModal.value = true
+      coverageQueue.value.push({
+        plantel,
+        employeeName: emp.name,
+        ...res
+      })
+    } else {
+      verifiedPlanteles.value.add(plantel)
     }
   } catch(e) {
-    // Fail open safely so it never blocks operation completely if API breaks
-    directoryCoverage.value = { isComplete: true }
+    verifiedPlanteles.value.add(plantel)
   } finally {
     checkingCoverage.value = false
   }
 }
 
 function onSetupCompleted() {
-  showSetupModal.value = false
-  if (selectedEmployees.value.length > 0) {
-    checkPlantelCoverage(selectedEmployees.value[0]?.plantel)
+  if (currentCoverageTask.value) {
+    verifiedPlanteles.value.add(currentCoverageTask.value.plantel)
+    coverageQueue.value.shift()
   }
 }
 
 function onSetupCancelled() {
-  showSetupModal.value = false
-  if (selectedEmployees.value.length > 0) {
-    removeEmployee(selectedEmployees.value[0].id)
+  if (currentCoverageTask.value) {
+    const plantel = currentCoverageTask.value.plantel
+    coverageQueue.value.shift()
+    selectedEmployees.value = selectedEmployees.value.filter(e => e.plantel !== plantel)
+    if (selectedEmployees.value.length === 0) {
+      activeScenario.value = null
+    }
   }
 }
 
@@ -259,7 +274,7 @@ async function addEmployee(emp) {
     selectedEmployees.value.push(tempEmp)
 
     // Server-side enrichment query
-    const enriched = await $fetch('/api/employees/enrich', { query: { name: emp.name } }).catch(() => ({}))
+    const enriched = await $fetch('/api/employees/enrich', { query: { name: emp.name, id: emp.id } }).catch(() => ({}))
     
     // Update live object
     const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
@@ -270,7 +285,7 @@ async function addEmployee(emp) {
       actualEmp.picture = enriched.picture || emp.picture || null
       actualEmp._enriching = false
 
-      await checkPlantelCoverage(actualEmp.plantel)
+      await checkCoverageQueue(actualEmp)
     }
   }
 }
@@ -279,22 +294,18 @@ function removeEmployee(id) {
   selectedEmployees.value = selectedEmployees.value.filter(e => e.id !== id)
   if (selectedEmployees.value.length === 0) {
     activeScenario.value = null
-    directoryCoverage.value = null
-    showSetupModal.value = false
-  } else {
-    checkPlantelCoverage(selectedEmployees.value[0]?.plantel)
+    coverageQueue.value = []
   }
 }
 
-const getToday = () => new Date().toISOString().split('T')[0]
 const getCurrentTime = () => {
   const d = new Date()
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
 const form = reactive({
-  date: getToday(),
-  endDate: '',
+  date: todayDate,
+  endDate: todayDate,
   time: '',
   comentarios: '',
   regreso: false,
@@ -313,7 +324,7 @@ const predefinedScenarios = [
 function selectScenario(scenario) {
   activeScenario.value = scenario
   Object.assign(form, { 
-    date: getToday(), endDate: getToday(), time: '', 
+    date: todayDate, endDate: todayDate, time: '', 
     comentarios: '', regreso: false, horaRegreso: '',
     imss: '', tipoIncapacidad: 'Enfermedad en General'
   })
@@ -328,6 +339,10 @@ function isBirthday(emp) {
   const bMonth = parseInt(mm) - 1;
   const bDay = parseInt(dd);
   return today.getMonth() === bMonth && (today.getDate() === bDay || today.getDate() + 1 === bDay);
+}
+
+function hasBirthday() {
+  return selectedEmployees.value.some(emp => isBirthday(emp))
 }
 
 function triggerBirthdayQuickAction() {
@@ -361,7 +376,7 @@ async function submitPass() {
     
     activeScenario.value = null
     selectedEmployees.value = []
-    directoryCoverage.value = null
+    coverageQueue.value = []
     
     refreshNuxtData() 
   } catch(e) {

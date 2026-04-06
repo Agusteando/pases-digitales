@@ -43,11 +43,11 @@
           <div class="grid grid-cols-2 gap-5">
             <div class="space-y-2">
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Fecha Inicial</label>
-              <input type="date" v-model="form.date" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+              <input type="date" v-model="form.date" :min="todayDate" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
             </div>
             <div v-if="[3, 5].includes(form.categoryId)" class="space-y-2">
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Fecha Final</label>
-              <input type="date" v-model="form.endDate" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
+              <input type="date" v-model="form.endDate" :min="todayDate" :disabled="!isEditable" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold transition-all bg-white shadow-sm disabled:bg-slate-50 disabled:text-slate-500" />
             </div>
             <div v-if="![3].includes(form.categoryId)" class="space-y-2">
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Hora Evento</label>
@@ -127,6 +127,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'updated'])
 const { user } = useAuth()
+const todayDate = dayjs().format('YYYY-MM-DD')
 
 const isOwner = computed(() => {
   return user.value && user.value.name === props.pass.user

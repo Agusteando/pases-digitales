@@ -28,8 +28,16 @@ export default defineEventHandler(async (event) => {
     plantel, regreso, horaRegreso, imss, tipoIncapacidad 
   } = body
 
-  const mysqlDate = date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : dayjs().format('YYYY-MM-DD HH:mm:ss')
-  const mysqlEndDate = endDate ? dayjs(endDate).format('YYYY-MM-DD 23:59:59') : mysqlDate
+  const dateObj = date ? dayjs(date).startOf('day') : dayjs().startOf('day')
+  const endDateObj = endDate ? dayjs(endDate).startOf('day') : dateObj
+  const todayObj = dayjs().startOf('day')
+
+  if (dateObj.isBefore(todayObj) || endDateObj.isBefore(todayObj)) {
+    throw createError({ statusCode: 400, message: 'No se permite registrar pases con fechas en el pasado.' })
+  }
+
+  const mysqlDate = dateObj.format('YYYY-MM-DD 00:00:00')
+  const mysqlEndDate = endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
   
   const authToken = randomUUID()
   const initialStatus = 'pendiente'
