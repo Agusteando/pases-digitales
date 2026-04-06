@@ -3,7 +3,7 @@
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-white/20">
       
       <header class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white relative">
-        <h3 class="text-base font-black text-slate-900 tracking-tight">Confirmación de Responsable</h3>
+        <h3 class="text-base font-black text-slate-900 tracking-tight">Confirmación requerida</h3>
         <button v-if="!setupForm.saving" @click="$emit('cancel')" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
           <X class="w-4 h-4" />
         </button>
@@ -17,36 +17,29 @@
 
         <div v-else class="animate-in fade-in duration-300">
           <!-- State 1: Select Person -->
-          <div v-if="setupForm.internalStep === 'SELECT_PERSON'">
-            <p class="text-sm font-medium text-slate-600 mb-6 leading-relaxed">
-              Para continuar con el pase de <strong class="text-slate-900 font-black">{{ employeeFirstName }}</strong>, el sistema necesita saber quién es el <strong class="text-slate-900 font-black">{{ coverageData.role }}</strong> actual de <strong class="text-slate-900 font-black">{{ plantel }}</strong>.
+          <div v-if="setupForm.internalStep === 'SELECT_PERSON'" class="space-y-4">
+            <p class="text-sm font-medium text-slate-600 mb-2 leading-relaxed">
+              Para continuar con el pase de <strong class="text-slate-900 font-black">{{ employeeFirstName }}</strong>, selecciona al <strong class="text-slate-900 font-black">{{ coverageData.role }}</strong> de <strong class="text-slate-900 font-black">{{ plantel }}</strong>.
             </p>
-            <div class="space-y-4">
-              <label class="block text-sm font-bold text-slate-700">Busca a la persona en el directorio institucional.</label>
-              <div class="relative">
-                <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Search class="w-4 h-4" /></div>
-                <input v-model="setupForm.gwQuery" @input="searchSetupGw" placeholder="Nombre o correo institucional..." class="w-full pl-10 pr-4 py-3.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-slate-50 transition-all shadow-sm" />
-                
-                <div v-if="setupForm.gwResults.length > 0" class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-xl rounded-xl z-30 max-h-48 overflow-y-auto custom-scrollbar py-2">
-                  <button type="button" v-for="res in setupForm.gwResults" :key="res.email" @click="selectSetupGw(res)" class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-3 transition-colors last:border-0">
-                    <img v-if="res.photoUrl" :src="res.photoUrl" class="w-8 h-8 rounded-full object-cover border border-slate-200" />
-                    <div v-else class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex justify-center items-center text-[10px] font-black">{{ res.name.slice(0,2).toUpperCase() }}</div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-black text-slate-800 truncate">{{ res.name }}</p>
-                      <p class="text-[10px] font-bold text-slate-500 truncate">{{ res.email }}</p>
-                    </div>
-                  </button>
-                </div>
+            <div class="relative">
+              <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Search class="w-4 h-4" /></div>
+              <input v-model="setupForm.gwQuery" @input="searchSetupGw" placeholder="Buscar por nombre o correo..." class="w-full pl-10 pr-4 py-3.5 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold bg-slate-50 transition-all shadow-sm" />
+              
+              <div v-if="setupForm.gwResults.length > 0" class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-xl rounded-xl z-30 max-h-48 overflow-y-auto custom-scrollbar py-2">
+                <button type="button" v-for="res in setupForm.gwResults" :key="res.email" @click="selectSetupGw(res)" class="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-50 flex items-center gap-3 transition-colors last:border-0">
+                  <img v-if="res.photoUrl" :src="res.photoUrl" class="w-8 h-8 rounded-full object-cover border border-slate-200" />
+                  <div v-else class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex justify-center items-center text-[10px] font-black">{{ res.name.slice(0,2).toUpperCase() }}</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-black text-slate-800 truncate">{{ res.name }}</p>
+                    <p class="text-[10px] font-bold text-slate-500 truncate">{{ res.email }}</p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
 
           <!-- State 2: Enter Phone -->
           <div v-else-if="setupForm.internalStep === 'ENTER_PHONE'" class="space-y-5 animate-in slide-in-from-right-4 fade-in duration-300">
-            <p class="text-sm font-medium text-slate-600 mb-2 leading-relaxed">
-              Para que <strong class="text-slate-900 font-black">{{ displayContext.name }}</strong> ({{ coverageData.role }}) pueda autorizar pases remotamente, necesitamos su celular.
-            </p>
-
             <div class="flex items-center gap-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
               <img v-if="displayContext.photoUrl" :src="displayContext.photoUrl" class="w-10 h-10 rounded-full border border-slate-200 object-cover shadow-sm bg-white" />
               <div v-else class="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-xs font-black text-slate-500">{{ displayContext.name.slice(0,2).toUpperCase() }}</div>
@@ -57,7 +50,7 @@
             </div>
 
             <div class="space-y-3">
-              <label class="block text-sm font-bold text-slate-700">Número de WhatsApp a 10 dígitos.</label>
+              <label class="block text-sm font-bold text-slate-700">Ahora agrega su número de contacto.</label>
               <div class="flex items-center shadow-sm rounded-xl">
                 <div class="bg-slate-50 border border-slate-200 border-r-0 px-4 py-3.5 rounded-l-xl text-slate-500 font-black text-sm">+52 1</div>
                 <input v-model="setupForm.phone" @input="onSetupPhoneInput" type="tel" placeholder="10 dígitos" class="flex-1 px-4 py-3.5 rounded-r-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-black bg-white transition-all" />
