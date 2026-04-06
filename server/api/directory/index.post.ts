@@ -17,8 +17,14 @@ export default defineEventHandler(async (event) => {
       [plantel, email, role]
     )
     return { success: true }
-  } catch (error) {
-    console.error('Directory insert error:', error)
-    throw createError({ statusCode: 500, message: 'No se pudo registrar el contacto.' })
+  } catch (error: any) {
+    console.error('Directory insert error:', error.message || error)
+    
+    // Provide a more descriptive error if a network drop happens despite keep-alive
+    if (error.code === 'ECONNRESET' || error.code === 'PROTOCOL_CONNECTION_LOST') {
+      throw createError({ statusCode: 503, message: 'Conexión a la base de datos interrumpida. Por favor, reintenta.' })
+    }
+    
+    throw createError({ statusCode: 500, message: 'No se pudo registrar el contacto en la base de datos.' })
   }
 })
