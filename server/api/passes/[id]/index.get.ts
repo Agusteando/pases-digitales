@@ -4,7 +4,11 @@ import { defineEventHandler, getRouterParam, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
-  if (!id) throw createError({ statusCode: 400, message: 'ID no proporcionado.' })
+  
+  // Strict check to completely reject ghost requests created by component teardown logic in frontend
+  if (!id || id === 'undefined' || id === 'null') {
+    throw createError({ statusCode: 400, message: 'ID de registro inválido o no proporcionado.' })
+  }
 
   const db = useDB()
 
@@ -24,6 +28,6 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error('Fetch pass error:', error)
     if (error.statusCode) throw error
-    throw createError({ statusCode: 500, message: 'Fallo al recuperar la información del pase.' })
+    throw createError({ statusCode: 500, message: 'Fallo al recuperar la información del registro.' })
   }
 })

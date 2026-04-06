@@ -45,7 +45,7 @@
               </div>
               <p class="text-xl font-black text-slate-700">{{ getCategoryName(pass.category_id) }}</p>
               <p class="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest flex items-center gap-2">
-                <Clock class="w-3.5 h-3.5" /> Generado el {{ formatDateLong(pass.created_at) }}
+                <Clock class="w-3.5 h-3.5" /> Creado el {{ formatDateLong(pass.created_at) }}
               </p>
             </div>
           </div>
@@ -57,19 +57,18 @@
         <!-- Left Column: Details -->
         <div class="lg:col-span-2 space-y-8">
           
-          <!-- Operative Data -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <User class="w-4 h-4 text-brand-500" /> Identidad del Colaborador
+              <User class="w-4 h-4 text-brand-500" /> Colaborador
             </h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nombre Completo</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nombre</span>
                 <span class="text-lg font-black text-slate-900 leading-tight">{{ pass.employee_name }}</span>
               </div>
               <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100" v-if="pass.plantel">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Plantel Asignado</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Plantel</span>
                 <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-slate-800 text-sm font-black rounded-xl border border-slate-200/80 shadow-sm">
                   <Building2 class="w-4 h-4 text-brand-500" />
                   {{ pass.plantel }}
@@ -78,45 +77,43 @@
             </div>
           </div>
 
-          <!-- Event Details -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Calendar class="w-4 h-4 text-brand-500" /> Parámetros del Evento
+              <Calendar class="w-4 h-4 text-brand-500" /> Detalles
             </h3>
             
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               <div class="border-l-2 border-brand-200 pl-4">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Fecha Inicial</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Desde</span>
                 <span class="text-base font-black text-slate-800">{{ formatDateOnly(pass.date) }}</span>
               </div>
               <div class="border-l-2 border-brand-200 pl-4" v-if="[3, 5].includes(pass.category_id)">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Fecha Final</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hasta</span>
                 <span class="text-base font-black text-slate-800">{{ pass.fecha_fin ? formatDateOnly(pass.fecha_fin) : 'N/A' }}</span>
               </div>
               <div class="border-l-2 border-brand-200 pl-4" v-if="![3].includes(pass.category_id)">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hora Evento</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hora</span>
                 <span class="text-base font-black text-slate-800 font-mono">{{ formatTime(pass.time) }}</span>
               </div>
               <div class="border-l-2 border-indigo-200 pl-4 bg-indigo-50/30 rounded-r-xl py-2" v-if="pass.regreso">
-                <span class="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Retorno Programado</span>
+                <span class="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Hora de regreso</span>
                 <span class="text-base font-black text-indigo-700 font-mono">{{ formatTime(pass.hora_regreso) }}</span>
               </div>
             </div>
 
-            <!-- Medical Data -->
             <div v-if="pass.category_id === 5" class="mb-8 p-6 bg-teal-50 rounded-2xl border border-teal-100 grid grid-cols-2 gap-6 shadow-sm">
               <div>
                 <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Folio IMSS</span>
                 <span class="text-base font-black text-teal-900 font-mono">{{ pass.IMSS || 'No Registrado' }}</span>
               </div>
               <div>
-                <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Clasificación</span>
+                <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Tipo de incapacidad</span>
                 <span class="text-base font-black text-teal-900">{{ pass.tipo_incapacidad || 'N/A' }}</span>
               </div>
             </div>
 
             <div v-if="pass.comentarios" class="bg-slate-50/80 p-6 rounded-2xl border border-slate-200/60">
-              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Justificación Redactada</span>
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Justificación</span>
               <p class="text-sm font-medium text-slate-800 leading-relaxed italic">
                 "{{ pass.comentarios }}"
               </p>
@@ -127,18 +124,18 @@
         <!-- Right Column: Status & System -->
         <div class="space-y-8">
           
-          <!-- Acciones Operativas -->
+          <!-- Actions -->
           <div v-if="pass && canManage" class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <Zap class="w-4 h-4 text-brand-500" /> Acciones Operativas
+              <Zap class="w-4 h-4 text-brand-500" /> Acciones
             </h3>
 
             <div v-if="pass.status !== 'pendiente'" class="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-4 flex items-start gap-3">
                <Lock class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                <div>
-                 <p class="text-sm font-black text-slate-700">Folio Inalterable</p>
+                 <p class="text-sm font-black text-slate-700">Acciones no disponibles</p>
                  <p class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
-                   El registro ya ha sido resuelto ({{pass.status}}). Por reglas de auditoría y seguridad, no es posible modificar, anular ni reenviar notificaciones en este estado.
+                   El registro ya ha sido resuelto ({{pass.status}}). Por reglas de seguridad, no se puede modificar, anular ni reenviar.
                  </p>
                </div>
             </div>
@@ -147,27 +144,27 @@
               <button @click="handleResend" :disabled="pass.status !== 'pendiente' || isResending" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:bg-brand-600 disabled:shadow-none outline-none">
                 <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
                 <Send v-else class="w-4 h-4" />
-                <span>Reenviar Notificación</span>
+                <span>Reenviar notificación</span>
               </button>
               
               <button @click="showEditModal = true" :disabled="pass.status !== 'pendiente' || isExpired" class="w-full py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white outline-none">
                 <Edit2 class="w-4 h-4 text-slate-400" />
-                <span>Editar Datos</span>
+                <span>Editar</span>
               </button>
-              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">Edición bloqueada: Han transcurrido más de 48 horas desde la fecha del evento.</p>
+              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">Edición bloqueada: Han pasado más de 48 horas desde el evento.</p>
 
               <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200 outline-none">
                 <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
                 <Trash2 v-else class="w-4 h-4 text-red-400" />
-                <span>Anular Folio</span>
+                <span>Anular</span>
               </button>
             </div>
           </div>
 
-          <!-- Estado y Trazabilidad -->
+          <!-- Status -->
           <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <ShieldCheck class="w-4 h-4 text-brand-500" /> Estado del Folio
+              <ShieldCheck class="w-4 h-4 text-brand-500" /> Estado
             </h3>
 
             <div class="relative pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
@@ -177,7 +174,7 @@
                   <div class="w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Registro Creado</p>
+                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Creado</p>
                   <p class="text-xs font-bold text-slate-500">Por: <span class="text-slate-700">{{ pass.user }}</span></p>
                   <p class="text-[10px] font-bold text-slate-400 mt-2">{{ formatDateLong(pass.created_at) }}</p>
                 </div>
@@ -192,7 +189,7 @@
                 <div class="p-4 rounded-2xl border" :class="{'bg-amber-50/50 border-amber-100': pass.status === 'pendiente', 'bg-emerald-50/50 border-emerald-100': pass.status === 'autorizado', 'bg-red-50/50 border-red-100': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                   <p class="text-xs font-black uppercase tracking-widest mb-1"
                      :class="{'text-amber-700': pass.status === 'pendiente', 'text-emerald-700': pass.status === 'autorizado', 'text-red-700': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                    {{ pass.status === 'pendiente' ? 'Pendiente de Autorización' : `Estado: ${pass.status}` }}
+                    {{ pass.status === 'pendiente' ? 'Pendiente' : `Estado: ${pass.status}` }}
                   </p>
                   <p v-if="pass.authorized_by" class="text-xs font-bold text-slate-600 mt-1">Por: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
                   <p v-if="pass.authorized_at" class="text-[10px] font-bold text-slate-500 mt-2 opacity-80">{{ formatDateLong(pass.authorized_at) }}</p>
@@ -204,11 +201,11 @@
           <!-- Notification Delivery Log -->
           <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Bell class="w-4 h-4 text-brand-500" /> Envíos de Notificación
+              <Bell class="w-4 h-4 text-brand-500" /> Notificaciones
             </h3>
 
             <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-              <p class="text-sm font-bold text-slate-400">Sin registros de distribución.</p>
+              <p class="text-sm font-bold text-slate-400">No hay registros de envío.</p>
             </div>
             <div v-else class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
               <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 rounded-2xl border flex items-start justify-between gap-4 transition-colors"
@@ -258,11 +255,14 @@ import 'dayjs/locale/es'
 dayjs.locale('es')
 
 const route = useRoute()
-const passId = computed(() => route.params.id)
+
+// Statically capture the route ID during setup instead of tracking it reactively.
+// This permanently fixes the hidden 'undefined' fetch error that occurs when 
+// the user navigates away and route.params.id becomes undefined mid-unmount.
+const passId = route.params.id
+const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
+
 const { user } = useAuth()
-
-const { data: pass, pending, error, refresh } = useFetch(() => `/api/passes/${passId.value}`)
-
 const showEditModal = ref(false)
 const isResending = ref(false)
 const isCancelling = ref(false)
@@ -280,7 +280,7 @@ const handleResend = async () => {
   if (isResending.value || !pass.value) return
   isResending.value = true
   try {
-    await $fetch(`/api/passes/${passId.value}/notify`, { method: 'POST' })
+    await $fetch(`/api/passes/${passId}/notify`, { method: 'POST' })
     refresh()
   } catch (err) {
     console.error('Resend error', err)
@@ -296,7 +296,7 @@ const handleCancel = async () => {
   
   isCancelling.value = true
   try {
-    await $fetch(`/api/passes/${passId.value}/action`, { 
+    await $fetch(`/api/passes/${passId}/action`, { 
       method: 'POST', 
       body: { action: 'cancel' } 
     })

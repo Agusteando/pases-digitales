@@ -52,7 +52,7 @@
               <th class="px-6 py-5">Fecha</th>
               <th class="px-6 py-5">Plantel</th>
               <th class="px-6 py-5">Estado</th>
-              <th class="px-6 py-5 text-right rounded-tr-3xl">Acciones Rápidas</th>
+              <th class="px-6 py-5 text-right rounded-tr-3xl">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
