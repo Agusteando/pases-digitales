@@ -8,12 +8,12 @@ export function normalizeName(name: any) {
 }
 
 /**
- * Ensures strict removal of any indexed numeric prefixes from plantel names
- * Safely converts `raw` to string in case JSON APIs return numbers (e.g. `plantelId: 4`)
+ * Assumes the authoritative API source provides clean names.
+ * Ensures the value is trimmed and safe for database entry.
  */
 export function cleanPlantelName(raw: any): string | null {
   if (raw === null || raw === undefined || raw === '') return null;
-  const cleaned = String(raw).replace(/^\d+\s*-\s*/, '').trim();
+  const cleaned = String(raw).trim();
   return cleaned === '' ? null : cleaned;
 }
 
@@ -34,7 +34,7 @@ function parseSoapXML(xmlString: string) {
       name: getTag('NombreCompleto'),
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
-      plantel: cleanPlantelName(getTag('ClaveArea')),
+      plantel: getTag('ClaveArea'), // Legacy SOAP value, will be overridden by Signia
       email: getTag('Correo')
     })
   }
@@ -78,26 +78,52 @@ export async function getSigniaData() {
 export async function getFastSoapEmployees() {
   if (cache.has('soap_list')) return cache.get('soap_list')!
 
-  let employees = await fetchSoapEmployees()
+  const soapData = await fetchSoapEmployees()
+  const signiaData = await getSigniaData()
+
+  // Build a fast lookup map from the authoritative Signia API
+  const signiaMap = new Map()
+  for (const s of signiaData) {
+    if (s.curp && s.curp.length > 10) signiaMap.set(s.curp.toLowerCase(), s)
+    else if (s.rfc && s.rfc.length > 8) signiaMap.set(s.rfc.toLowerCase(), s)
+    else {
+       const norm = normalizeName(s.name || `${s.nombres || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`)
+       signiaMap.set(norm, s)
+    }
+  }
+
+  // Cross-reference fast SOAP typeahead results with real PlantelNames to completely kill indexed regressions
+  let finalData = (soapData || []).map(emp => {
+     const normName = normalizeName(emp.name);
+     const match = (emp.curp && signiaMap.get(emp.curp.toLowerCase())) ||
+                   (emp.rfc && signiaMap.get(emp.rfc.toLowerCase())) ||
+                   signiaMap.get(normName);
+
+     return {
+        ...emp,
+        plantel: match?.plantelName || null, // Authoritative clean name
+        puesto: match?.puesto || emp.puesto,
+        email: match?.email || emp.email
+     }
+  })
 
   // Safe fallback if the fast SOAP API breaks completely
-  if (!employees || employees.length === 0) {
-    const signiaData = await getSigniaData()
-    employees = signiaData.filter(e => e.isActive).map(e => ({
+  if (!soapData || soapData.length === 0) {
+    finalData = signiaData.filter(e => e.isActive !== false).map(e => ({
       id: e.id,
       name: e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`.trim(),
       rfc: e.rfc,
       curp: e.curp,
-      plantel: cleanPlantelName(e.plantelId),
+      plantel: cleanPlantelName(e.plantelName),
       email: e.email,
       puesto: e.puesto || null
     }))
   }
 
-  if (employees && employees.length > 0) {
-    cache.set('soap_list', employees)
+  if (finalData && finalData.length > 0) {
+    cache.set('soap_list', finalData)
   }
-  return employees || []
+  return finalData || []
 }
 
 export async function getSigniaEnrichment(name: string, rfc?: string, curp?: string) {
@@ -110,7 +136,6 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
 
   let match = null;
 
-  // 1. Primary robust match: CURP or RFC if available
   if (normCurp || normRfc) {
     match = signia.find(e => 
       (normCurp && e.curp && String(e.curp).toLowerCase() === normCurp) || 
@@ -118,7 +143,6 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     )
   }
 
-  // 2. Fallback: strict name matching
   if (!match) {
     match = signia.find(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
@@ -126,7 +150,6 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     })
   }
 
-  // Map and return standard payload
   if (match) {
     let pictureUrl = match.picture
     if (pictureUrl && !pictureUrl.startsWith('http')) {
@@ -135,7 +158,7 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     return { 
       ...match, 
       picture: pictureUrl, 
-      plantelId: cleanPlantelName(match.plantelId) 
+      plantelId: cleanPlantelName(match.plantelName) 
     }
   }
 

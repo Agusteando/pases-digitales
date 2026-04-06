@@ -180,24 +180,27 @@
           <!-- Notification Delivery Log -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Bell class="w-4 h-4 text-brand-500" /> Logs de Enrutamiento
+              <Bell class="w-4 h-4 text-brand-500" /> Entrega de Notificaciones
             </h3>
 
-            <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
-              <p class="text-xs font-bold text-slate-400">Sin historial de distribución registrado.</p>
+            <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+              <p class="text-sm font-bold text-slate-400">Sin registros de distribución.</p>
             </div>
             <div v-else class="space-y-4">
               <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start justify-between gap-4 transition-colors hover:bg-white hover:shadow-sm">
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-600 truncate font-mono">{{ log.chat_id }}</span>
+                <div class="flex items-center gap-3 w-full min-w-0">
+                  <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm" :class="getChannelColor(log.error_text)">
+                    <component :is="getChannelIcon(log.error_text)" class="w-4 h-4" />
                   </div>
-                  <p v-if="log.error_text" class="text-[10px] font-bold text-red-500 truncate" :title="log.error_text">{{ log.error_text }}</p>
-                  <p class="text-[9px] font-bold text-slate-400 mt-2">{{ formatDateLong(log.created_at) }}</p>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-black text-slate-800 tracking-tight truncate">{{ extractTargetName(log.error_text) }}</p>
+                    <p class="text-[10px] font-bold text-slate-500 mt-0.5 truncate">{{ getDeliveryDetail(log) }}</p>
+                    <p class="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{{ formatDateLong(log.created_at) }}</p>
+                  </div>
                 </div>
-                <span class="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border shadow-sm"
+                <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border shadow-sm shrink-0"
                       :class="log.status === 'sent' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'">
-                  {{ log.status === 'sent' ? 'Ok' : 'Fail' }}
+                  {{ log.status === 'sent' ? 'Entregado' : 'Fallido' }}
                 </span>
               </div>
             </div>
@@ -214,7 +217,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, Share2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, FileText, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, Share2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, Info, MessageCircle, Mail, Send as SendIcon, LogIn, LogOut, UserX, Clock, Stethoscope } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -264,6 +267,44 @@ const getCategoryName = (id) => {
 const formatDateOnly = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMMM YYYY') : 'N/A'
 const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY, HH:mm') : 'N/A'
 const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : 'N/A'
+
+// Explicit Notification Parsing
+const extractTargetName = (text) => {
+  if (!text) return 'Desconocido'
+  const match = text.match(/Destinatario:\s*([^|]+)/)
+  return match ? match[1].trim() : 'Sistema'
+}
+
+const getChannelColor = (text) => {
+  if (!text) return 'bg-slate-100 text-slate-500 border-slate-200'
+  if (text.includes('WhatsApp')) return 'bg-emerald-100 text-emerald-600 border-emerald-200'
+  if (text.includes('Email')) return 'bg-brand-100 text-brand-600 border-brand-200'
+  if (text.includes('Telegram')) return 'bg-sky-100 text-sky-600 border-sky-200'
+  return 'bg-slate-100 text-slate-500 border-slate-200'
+}
+
+const getChannelIcon = (text) => {
+  if (!text) return Bell
+  if (text.includes('WhatsApp')) return MessageCircle
+  if (text.includes('Email')) return Mail
+  if (text.includes('Telegram')) return SendIcon
+  return Bell
+}
+
+const getDeliveryDetail = (log) => {
+  const text = log.error_text || ''
+  const isOk = log.status === 'sent'
+  
+  let channelStr = 'Canal Desconocido'
+  if (text.includes('WhatsApp')) channelStr = 'WhatsApp'
+  else if (text.includes('Email')) channelStr = 'Correo Electrónico'
+  else if (text.includes('Telegram')) channelStr = 'Telegram'
+
+  if (isOk) return `Entregado vía ${channelStr} a ${log.chat_id}`
+  
+  const errMatch = text.split('| Error:')[1]
+  return `Fallo en ${channelStr}: ${errMatch ? errMatch.trim() : 'Destino inalcanzable'}`
+}
 
 const refreshPass = () => {
   refresh()

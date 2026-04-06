@@ -5,6 +5,9 @@
       <header class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white relative">
         <h3 class="text-base font-black text-slate-900 tracking-tight">Confirmación requerida</h3>
         <button v-if="!setupForm.saving" @click="$emit('cancel')" class="text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
+
+
+
           <X class="w-4 h-4" />
         </button>
       </header>

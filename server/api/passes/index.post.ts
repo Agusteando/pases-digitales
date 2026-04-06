@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
+import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import jwt from 'jsonwebtoken'
 import { getCookie, createError, defineEventHandler, readBody } from '#imports'
 import dayjs from 'dayjs'
@@ -56,6 +57,9 @@ export default defineEventHandler(async (event) => {
       imss || null,
       categoryId === 5 ? tipoIncapacidad : null
     ])
+
+    // Immediately dispatch notifications asynchronously so it doesn't block the UI
+    dispatchNotificationsForPass(result.insertId).catch(console.error)
 
     return { success: true, id: result.insertId, auth_token: authToken }
   } catch (error) {

@@ -1,23 +1,27 @@
-import { getFastSoapEmployees } from '~/server/utils/employee-engine'
+import { getSigniaData } from '~/server/utils/employee-engine'
 import { defineEventHandler } from '#imports'
 
 export default defineEventHandler(async () => {
-  const data = await getFastSoapEmployees()
+  // Use authoritative options API to avoid rebuilding the catalog manually
+  try {
+    const options: any = await $fetch('https://signia.casitaapps.com/api/options', { timeout: 5000 })
+    if (options && Array.isArray(options.planteles)) {
+      return options.planteles.map((p: any) => p.name || p.label || p).filter(Boolean).sort()
+    }
+  } catch (e) {
+    console.warn('Options API fallback engaged for planteles')
+  }
+
+  // Graceful fallback: extract from authoritative employees list
+  const data = await getSigniaData()
   const planteles = new Set<string>()
   
   data.forEach(e => {
-    if (e.plantel && typeof e.plantel === 'string' && e.plantel.trim() !== '') {
-      planteles.add(e.plantel.trim())
+    if (e.plantelName && typeof e.plantelName === 'string') {
+      planteles.add(e.plantelName.trim())
     }
   })
   
   const sortedPlanteles = Array.from(planteles).sort()
-  
-  if (sortedPlanteles.length === 0) {
-    return [
-      'CM', 'CO', 'CT', 'DCA', 'DM', 'ISSSTE MET', 'ISSSTE TOL', 'KM', 'KT', 'PM', 'PREES MET', 'PREES TOL', 'PT', 'SM', 'ST'
-    ].sort()
-  }
-  
   return sortedPlanteles
 })
