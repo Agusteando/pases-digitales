@@ -13,7 +13,7 @@
         
         <!-- Search Section -->
         <div class="mb-10">
-          <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Localizar Colaborador</label>
+          <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Colaborador</label>
           <EmployeeSearch @select="addEmployee" />
           
           <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
@@ -34,43 +34,40 @@
               </div>
               <div v-else class="flex flex-col gap-3 w-full mt-1">
                 <div class="flex flex-wrap items-center gap-2">
-                  <!-- Role -->
-                  <span v-if="emp.puesto" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
-                    <Briefcase class="w-3.5 h-3.5 text-brand-400" />
+                  <!-- Puesto -->
+                  <span v-if="emp.puesto" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60">
                     {{ emp.puesto }}
                   </span>
 
-                  <!-- Origin Plantel -->
-                  <span v-if="emp.originPlantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5 transition-opacity duration-300" :class="{'opacity-50': emp.operationalPlantel && emp.operationalPlantel !== emp.originPlantel}">
+                  <!-- Plantel Base (SOAP) -->
+                  <span v-if="emp.plantelBase" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5" :class="{'opacity-60': emp.plantelActual && emp.plantelActual !== emp.plantelBase}">
                     <Building2 class="w-3.5 h-3.5 text-slate-400" />
-                    {{ emp.originPlantel }}
+                    Base: {{ emp.plantelBase }}
                   </span>
 
-                  <!-- Destination Transition -->
-                  <template v-if="emp.operationalPlantel && emp.operationalPlantel !== emp.originPlantel">
-                    <ArrowRight class="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                    <span class="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-black rounded-lg border border-purple-200/80 shadow-sm flex items-center gap-1.5 animate-in slide-in-from-left-2 duration-300">
-                      <MapPin class="w-3.5 h-3.5 text-purple-500" />
-                      Destino: {{ emp.operationalPlantel }}
-                      <button type="button" @click.stop="resetDestino(emp)" class="ml-1 hover:text-purple-900 bg-purple-100/50 p-0.5 rounded-md transition-colors outline-none"><XIcon class="w-3 h-3"/></button>
+                  <!-- Plantel Actual (Routing override) -->
+                  <template v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase">
+                    <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-200/80 shadow-sm flex items-center gap-1.5 animate-in fade-in duration-300">
+                      <MapPin class="w-3.5 h-3.5 text-blue-500" />
+                      Actual: {{ emp.plantelActual }}
+                      <button type="button" @click.stop="resetPlantelActual(emp)" class="ml-1 hover:text-blue-900 bg-blue-100/50 p-0.5 rounded-md transition-colors outline-none"><XIcon class="w-3 h-3"/></button>
                     </span>
                   </template>
                   
-                  <!-- Trigger for movement -->
-                  <button v-else-if="!emp._selectingDestino" type="button" @click.stop="emp._selectingDestino = true" class="text-[10px] font-black text-slate-400 hover:text-purple-600 px-2 py-1 rounded-lg hover:bg-purple-50 transition-colors flex items-center gap-1 border border-transparent hover:border-purple-200 outline-none">
-                    <MapPin class="w-3 h-3" /> Moverse
+                  <!-- Trigger to change Plantel Actual -->
+                  <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-bold text-slate-400 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1 border border-transparent hover:border-blue-200 outline-none">
+                    <MapPin class="w-3 h-3" /> Cambiar actual
                   </button>
                 </div>
 
-                <!-- Inline Selector for Destination Plantel -->
-                <div v-if="emp._selectingDestino" class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-end gap-3 animate-in fade-in slide-in-from-top-2 duration-200 shadow-inner">
+                <!-- Inline Selector for Plantel Actual -->
+                <div v-if="emp._editingActual" class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
                    <div class="flex-1">
-                      <label class="text-[10px] uppercase font-black text-slate-500 tracking-widest mb-2 block flex items-center gap-1.5"><MapPin class="w-3 h-3 text-purple-500"/> Base Operativa Destino</label>
-                      <select v-model="emp.operationalPlantel" @change="onDestinoSelected(emp)" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-purple-100 focus:border-purple-500 outline-none shadow-sm cursor-pointer transition-all">
+                      <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none shadow-sm cursor-pointer transition-all">
                          <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
                       </select>
                    </div>
-                   <button type="button" @click="emp._selectingDestino = false" class="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors border border-transparent outline-none">
+                   <button type="button" @click="emp._editingActual = false" class="p-2 text-slate-400 hover:text-slate-600 bg-slate-200/50 hover:bg-slate-200 rounded-lg transition-colors border border-transparent outline-none">
                       <XIcon class="w-4 h-4" />
                    </button>
                 </div>
@@ -82,7 +79,7 @@
         <!-- Directory Coverage Loading State -->
         <div v-if="checkingCoverage" class="mb-10 py-10 flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-slate-100 animate-pulse">
            <Loader2 class="w-8 h-8 animate-spin text-brand-400 mb-3" />
-           <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Verificando estado operativo...</p>
+           <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
         </div>
         
         <template v-else-if="!currentCoverageTask && selectedEmployees.length > 0">
@@ -113,14 +110,14 @@
                 </div>
               </button>
 
-              <!-- Moverse de Plantel Quick Action -->
-              <button @click="triggerMoverseQuickAction" type="button" class="bg-white border border-slate-200 hover:border-purple-300 hover:bg-purple-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group" :class="hasBirthday() ? 'sm:col-span-2' : ''">
-                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
-                  <ArrowRightLeft class="w-5 h-5" />
+              <!-- Ir a otro plantel Quick Action -->
+              <button @click="triggerIrAOtroPlantel" type="button" class="bg-white border border-slate-200 hover:border-brand-300 hover:bg-brand-50/50 rounded-2xl p-4 text-left transition-all shadow-sm hover:shadow-md outline-none flex items-center gap-4 group" :class="hasBirthday() ? 'sm:col-span-2' : ''">
+                <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                  <MapPin class="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 class="text-sm font-black text-slate-800">Moverse de Plantel</h4>
-                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Asignar nueva base operativa</p>
+                  <h4 class="text-sm font-black text-slate-800">Ir a otro plantel</h4>
+                  <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Registrar salida y destino</p>
                 </div>
               </button>
             </div>
@@ -128,7 +125,7 @@
 
           <!-- Standard Scenarios Section -->
           <div class="mb-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Catálogo Estándar</label>
+            <label class="block text-[11px] font-black text-slate-400 mb-3 uppercase tracking-widest">Tipo de Pase</label>
             <div class="grid grid-cols-2 gap-4">
               <ScenarioCard 
                 v-for="scenario in predefinedScenarios" 
@@ -147,7 +144,7 @@
             
             <h3 class="font-black text-slate-900 text-lg mb-4 flex items-center gap-2">
               <PenTool class="w-5 h-5 text-brand-500" />
-              Detalles Operativos
+              Detalles del Pase
             </h3>
 
             <div class="grid grid-cols-2 gap-5">
@@ -191,6 +188,26 @@
               </div>
             </div>
 
+            <!-- Destino Option (Appended to comments) -->
+            <div class="space-y-3 pt-2">
+              <div v-if="!showDestino" class="flex">
+                <button type="button" @click="showDestino = true" class="text-xs font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">
+                  <Plus class="w-3.5 h-3.5" /> Agregar plantel destino
+                </button>
+              </div>
+              <div v-else class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 relative animate-in fade-in zoom-in-95 duration-200">
+                <button type="button" @click="showDestino = false; form.destino = ''" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600">
+                   <XIcon class="w-4 h-4" />
+                </button>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Plantel Destino</label>
+                <select v-model="form.destino" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 bg-white shadow-sm">
+                  <option value="">Selecciona un plantel...</option>
+                  <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+                </select>
+                <p v-if="form.destino" class="text-[10px] text-slate-500 font-medium mt-2">Este dato se documentará automáticamente en la justificación.</p>
+              </div>
+            </div>
+
             <div class="space-y-2">
               <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Justificación u Observaciones</label>
               <textarea v-model="form.comentarios" rows="3" placeholder="Redacta el motivo de forma clara..." required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium text-slate-900 resize-none transition-all bg-slate-50/50"></textarea>
@@ -213,7 +230,7 @@
       <div class="max-w-3xl mx-auto flex flex-col gap-8">
         <template v-if="selectedEmployees.length > 0">
           <div class="flex items-center justify-between pb-4 border-b border-slate-200/60">
-            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Expediente Operativo</h2>
+            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Expediente</h2>
           </div>
           <EmployeeContextPanel v-for="emp in selectedEmployees" :key="emp.id" :employee="emp" class="animate-in fade-in slide-in-from-right-8 duration-500" />
         </template>
@@ -239,7 +256,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import dayjs from 'dayjs'
-import { Loader2, X as XIcon, Cake, ArrowRight, LogOut, PenTool, Send, Building2, Briefcase, MapPin, ArrowRightLeft } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, LogOut, PenTool, Send, Building2, Briefcase, MapPin, Plus } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -253,6 +270,7 @@ const todayDate = dayjs().format('YYYY-MM-DD')
 const selectedEmployees = ref([])
 const activeScenario = ref(null)
 const isSubmitting = ref(false)
+const showDestino = ref(false)
 
 // Directory Completion Setup Logic for multiple planteles
 const checkingCoverage = ref(false)
@@ -262,7 +280,7 @@ const verifiedPlanteles = ref(new Set())
 const currentCoverageTask = computed(() => coverageQueue.value[0] || null)
 
 async function checkCoverageQueue(emp) {
-  const plantel = emp.operationalPlantel || emp.originPlantel
+  const plantel = emp.plantelActual || emp.plantelBase
   if (!plantel || plantel === 'N/A') return
   
   if (verifiedPlanteles.value.has(plantel)) return
@@ -298,13 +316,14 @@ function onSetupCancelled() {
   if (currentCoverageTask.value) {
     const plantel = currentCoverageTask.value.plantel
     coverageQueue.value.shift()
-    // Find all employees that were pointing to this cancelled destination and reset them or remove them
+    
+    // Graceful rollback to base if the rejected plantel was the actual
     selectedEmployees.value = selectedEmployees.value.filter(e => {
-       if (e.operationalPlantel === plantel && e.originPlantel !== plantel) {
-          e.operationalPlantel = e.originPlantel; // Graceful rollback to origin
+       if (e.plantelActual === plantel && e.plantelBase !== plantel) {
+          e.plantelActual = e.plantelBase; 
           return true;
        }
-       return e.operationalPlantel !== plantel;
+       return e.plantelActual !== plantel;
     })
     
     if (selectedEmployees.value.length === 0) {
@@ -316,7 +335,7 @@ function onSetupCancelled() {
 async function addEmployee(emp) {
   if (!selectedEmployees.value.find(e => e.id === emp.id)) {
     // Optimistic UI insert with enrichment skeleton
-    const tempEmp = { ...emp, _enriching: true, _selectingDestino: false }
+    const tempEmp = { ...emp, _enriching: true, _editingActual: false }
     selectedEmployees.value.push(tempEmp)
 
     // Server-side enrichment query
@@ -326,11 +345,11 @@ async function addEmployee(emp) {
     const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
     if (actualEmp) {
       actualEmp.curp = enriched.curp || emp.curp || null
-      actualEmp.originPlantel = enriched.plantel || emp.plantel || null
-      actualEmp.operationalPlantel = actualEmp.originPlantel
+      actualEmp.plantelBase = enriched.plantel || emp.plantel || null
+      actualEmp.plantelActual = actualEmp.plantelBase
       actualEmp.puesto = enriched.puesto || emp.puesto || null
       actualEmp.picture = enriched.picture || emp.picture || null
-      actualEmp._selectingDestino = false
+      actualEmp._editingActual = false
       actualEmp._enriching = false
 
       await checkCoverageQueue(actualEmp)
@@ -346,21 +365,15 @@ function removeEmployee(id) {
   }
 }
 
-async function onDestinoSelected(emp) {
-  emp._selectingDestino = false
+async function onPlantelActualSelected(emp) {
+  emp._editingActual = false
   await checkCoverageQueue(emp)
 }
 
-async function resetDestino(emp) {
-  emp.operationalPlantel = emp.originPlantel
-  emp._selectingDestino = false
+async function resetPlantelActual(emp) {
+  emp.plantelActual = emp.plantelBase
+  emp._editingActual = false
   await checkCoverageQueue(emp)
-}
-
-function triggerMoverseQuickAction() {
-  selectedEmployees.value.forEach(emp => {
-    emp._selectingDestino = true
-  })
 }
 
 const getCurrentTime = () => {
@@ -373,6 +386,7 @@ const form = reactive({
   endDate: todayDate,
   time: '',
   comentarios: '',
+  destino: '',
   regreso: false,
   horaRegreso: '',
   imss: '',
@@ -388,9 +402,10 @@ const predefinedScenarios = [
 
 function selectScenario(scenario) {
   activeScenario.value = scenario
+  showDestino.value = false
   Object.assign(form, { 
     date: todayDate, endDate: todayDate, time: '', 
-    comentarios: '', regreso: false, horaRegreso: '',
+    comentarios: '', destino: '', regreso: false, horaRegreso: '',
     imss: '', tipoIncapacidad: 'Enfermedad en General'
   })
 }
@@ -434,19 +449,35 @@ function triggerEarlyLeaveQuickAction() {
   form.comentarios = ''
 }
 
+function triggerIrAOtroPlantel() {
+  const salidaScenario = predefinedScenarios.find(s => s.categoryId === 2)
+  selectScenario(salidaScenario)
+  form.time = getCurrentTime()
+  showDestino.value = true
+}
+
 async function submitPass() {
   if (isSubmitting.value) return
   isSubmitting.value = true
   
+  const payloadComentarios = form.destino ? `${form.comentarios}\n\nDestino: ${form.destino}` : form.comentarios;
+
   try {
     await Promise.all(selectedEmployees.value.map(emp => 
       $fetch('/api/passes', {
         method: 'POST',
         body: { 
           employeeName: emp.name, 
-          plantel: emp.operationalPlantel || emp.originPlantel || 'N/A', 
+          plantel: emp.plantelActual || emp.plantelBase || 'N/A', 
           categoryId: activeScenario.value.categoryId, 
-          ...form 
+          date: form.date,
+          endDate: form.endDate,
+          time: form.time,
+          comentarios: payloadComentarios,
+          regreso: form.regreso,
+          horaRegreso: form.horaRegreso,
+          imss: form.imss,
+          tipoIncapacidad: form.tipoIncapacidad
         }
       })
     ))

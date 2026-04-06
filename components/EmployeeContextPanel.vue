@@ -13,7 +13,7 @@
         <div v-else class="mt-2 flex flex-wrap gap-2 items-center">
           <span v-if="displayPlantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5">
             <Building2 class="w-3.5 h-3.5 text-slate-400" />
-            {{ displayPlantel }}
+            Base: {{ displayPlantel }}
           </span>
           <span v-if="displayRole" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
             <Briefcase class="w-3.5 h-3.5 text-brand-400" />
@@ -23,7 +23,7 @@
       </div>
     </div>
 
-    <!-- Active Folio Detection: Directs users to reuse rather than duplicate -->
+    <!-- Active Folio Detection -->
     <transition name="fade">
       <div v-if="todayPasses.length > 0" class="bg-brand-50/50 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 border border-brand-100/80 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-colors hover:bg-brand-50">
         <div class="flex gap-4 items-center">
@@ -31,8 +31,8 @@
             <FileText class="w-5 h-5 text-brand-600" />
           </div>
           <div>
-            <h4 class="text-sm font-black text-brand-900 tracking-tight">Folio Activo</h4>
-            <p class="text-xs text-brand-700/90 mt-0.5 font-medium">Registro abierto en esta jornada.</p>
+            <h4 class="text-sm font-black text-brand-900 tracking-tight">Pase Abierto</h4>
+            <p class="text-xs text-brand-700/90 mt-0.5 font-medium">El colaborador ya tiene un pase hoy.</p>
           </div>
         </div>
         <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 w-full sm:w-auto outline-none">
@@ -42,11 +42,11 @@
       </div>
     </transition>
 
-    <!-- History Timeline (Ciclo Escolar) -->
+    <!-- History Timeline -->
     <div class="relative z-10 flex-1 flex flex-col min-h-0 bg-slate-50/50 rounded-2xl border border-slate-100 p-1">
       <div class="flex items-center justify-between mb-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm shrink-0">
         <div>
-          <h3 class="text-sm font-black text-slate-900 tracking-tight">Cronología de Eventos</h3>
+          <h3 class="text-sm font-black text-slate-900 tracking-tight">Historial</h3>
           <p class="text-[10px] font-bold text-brand-600 uppercase tracking-widest mt-1" v-if="historyData?.cycle">Ciclo Escolar {{ historyData.cycle }}</p>
         </div>
         <div class="flex gap-2">
@@ -148,7 +148,7 @@ const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/en
 
 const displayPic = computed(() => enrichment.value?.picture || props.employee.picture || null)
 const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
-const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.originPlantel || props.employee.plantel || null)
+const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.plantelBase || props.employee.plantel || null)
 
 const isToday = (dateStr) => {
   if (!dateStr) return false
