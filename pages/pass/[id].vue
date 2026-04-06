@@ -57,26 +57,32 @@
         <!-- Left Column: Details -->
         <div class="lg:col-span-2 space-y-8">
           
+          <!-- Colaborador Block con Fotografía -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
               <User class="w-4 h-4 text-brand-500" /> Colaborador
             </h3>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nombre</span>
-                <span class="text-lg font-black text-slate-900 leading-tight">{{ pass.employee_name }}</span>
-              </div>
-              <div class="bg-slate-50/50 p-4 rounded-2xl border border-slate-100" v-if="pass.plantel">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Plantel</span>
-                <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-white text-slate-800 text-sm font-black rounded-xl border border-slate-200/80 shadow-sm">
-                  <Building2 class="w-4 h-4 text-brand-500" />
-                  {{ pass.plantel }}
-                </span>
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              <PremiumAvatar :src="enrichment?.picture || null" :name="pass.employee_name" size="lg" class="shrink-0 ring-4 ring-slate-50 shadow-sm" />
+              
+              <div class="flex-1 w-full text-center sm:text-left">
+                <h4 class="text-2xl font-black text-slate-900 tracking-tight">{{ pass.employee_name }}</h4>
+                <div class="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
+                  <span v-if="pass.plantel" class="px-3 py-1.5 bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200/80 shadow-sm flex items-center gap-1.5">
+                    <Building2 class="w-3.5 h-3.5 text-brand-500" />
+                    {{ pass.plantel }}
+                  </span>
+                  <span v-if="enrichment?.puesto" class="px-3 py-1.5 bg-brand-50 text-brand-700 text-xs font-bold rounded-xl border border-brand-100/60 shadow-sm flex items-center gap-1.5">
+                    <Briefcase class="w-3.5 h-3.5 text-brand-500" />
+                    {{ enrichment.puesto }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
+          <!-- Detalles del Pase -->
           <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
               <Calendar class="w-4 h-4 text-brand-500" /> Detalles
@@ -124,7 +130,7 @@
         <!-- Right Column: Status & System -->
         <div class="space-y-8">
           
-          <!-- Actions -->
+          <!-- Acciones -->
           <div v-if="pass && canManage" class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
               <Zap class="w-4 h-4 text-brand-500" /> Acciones
@@ -161,7 +167,7 @@
             </div>
           </div>
 
-          <!-- Status -->
+          <!-- Status Timeline -->
           <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
               <ShieldCheck class="w-4 h-4 text-brand-500" /> Estado
@@ -247,8 +253,9 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
+import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 
@@ -257,10 +264,14 @@ dayjs.locale('es')
 const route = useRoute()
 
 // Statically capture the route ID during setup instead of tracking it reactively.
-// This permanently fixes the hidden 'undefined' fetch error that occurs when 
-// the user navigates away and route.params.id becomes undefined mid-unmount.
 const passId = route.params.id
 const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
+
+// Fetch enrichment dynamically when the pass employee name is known
+const { data: enrichment } = useAsyncData(`enrich-pass-${passId}`, async () => {
+  if (!pass.value?.employee_name) return null
+  return await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
+}, { watch: [pass] })
 
 const { user } = useAuth()
 const showEditModal = ref(false)
