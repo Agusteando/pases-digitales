@@ -166,11 +166,12 @@
       </div>
     </section>
 
-    <!-- Plantel Directory Setup Modal -->
+    <!-- Context Check Setup Modal -->
     <PlantelSetupModal 
       v-if="showSetupModal && directoryCoverage"
       :is-open="showSetupModal"
-      :plantel="selectedEmployees[0]?.plantel || 'N/A'"
+      :plantel="selectedEmployees[0]?.plantel || 'el plantel'"
+      :employee-name="selectedEmployees[0]?.name || 'el colaborador'"
       :coverage-data="directoryCoverage"
       @cancel="onSetupCancelled"
       @completed="onSetupCompleted"
