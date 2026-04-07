@@ -271,7 +271,8 @@ const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`
 // FIX: Returning a stable empty object prevents "useAsyncData must return a value" warnings.
 const { data: enrichment } = useAsyncData(`enrich-pass-${passId}`, async () => {
   if (!pass.value?.employee_name) return {}
-  return await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
+  const res = await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
+  return res || {}
 }, { watch: [pass] })
 
 const { user } = useAuth()

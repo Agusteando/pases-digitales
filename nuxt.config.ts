@@ -53,6 +53,7 @@ export default defineNuxtConfig({
     public: {
       googleClientIdPublic: process.env.GOOGLE_CLIENT_ID,
       debugFace: process.env.DEBUG_FACE === 'true',
+      visionApiBaseUrl: process.env.VISION_API_BASE_URL || 'https://vision.casitaapps.com',
     }
   }
 })
