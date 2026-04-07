@@ -511,28 +511,26 @@ async function processPremiumImage(url) {
       }
     }
 
-    // ── Safety Check ──────────────────────────────────────────────────────────
-    // Keep the detection check tied to the final rendered result. If the mask 
-    // broke the face, we abort and automatically fall back to the original image.
+    // ── Safety Check (Native Browser Face Detection) ──────────────────────────
+    // Check if the final rendered result still has a valid face.
+    // If the mask broke the face, abort and fall back to the original image.
     if (data.faceDetected && debugInfo.value.bgStatus === 'REMOVED') {
-      debugInfo.value.bgStatus = 'VERIFYING_MASK'
-      const processedDataUrl = canvas.toDataURL('image/png')
-      const verifyFormData = new FormData()
-      verifyFormData.append('imageUrl', processedDataUrl)
-
-      const verifyRes = await fetch(`${visionBase}/analyze`, {
-        method: 'POST',
-        body: verifyFormData
-      }).catch(() => null)
-
-      if (verifyRes?.ok) {
-        const verifyData = await verifyRes.json()
-        if (verifyData.ok === true && !verifyData.faceDetected) {
-          throw new Error('SAFETY_CHECK_FAIL')
+      if ('FaceDetector' in window) {
+        debugInfo.value.bgStatus = 'VERIFYING_MASK'
+        try {
+          const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 })
+          const faces = await detector.detect(canvas)
+          if (faces.length === 0) {
+            throw new Error('SAFETY_CHECK_FAIL')
+          }
+          debugInfo.value.bgStatus = 'REMOVED_AND_VERIFIED'
+        } catch (err) {
+          if (err.message === 'SAFETY_CHECK_FAIL') throw err
+          // If FaceDetector fails internally (e.g. not fully implemented), just accept the mask
+          debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
         }
-        debugInfo.value.bgStatus = 'REMOVED_AND_VERIFIED'
       } else {
-        // Assume OK if transient network issue to prevent breaking the flow
+        // Native detection not available in this browser, skip verification gracefully
         debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
       }
     }
