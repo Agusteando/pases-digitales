@@ -137,10 +137,12 @@
 
           <!-- Autorización Directa -->
           <div v-if="pass.status === 'pendiente' && canManage" class="bg-white p-6 rounded-3xl border border-emerald-100 shadow-md">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Autorización Directa
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Resolución de Solicitud
             </h3>
-            <p class="text-xs text-slate-500 font-medium mb-4 leading-relaxed">Puedes resolver esta solicitud inmediatamente desde la plataforma sin esperar notificaciones.</p>
+            <p class="text-xs text-slate-500 font-medium mb-5 leading-relaxed">
+              El enlace de autorización ya ha sido distribuido a los responsables. Como administrador o creador, puedes resolver la solicitud directamente desde aquí.
+            </p>
             <div class="flex gap-4">
               <button @click="handleInAppAuth('reject')" :disabled="isResolving" class="flex-1 py-3 bg-white hover:bg-red-50 border border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 outline-none">
                 <X class="w-4 h-4" /> Rechazar

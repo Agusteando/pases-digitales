@@ -60,16 +60,22 @@
           </div>
         </div>
 
-        <div v-if="pass.status !== 'pendiente'" class="p-5 rounded-2xl flex items-start gap-4 shadow-sm" :class="pass.status === 'autorizado' ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'">
-          <component :is="pass.status === 'autorizado' ? CheckCircle2 : XCircle" class="w-8 h-8 shrink-0" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-red-500'" />
-          <div class="pt-1">
-            <p class="text-base font-black tracking-tight" :class="pass.status === 'autorizado' ? 'text-emerald-900' : 'text-red-900'">
-              Registro {{ pass.status }}
+        <div v-if="pass.status !== 'pendiente'" class="mt-8 p-6 rounded-3xl border text-center shadow-sm" :class="pass.status === 'autorizado' ? 'bg-emerald-50/50 border-emerald-100' : (pass.status === 'rechazado' ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-200')">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" :class="pass.status === 'autorizado' ? 'bg-emerald-100 text-emerald-600' : (pass.status === 'rechazado' ? 'bg-red-100 text-red-600' : 'bg-slate-200 text-slate-500')">
+            <component :is="pass.status === 'autorizado' ? CheckCircle2 : (pass.status === 'rechazado' ? XCircle : AlertTriangle)" class="w-6 h-6" />
+          </div>
+          <h3 class="text-lg font-black tracking-tight mb-1" :class="pass.status === 'autorizado' ? 'text-emerald-900' : (pass.status === 'rechazado' ? 'text-red-900' : 'text-slate-700')">
+            {{ pass.status === 'autorizado' ? 'Solicitud Autorizada' : (pass.status === 'rechazado' ? 'Solicitud Rechazada' : 'Pase Anulado') }}
+          </h3>
+          <p class="text-sm font-medium mb-4" :class="pass.status === 'autorizado' ? 'text-emerald-700' : (pass.status === 'rechazado' ? 'text-red-700' : 'text-slate-500')">
+            Esta solicitud ya fue resuelta y no requiere acciones adicionales.
+          </p>
+          <div v-if="pass.authorized_by" class="inline-block bg-white px-5 py-3 rounded-2xl border shadow-sm" :class="pass.status === 'autorizado' ? 'border-emerald-100' : (pass.status === 'rechazado' ? 'border-red-100' : 'border-slate-200')">
+            <p class="text-[10px] font-black uppercase tracking-widest mb-0.5" :class="pass.status === 'autorizado' ? 'text-emerald-500' : (pass.status === 'rechazado' ? 'text-red-500' : 'text-slate-400')">
+              Resuelta por
             </p>
-            <p class="text-xs font-bold mt-1" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-red-700'">
-              Por: {{ pass.authorized_by }} <br/>
-              <span class="opacity-70 font-medium">{{ new Date(pass.authorized_at).toLocaleString() }}</span>
-            </p>
+            <p class="text-sm font-bold text-slate-900">{{ pass.authorized_by }}</p>
+            <p v-if="pass.authorized_at" class="text-[10px] font-medium text-slate-500 mt-1">{{ formatDateLong(pass.authorized_at) }}</p>
           </div>
         </div>
       </div>
@@ -91,10 +97,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Loader2, ShieldCheck, CheckCircle2, XCircle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope } from 'lucide-vue-next'
 
 definePageMeta({ layout: false })
 
@@ -144,6 +150,7 @@ const getCategoryName = (id) => {
 }
 
 const formatDate = (dateStr) => dayjs(dateStr).format('DD MMMM YYYY')
+const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY, HH:mm') : 'N/A'
 
 fetchPass()
 </script>

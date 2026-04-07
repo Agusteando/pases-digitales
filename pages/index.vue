@@ -75,11 +75,13 @@
           </div>
         </div>
 
+        <!-- Directory Coverage Loading State -->
         <div v-if="checkingCoverage" class="py-10 flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-slate-100 animate-pulse">
            <Loader2 class="w-8 h-8 animate-spin text-brand-400 mb-3" />
            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
         </div>
         
+        <!-- Step 2: Motivo del pase -->
         <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">2</div>
@@ -98,6 +100,7 @@
           </div>
         </div>
 
+        <!-- Step 3: Detalles y Generación -->
         <div v-if="activeScenario" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500 pb-10">
           <div class="flex items-center gap-3 mb-4 mt-2">
             <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">3</div>
@@ -107,6 +110,7 @@
           <form @submit.prevent class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-card relative overflow-hidden flex flex-col gap-6">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-brand-500"></div>
             
+            <!-- Quick Context Presets inside the form -->
             <div v-if="activeScenario.categoryId === 2" class="flex flex-wrap items-center gap-2 pb-5 border-b border-slate-100">
               <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full mb-1">Atajos contextuales:</span>
               <button type="button" @click="applyPreset('now')" class="px-3 py-1.5 bg-slate-50 hover:bg-brand-50 text-slate-600 hover:text-brand-700 text-xs font-bold rounded-lg border border-slate-200 hover:border-brand-200 transition-colors flex items-center gap-1.5 outline-none">
@@ -120,6 +124,7 @@
               </button>
             </div>
 
+            <!-- Core Form Grid -->
             <div class="grid grid-cols-2 gap-5">
               <div class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha de inicio</label>
@@ -145,6 +150,7 @@
               <input type="time" v-model="form.horaRegreso" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
             </div>
 
+            <!-- Medical specifics -->
             <div v-if="activeScenario.isMedical" class="space-y-5 p-6 bg-teal-50/50 rounded-3xl border border-teal-100">
               <div class="space-y-2">
                 <label class="block text-[10px] font-black text-teal-700 uppercase tracking-widest">Folio IMSS</label>
@@ -160,6 +166,7 @@
               </div>
             </div>
 
+            <!-- Destino Option -->
             <div class="space-y-3 pt-2">
               <div v-if="!showDestino" class="flex">
                 <button type="button" @click="showDestino = true" class="text-xs font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">
@@ -200,13 +207,24 @@
               </div>
             </div>
 
-            <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
-              <button type="button" @click="submitPass(false)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-all border border-slate-200 flex items-center justify-center gap-2 outline-none">
-                <Send class="w-4 h-4" /> Generar y notificar
-              </button>
-              <button type="button" @click="submitPass(true)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 outline-none">
-                <CheckCircle class="w-4 h-4" /> Generar y autorizar
-              </button>
+            <div class="pt-6 border-t border-slate-100 flex flex-col gap-4">
+              <div class="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <Bell class="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <p class="text-[11px] font-medium text-slate-600 leading-relaxed">
+                  El sistema enviará el enlace de autorización a los responsables asignados. Puedes delegar la revisión o resolver el pase directamente en este momento.
+                </p>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <button type="button" @click="submitPass(false)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-xl transition-all border border-slate-200 flex items-center justify-center gap-2 outline-none shadow-sm">
+                  <Send class="w-4 h-4 text-slate-400" /> Solicitar autorización
+                </button>
+                <button type="button" @click="submitPass(true)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 outline-none">
+                  <CheckCircle class="w-4 h-4" /> Autorizar directamente
+                </button>
+              </div>
+              <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 text-center px-4">
+                Estás generando una solicitud a tu propio nombre. La resolución quedará documentada bajo tu usuario.
+              </p>
             </div>
             
           </form>
@@ -246,7 +264,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { Loader2, X as XIcon, Cake, PenTool, Send, Building2, Briefcase, MapPin, Plus, Clock, ArrowRight, CheckCircle } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, Clock, Bell, CheckCircle } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -274,6 +292,10 @@ const isAuthorizerForCurrent = computed(() => {
   if (!myProfile.value || selectedEmployees.value.length === 0) return true;
   const targetPlantel = selectedEmployees.value[0]?.plantelActual || selectedEmployees.value[0]?.plantelBase;
   return myProfile.value.authorizedPlanteles.includes(targetPlantel);
+})
+
+const hasSelfPass = computed(() => {
+  return myProfile.value && selectedEmployees.value.some(e => e.name === myProfile.value.name)
 })
 
 async function checkCoverageQueue(emp) {
