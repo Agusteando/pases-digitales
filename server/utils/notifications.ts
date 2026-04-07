@@ -15,7 +15,7 @@ const toWhatsAppChatId = (phone: string) => {
 export async function dispatchNotificationsForPass(passId: number) {
   const db = useDB()
   const config = useRuntimeConfig()
-  
+
   const [rows]: any = await db.execute('SELECT * FROM hr_entries WHERE id = ?', [passId])
   if (!rows.length) return false
 
@@ -28,30 +28,36 @@ export async function dispatchNotificationsForPass(passId: number) {
   const categoryName = categories[pass.category_id] || 'Pase'
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
-  
-  const returnMessage = pass.hora_regreso ? `\nRetorno estimado: ${pass.hora_regreso}` : ''
-  const motivoMsg = pass.comentarios ? `\nMotivo: ${pass.comentarios}` : ''
-  const timeMsg = pass.time ? `\nHora: ${pass.time}` : ''
+
+  // Redacción alineada a tu solicitud
+  const motivoMsg = pass.comentarios ? ` con motivo ${pass.comentarios}` : ''
+  const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
+  const timeMsg = pass.time ? ` - Hora: ${pass.time}` : ''
 
   const authUrlBase = `${config.appUrl}/authorize/${pass.auth_token}`
 
   // 1. Mandatory Global Infrastructure Audit (Fixed, Non-Configurable)
   const telegramGlobalId = '-1003057962499'
-  const tgMessage = `*REQUERIMIENTO OPERATIVO*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg}\nFolio *${paddedId}*\nEmitido por: ${pass.user}`
+
+  // Mensaje en formato nativo con negritas (*) de Telegram
+  const tgMessage = `*REQUERIMIENTO OPERATIVO*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\nEmitido por: ${pass.user}`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
       method: 'POST',
-      body: { chatId: [telegramGlobalId], message: tgMessage, disable_notification: false }
+      body: {
+        chatId: [telegramGlobalId],
+        message: tgMessage,
+        parse_mode: 'Markdown', // Habilita que los asteriscos se vuelvan negritas en Telegram
+        disable_notification: false
+      }
     })
     await db.execute(
-      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-      [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
+      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
     )
   } catch (e: any) {
     await db.execute(
-      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-      [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
+      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
     )
   }
 
@@ -61,7 +67,7 @@ export async function dispatchNotificationsForPass(passId: number) {
   const empPlantel = pass.plantel || ''
 
   const targets = new Map<string, { email: string, name: string, phone: string, channels: Set<string> }>()
-  
+
   async function addTarget(email: string, channel: string) {
     if (!email) return
     const gw = await getCachedWorkspaceUser(email)
@@ -70,7 +76,6 @@ export async function dispatchNotificationsForPass(passId: number) {
       current = { email, name: gw.name || email.split('@')[0], phone: gw.phone, channels: new Set() }
       targets.set(email, current)
     }
-    // Only accept user-facing configurable channels
     if (channel === 'WHATSAPP' || channel === 'EMAIL') {
       current.channels.add(channel)
     }
@@ -83,19 +88,19 @@ export async function dispatchNotificationsForPass(passId: number) {
   // Bind Explicit Notification Rules
   const [rules]: any = await db.execute('SELECT * FROM notification_rules')
   for (const rule of rules) {
-     const rulePlantel = cleanPlantelName(rule.condition_plantel) || 'ALL'
-     const matchPlantel = rulePlantel === 'ALL' || rulePlantel === empPlantel
-     const matchPuesto = rule.condition_puesto === 'ALL' || rule.condition_puesto.toLowerCase() === empPuesto.toLowerCase()
-     if (matchPlantel && matchPuesto && rule.target_val) {
-         await addTarget(rule.target_val, rule.channel)
-     }
+    const rulePlantel = cleanPlantelName(rule.condition_plantel) || 'ALL'
+    const matchPlantel = rulePlantel === 'ALL' || rulePlantel === empPlantel
+    const matchPuesto = rule.condition_puesto === 'ALL' || rule.condition_puesto.toLowerCase() === empPuesto.toLowerCase()
+    if (matchPlantel && matchPuesto && rule.target_val) {
+      await addTarget(rule.target_val, rule.channel)
+    }
   }
 
   // 3. Dispatch Configurable Channels & Audit Trail
   for (const [email, target] of targets.entries()) {
     const rToken = jwt.sign(
-      { passId: pass.id, email: target.email, name: target.name }, 
-      config.jwtSecret, 
+      { passId: pass.id, email: target.email, name: target.name },
+      config.jwtSecret,
       { expiresIn: '7d' }
     )
     const targetAuthUrl = `${authUrlBase}?r=${rToken}`
@@ -103,24 +108,21 @@ export async function dispatchNotificationsForPass(passId: number) {
     if (target.channels.has('WHATSAPP')) {
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
-        const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
+        const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
         try {
           const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
           const msgId = waRes?.messageId || waRes?.id || 'delivered'
           await db.execute(
-            'INSERT INTO notification_logs (pass_id, chat_id, status, message_id, error_text) VALUES (?, ?, ?, ?, ?)', 
-            [pass.id, chatId, 'sent', msgId, `Destinatario: ${target.name} | Canal: WhatsApp`]
+            'INSERT INTO notification_logs (pass_id, chat_id, status, message_id, error_text) VALUES (?, ?, ?, ?, ?)', [pass.id, chatId, 'sent', msgId, `Destinatario: ${target.name} | Canal: WhatsApp`]
           )
         } catch (e: any) {
           await db.execute(
-            'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-            [pass.id, chatId, 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Fallo en motor de envío`]
+            'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, chatId, 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Fallo en motor de envío`]
           )
         }
       } else {
         await db.execute(
-          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-          [pass.id, 'N/A', 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Número de teléfono inválido o ausente`]
+          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, 'N/A', 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Número de teléfono inválido o ausente`]
         )
       }
     }
@@ -148,13 +150,11 @@ export async function dispatchNotificationsForPass(passId: number) {
       try {
         await sendWorkspaceEmail(target.email, `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`, emailHtml)
         await db.execute(
-          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-          [pass.id, target.email, 'sent', `Destinatario: ${target.name} | Canal: Email`]
+          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, target.email, 'sent', `Destinatario: ${target.name} | Canal: Email`]
         )
       } catch (e: any) {
         await db.execute(
-          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', 
-          [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de Google Workspace`]
+          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de Google Workspace`]
         )
       }
     }
