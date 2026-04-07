@@ -1,50 +1,45 @@
 <template>
+  <!-- Root container maintains size classes and acts as hover trigger/ref -->
   <div class="relative inline-flex items-center justify-center isolate group select-none" :class="[sizeClasses, $attrs.class]" ref="containerRef">
     
+    <!-- Clipping Wrapper: replaces the previous overflow-hidden on the root -->
     <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0">
       
-      <!-- Ambient Fallback Background -->
-      <div class="absolute inset-0 bg-gradient-to-br from-brand-50/80 to-indigo-100/80 rounded-[inherit]"></div>
+      <!-- Ambient Loading State / Background Shell -->
+      <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]">
+        <div v-if="isProcessing" class="absolute inset-0 bg-gradient-to-tr from-brand-100/40 via-slate-100 to-indigo-100/40 animate-pulse"></div>
+      </div>
       
       <!-- Aura Layer (A softly blurred multiplied clone that creates the premium glow from the image's own colors) -->
+      <!-- Only visibly bleeds onto the background if the image has a transparent background (mask applied) -->
       <img 
-        v-if="displaySrc" 
-        :src="displaySrc" 
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-1000 pointer-events-none" 
+        v-if="activeSrc" 
+        :src="activeSrc" 
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-700 pointer-events-none" 
         aria-hidden="true" 
       />
       
-      <!-- Base Original Image Layer -->
+      <!-- Core Image Layer -->
       <img 
-        v-if="baseSrc" 
-        :src="baseSrc" 
-        class="absolute inset-0 z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-1000 ease-out"
-        :class="enhancedLoaded ? 'opacity-0 scale-110 blur-sm' : 'opacity-100 scale-100 blur-0'"
-        style="object-position: center 15%;" 
+        v-if="activeSrc" 
+        :src="activeSrc" 
+        class="relative z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-700 ease-out" 
+        :class="{'opacity-0 scale-90': isProcessing, 'opacity-100 scale-100': !isProcessing}" 
+        :style="!usedCanvas ? 'object-position: center 15%;' : ''" 
         :alt="name" 
       />
 
       <!-- Fallback Initials Layer -->
       <div 
-        v-if="!baseSrc && !enhancedSrc" 
+        v-else-if="!isProcessing" 
         class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-brand-50 to-indigo-100 flex items-center justify-center font-black text-brand-600 shadow-inner border border-brand-200/50" 
         :class="textClass"
       >
         {{ initials }}
       </div>
 
-      <!-- Enhanced Image Layer (Fades in over base) -->
-      <img 
-        v-if="enhancedSrc" 
-        :src="enhancedSrc" 
-        class="absolute inset-0 z-15 w-full h-full object-cover rounded-[inherit] transition-all duration-1000 ease-out" 
-        :class="enhancedLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'"
-        @load="onEnhancedLoad"
-        :alt="name" 
-      />
-
       <!-- Eye Follow Layers -->
-      <div v-if="enhancedLoaded && activeEyeData" class="absolute inset-0 z-20 pointer-events-none rounded-[inherit] overflow-hidden transition-opacity duration-1000" :class="enhancedLoaded ? 'opacity-100' : 'opacity-0'">
+      <div v-if="activeSrc && activeEyeData && !isProcessing" class="absolute inset-0 z-15 pointer-events-none rounded-[inherit] overflow-hidden">
         <img v-for="(eye, i) in activeEyeData" :key="i"
              :ref="el => setEyeRef(el)"
              :src="eye.src"
@@ -55,9 +50,9 @@
       </div>
 
       <!-- Inner Glass / Lighting Ring -->
-      <div class="absolute inset-0 z-30 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none transition-all"></div>
+      <div class="absolute inset-0 z-20 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none transition-all"></div>
 
-      <!-- Pipeline Debug Overlay Bounds -->
+      <!-- Pipeline Debug Overlay Bounds (Only visible when DEBUG_FACE is true) -->
       <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none">
         
         <!-- Safe Face Detection Bounds -->
@@ -101,7 +96,7 @@
           
           <div class="flex flex-col border-b border-slate-700/50 pb-1.5">
             <span class="text-slate-400 mb-1">Background</span>
-            <span class="text-[10px] leading-relaxed break-words" :class="debugInfo.bgStatus === 'REMOVED' || debugInfo.bgStatus === 'MASK_READY' ? 'text-emerald-400' : 'text-amber-400'">
+            <span class="text-[10px] leading-relaxed break-words" :class="debugInfo.bgStatus === 'REMOVED' ? 'text-emerald-400' : 'text-amber-400'">
               {{ debugInfo.bgStatus }}
             </span>
           </div>
@@ -127,7 +122,7 @@ import { useRuntimeConfig } from '#imports'
 const props = defineProps({
   src: { type: String, default: null },
   name: { type: String, default: 'User' },
-  size: { type: String, default: 'lg' }
+  size: { type: String, default: 'lg' } // sm, md, lg
 })
 
 const config = useRuntimeConfig()
@@ -136,7 +131,7 @@ const isDebug = computed(() => config.public?.debugFace === true)
 const sizeClasses = computed(() => {
   if (props.size === 'sm') return 'w-10 h-10 rounded-full'
   if (props.size === 'md') return 'w-14 h-14 rounded-2xl'
-  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-3xl'
+  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-3xl' // lg
 })
 
 const textClass = computed(() => {
@@ -151,13 +146,10 @@ const initials = computed(() => {
   return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : props.name.slice(0, 2).toUpperCase()
 })
 
-const baseSrc = ref(null)
-const enhancedSrc = ref(null)
-const enhancedLoaded = ref(false)
+const activeSrc = ref(null)
 const activeEyeData = ref(null)
 const isProcessing = ref(false)
-
-const displaySrc = computed(() => enhancedLoaded.value && enhancedSrc.value ? enhancedSrc.value : baseSrc.value)
+const usedCanvas = ref(false)
 
 const debugInfo = ref({
   faceOK: false,
@@ -220,8 +212,8 @@ const handleMouseMove = (e) => {
   const intensity = Math.min(dist / maxDist, 1)
   const easeIntensity = intensity * (2 - intensity)
   
-  // Cap extreme movements rigidly (2.5% of total avatar width) to preserve anatomy
-  const maxMove = rect.width * 0.025
+  // Cap extreme movements rigidly (3.5% of total avatar width) to ensure it is visible but realistic
+  const maxMove = rect.width * 0.035
   
   const angle = Math.atan2(dy, dx)
   targetShift.x = Math.cos(angle) * easeIntensity * maxMove
@@ -241,7 +233,7 @@ onUnmounted(() => {
   }
 })
 
-// Global memory cache to keep UI lighting-fast during navigation
+// Global memory cache to keep UI lightning-fast during navigation
 const globalImageCache = new Map()
 
 // Safe cross-origin image loader
@@ -255,17 +247,9 @@ function loadImage(url, useCors) {
   })
 }
 
-function onEnhancedLoad() {
-  requestAnimationFrame(() => {
-    enhancedLoaded.value = true
-  })
-}
-
 async function processPremiumImage(url) {
   if (!url) {
-    baseSrc.value = null
-    enhancedSrc.value = null
-    enhancedLoaded.value = false
+    activeSrc.value = null
     activeEyeData.value = null
     return
   }
@@ -280,23 +264,12 @@ async function processPremiumImage(url) {
     fullUrl = `https://signia.casitaapps.com/${url.replace(/^\//, '')}`
   }
 
-  // Instant presentation of original image, guaranteeing a zero-wait state experience
-  baseSrc.value = fullUrl
-  enhancedSrc.value = null
-  enhancedLoaded.value = false
-  activeEyeData.value = null
-
   if (globalImageCache.has(fullUrl)) {
     const cached = globalImageCache.get(fullUrl)
-    if (cached.usedCanvas) {
-      enhancedSrc.value = cached.src
-      activeEyeData.value = cached.eyeData || null
-      if (cached.debugInfo) debugInfo.value = cached.debugInfo
-      // Safe fallback to trigger enhanced mode if @load doesn't fire for cached data URIs
-      setTimeout(() => {
-        if (enhancedSrc.value === cached.src) enhancedLoaded.value = true
-      }, 50)
-    }
+    activeSrc.value = cached.src
+    usedCanvas.value = cached.usedCanvas
+    activeEyeData.value = cached.eyeData || null
+    if (cached.debugInfo) debugInfo.value = cached.debugInfo
     return
   }
 
@@ -306,7 +279,7 @@ async function processPremiumImage(url) {
     const formData = new FormData()
     formData.append('imageUrl', fullUrl)
 
-    // Call external vision service for authoritative analysis quietly in background
+    // Call external vision service for authoritative analysis
     const analyzeRes = await fetch(`${visionBase}/analyze`, {
       method: 'POST',
       body: formData
@@ -326,7 +299,7 @@ async function processPremiumImage(url) {
     debugInfo.value.faceConf = data.faceConfidence || null
     debugInfo.value.eyesOK = !!data.eyesDetected
     debugInfo.value.eyeConf = data.eyeConfidence || null
-    debugInfo.value.bgStatus = data.backgroundRemoved ? 'REMOVED' : (data.maskAvailable ? 'MASK_READY' : 'SKIP')
+    debugInfo.value.bgStatus = data.maskAvailable ? 'MASK_AVAILABLE' : 'SKIP'
 
     // Safe retrieval of the original image from the vision proxy to avoid client CORS constraints
     const safeImgUrl = `${visionBase}/image/${data.imageKey}`
@@ -369,13 +342,32 @@ async function processPremiumImage(url) {
        }
     }
 
-    // 2. Intelligent Background Application
+    // 2. Intelligent Background Application via direct Pixel Manipulation 
+    // This securely applies both B/W JPEG masks and True Alpha PNG masks reliably
     if (data.maskAvailable && data.maskUrl) {
        const maskImg = await loadImage(data.maskUrl, true).catch(() => null)
        if (maskImg) {
-          ctx.globalCompositeOperation = 'destination-in'
-          ctx.drawImage(maskImg, sx, sy, sWidth, sHeight, 0, 0, cWidth, cHeight)
-          ctx.globalCompositeOperation = 'source-over'
+          const maskCanvas = document.createElement('canvas')
+          maskCanvas.width = cWidth
+          maskCanvas.height = cHeight
+          const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true })
+          
+          // Crop and scale the mask to exactly match the main image
+          maskCtx.drawImage(maskImg, sx, sy, sWidth, sHeight, 0, 0, cWidth, cHeight)
+
+          const mainData = ctx.getImageData(0, 0, cWidth, cHeight)
+          const maskData = maskCtx.getImageData(0, 0, cWidth, cHeight)
+
+          for (let i = 0; i < mainData.data.length; i += 4) {
+             const maskLuminance = maskData.data[i]
+             const maskAlpha = maskData.data[i + 3]
+             // Combined Alpha safely evaluates B/W masks (using red channel as alpha) and Transparent masks
+             const finalAlpha = (maskLuminance * maskAlpha) / 255
+             mainData.data[i + 3] = (mainData.data[i + 3] * finalAlpha) / 255
+          }
+          
+          ctx.putImageData(mainData, 0, 0)
+          debugInfo.value.bgStatus = 'REMOVED'
        } else {
           debugInfo.value.bgStatus = 'MASK_LOAD_FAIL'
        }
@@ -404,8 +396,8 @@ async function processPremiumImage(url) {
           const cx_c = (ecx - sx) * scale
           const cy_c = (ecy - sy) * scale
           
-          // 150% of the detected eye width provides a clean localized mask for the iris and eyelid
-          const pSize = Math.max(12, Math.floor(ew * scale * 1.5))
+          // 160% of the detected eye width provides a clean localized mask for the iris and eyelid without tearing
+          const pSize = Math.max(16, Math.floor(ew * scale * 1.6))
           const pR = pSize / 2
 
           // Ensure eye is securely within the cropped bounds before isolating it
@@ -417,9 +409,9 @@ async function processPremiumImage(url) {
             
             eyeCtx.drawImage(canvas, cx_c - pR, cy_c - pR, pSize, pSize, 0, 0, pSize, pSize)
             
-            // Multiply the crop with a soft radial mask to avoid harsh edges that cause double-vision
+            // Multiply the crop with a soft radial mask to avoid harsh edges that cause the "floating skin" artifact
             eyeCtx.globalCompositeOperation = 'destination-in'
-            const grad = eyeCtx.createRadialGradient(pR, pR, pR * 0.1, pR, pR, pR)
+            const grad = eyeCtx.createRadialGradient(pR, pR, pR * 0.1, pR, pR, pR * 0.8)
             grad.addColorStop(0, 'rgba(0,0,0,1)')
             grad.addColorStop(0.5, 'rgba(0,0,0,0.8)')
             grad.addColorStop(1, 'rgba(0,0,0,0)')
@@ -446,17 +438,19 @@ async function processPremiumImage(url) {
     const processedDataUrl = canvas.toDataURL('image/png')
     
     globalImageCache.set(fullUrl, { src: processedDataUrl, usedCanvas: true, eyeData: patches, debugInfo: { ...debugInfo.value } })
-    
-    // Assigning enhanced source lets the image tag load the base64 string, firing @load
-    enhancedSrc.value = processedDataUrl
+    activeSrc.value = processedDataUrl
+    usedCanvas.value = true
     activeEyeData.value = patches
 
   } catch (e) {
     debugInfo.value.faceOK = false
     debugInfo.value.bgStatus = 'FAIL_FALLBACK'
     
-    // 4. Graceful fallback: If external analysis drops, just keep baseSrc active seamlessly
+    // 4. Graceful fallback: If external analysis drops, just map the raw image
     globalImageCache.set(fullUrl, { src: fullUrl, usedCanvas: false, eyeData: null, debugInfo: { ...debugInfo.value } })
+    activeSrc.value = fullUrl
+    usedCanvas.value = false
+    activeEyeData.value = null
   } finally {
     isProcessing.value = false
   }
