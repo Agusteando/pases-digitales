@@ -506,32 +506,39 @@ async function processPremiumImage(url) {
         }
         ctx.putImageData(mainData, 0, 0)
         debugInfo.value.bgStatus = 'REMOVED'
-      } else {
-        debugInfo.value.bgStatus = 'MASK_LOAD_FAIL'
-      }
-    }
 
-    // ── Safety Check (Native Browser Face Detection) ──────────────────────────
-    // Check if the final rendered result still has a valid face.
-    // If the mask broke the face, abort and fall back to the original image.
-    if (data.faceDetected && debugInfo.value.bgStatus === 'REMOVED') {
-      if ('FaceDetector' in window) {
-        debugInfo.value.bgStatus = 'VERIFYING_MASK'
-        try {
-          const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 })
-          const faces = await detector.detect(canvas)
-          if (faces.length === 0) {
-            throw new Error('SAFETY_CHECK_FAIL')
+        // ── 1. Safety Check (Alpha Transparency / Blank Canvas) ─────────────
+        // If the AI background mask completely wiped out the cropped area, 
+        // it means the cascade detector cropped to a false-positive in the background.
+        let visiblePixels = 0
+        for (let i = 3; i < mainData.data.length; i += 4) {
+          if (mainData.data[i] > 15) visiblePixels++ // count non-transparent pixels
+        }
+        if (visiblePixels / (cW * cH) < 0.15) {
+          throw new Error('SAFETY_CHECK_FAIL_EMPTY_CROP')
+        }
+
+        // ── 2. Safety Check (Native Browser Face Detection) ─────────────────
+        // If the image isn't blank, double check if it actually resembles a face 
+        // using the browser's native capabilities (gracefully skips if unsupported).
+        if ('FaceDetector' in window) {
+          debugInfo.value.bgStatus = 'VERIFYING_MASK'
+          try {
+            const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 })
+            const faces = await detector.detect(canvas)
+            if (faces.length === 0) throw new Error('SAFETY_CHECK_FAIL_NO_FACE')
+            debugInfo.value.bgStatus = 'REMOVED_AND_VERIFIED'
+          } catch (err) {
+            if (err.message.includes('SAFETY_CHECK_FAIL')) throw err
+            // If FaceDetector throws internal unhandled exception, ignore and proceed
+            debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
           }
-          debugInfo.value.bgStatus = 'REMOVED_AND_VERIFIED'
-        } catch (err) {
-          if (err.message === 'SAFETY_CHECK_FAIL') throw err
-          // If FaceDetector fails internally (e.g. not fully implemented), just accept the mask
+        } else {
           debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
         }
+
       } else {
-        // Native detection not available in this browser, skip verification gracefully
-        debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
+        debugInfo.value.bgStatus = 'MASK_LOAD_FAIL'
       }
     }
 
@@ -590,9 +597,13 @@ async function processPremiumImage(url) {
     activeEyeData.value = patches
 
   } catch (e) {
-    if (e.message === 'SAFETY_CHECK_FAIL') {
-      debugInfo.value.bgStatus = 'MASK_REJECTED_FACE_LOST'
-      debugInfo.value.faceOK   = true // Ensure original check still reports true
+    // If our safety check tripped, log it to the debug UI but ensure we 
+    // fall back cleanly to the raw, uncropped image
+    if (e.message.includes('SAFETY_CHECK_FAIL')) {
+      debugInfo.value.bgStatus = e.message === 'SAFETY_CHECK_FAIL_EMPTY_CROP' 
+        ? 'REJECTED_FALSE_CROP' 
+        : 'REJECTED_FACE_LOST'
+      debugInfo.value.faceOK = true // Technically the backend originally passed it
     } else {
       debugInfo.value.faceOK   = false
       debugInfo.value.bgStatus = 'FAIL_FALLBACK'
@@ -605,8 +616,7 @@ async function processPremiumImage(url) {
       debugInfo: { ...debugInfo.value }
     })
 
-    // Leaving enhancedSrc null acts as the required fallback -> leaves `baseSrc` 
-    // visibly loaded at opacity-100 (which is the original pre-bg removal image)
+    // enhancedSrc left as null naturally defaults to the raw `baseSrc`
     enhancedSrc.value   = null
     activeEyeData.value = null
   } finally {
