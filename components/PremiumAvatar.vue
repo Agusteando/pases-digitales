@@ -2,44 +2,49 @@
   <!-- Root container maintains size classes and acts as hover trigger/ref -->
   <div class="relative inline-flex items-center justify-center isolate group select-none" :class="[sizeClasses, $attrs.class]" ref="containerRef">
     
-    <!-- Clipping Wrapper: replaces the previous overflow-hidden on the root -->
+    <!-- Clipping Wrapper: safely contains all layers and overflows -->
     <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0">
       
-      <!-- Ambient Loading State / Background Shell -->
-      <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]">
-        <div v-if="isProcessing" class="absolute inset-0 bg-gradient-to-tr from-brand-100/40 via-slate-100 to-indigo-100/40 animate-pulse"></div>
-      </div>
+      <!-- Ambient Background Shell -->
+      <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]"></div>
       
-      <!-- Aura Layer (A softly blurred multiplied clone that creates the premium glow from the image's own colors) -->
-      <!-- Only visibly bleeds onto the background if the image has a transparent background (mask applied) -->
+      <!-- Aura Layer: A softly blurred multiplied clone that creates the premium glow from the image's own colors -->
       <img 
-        v-if="activeSrc" 
-        :src="activeSrc" 
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-700 pointer-events-none" 
+        v-if="enhancedSrc || baseSrc" 
+        :src="enhancedSrc || baseSrc" 
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-125 rounded-[inherit] mix-blend-multiply transition-all duration-700 pointer-events-none" 
         aria-hidden="true" 
       />
       
-      <!-- Core Image Layer -->
+      <!-- Base Image Layer (Original Fallback): Loads instantly and crossfades out once enhanced version is ready -->
       <img 
-        v-if="activeSrc" 
-        :src="activeSrc" 
-        class="relative z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-700 ease-out" 
-        :class="{'opacity-0 scale-90': isProcessing, 'opacity-100 scale-100': !isProcessing}" 
-        :style="!usedCanvas ? 'object-position: center 15%;' : ''" 
+        v-if="baseSrc" 
+        :src="baseSrc" 
+        class="absolute inset-0 w-full h-full object-cover rounded-[inherit] transition-opacity duration-700 ease-in-out" 
+        :class="enhancedSrc ? 'opacity-0' : 'opacity-100'" 
+        style="object-position: center 15%;" 
+        :alt="name" 
+      />
+
+      <!-- Enhanced Image Layer (Processed): Fades in seamlessly over the base image -->
+      <img 
+        v-if="enhancedSrc" 
+        :src="enhancedSrc" 
+        class="relative z-10 w-full h-full object-cover rounded-[inherit] animate-in fade-in duration-700 ease-out" 
         :alt="name" 
       />
 
       <!-- Fallback Initials Layer -->
       <div 
-        v-else-if="!isProcessing" 
+        v-else-if="!baseSrc && !isProcessing" 
         class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-brand-50 to-indigo-100 flex items-center justify-center font-black text-brand-600 shadow-inner border border-brand-200/50" 
         :class="textClass"
       >
         {{ initials }}
       </div>
 
-      <!-- Eye Follow Layers -->
-      <div v-if="activeSrc && activeEyeData && !isProcessing" class="absolute inset-0 z-15 pointer-events-none rounded-[inherit] overflow-hidden">
+      <!-- Premium Eye Follow Layers: Applied directly on top of the enhanced image -->
+      <div v-if="enhancedSrc && activeEyeData && !isProcessing" class="absolute inset-0 z-15 pointer-events-none rounded-[inherit] overflow-hidden">
         <img v-for="(eye, i) in activeEyeData" :key="i"
              :ref="el => setEyeRef(el)"
              :src="eye.src"
@@ -53,7 +58,6 @@
 
       <!-- Pipeline Debug Overlay Bounds (Only visible when DEBUG_FACE is true) -->
       <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none">
-        
         <!-- Safe Face Detection Bounds -->
         <div v-if="debugInfo.faceRect" class="absolute border border-red-500/80 bg-red-500/10" 
              :style="{ left: debugInfo.faceRect.left + '%', top: debugInfo.faceRect.top + '%', width: debugInfo.faceRect.width + '%', height: debugInfo.faceRect.height + '%' }">
@@ -145,10 +149,10 @@ const initials = computed(() => {
   return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : props.name.slice(0, 2).toUpperCase()
 })
 
-const activeSrc = ref(null)
+const baseSrc = ref(null)
+const enhancedSrc = ref(null)
 const activeEyeData = ref(null)
 const isProcessing = ref(false)
-const usedCanvas = ref(false)
 
 const debugInfo = ref({
   faceOK: false,
@@ -181,11 +185,11 @@ const updateLoop = () => {
     const dx = targetShift.x - currentShift.x
     const dy = targetShift.y - currentShift.y
     
-    // Only execute DOM manipulations if the visual change is perceptible to save CPU
+    // Only execute DOM manipulations if the visual change is perceptible to save CPU.
+    // Adjusted lerp factor to 0.15 for slightly more responsive eye physics.
     if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
-      // Lerp logic creates an organic spring-like physics drag on the eyeball
-      currentShift.x += dx * 0.12
-      currentShift.y += dy * 0.12
+      currentShift.x += dx * 0.15
+      currentShift.y += dy * 0.15
       
       const transformStr = `translate(calc(-50% + ${currentShift.x}px), calc(-50% + ${currentShift.y}px))`
       for (let i = 0; i < eyeDOMElements.length; i++) {
@@ -211,8 +215,9 @@ const handleMouseMove = (e) => {
   const intensity = Math.min(dist / maxDist, 1)
   const easeIntensity = intensity * (2 - intensity)
   
-  // Cap extreme movements rigidly (2% of total avatar width) to ensure it is subtle, realistic and premium
-  const maxMove = rect.width * 0.02
+  // Cap extreme movements rigidly (4% of total avatar width) to ensure the effect 
+  // is clearly visible and real, but retains a premium non-cartoonish anatomical constraint.
+  const maxMove = rect.width * 0.04
   
   const angle = Math.atan2(dy, dx)
   targetShift.x = Math.cos(angle) * easeIntensity * maxMove
@@ -248,13 +253,13 @@ function loadImage(url, useCors) {
 
 async function processPremiumImage(url) {
   if (!url) {
-    activeSrc.value = null
+    baseSrc.value = null
+    enhancedSrc.value = null
     activeEyeData.value = null
     return
   }
 
   const visionBase = config.public.visionApiBaseUrl || 'https://vision.casitaapps.com'
-
   debugInfo.value = { faceOK: false, faceConf: null, eyesOK: false, eyeConf: null, bgStatus: 'PENDING', followActive: false, faceRect: null, eyeRects: [] }
 
   // Ensure full URL formatting
@@ -263,16 +268,23 @@ async function processPremiumImage(url) {
     fullUrl = `https://signia.casitaapps.com/${url.replace(/^\//, '')}`
   }
 
+  // 1. Instant First Paint: Always show original instantly without blocking
+  baseSrc.value = fullUrl
+  enhancedSrc.value = null
+  activeEyeData.value = null
+  isProcessing.value = true
+
+  // 2. Fast-Path Cache Hit
   if (globalImageCache.has(fullUrl)) {
     const cached = globalImageCache.get(fullUrl)
-    activeSrc.value = cached.src
-    usedCanvas.value = cached.usedCanvas
-    activeEyeData.value = cached.eyeData || null
+    if (cached.usedCanvas) {
+      enhancedSrc.value = cached.src
+      activeEyeData.value = cached.eyeData || null
+    }
     if (cached.debugInfo) debugInfo.value = cached.debugInfo
+    isProcessing.value = false
     return
   }
-
-  isProcessing.value = true
 
   try {
     const formData = new FormData()
@@ -350,9 +362,6 @@ async function processPremiumImage(url) {
           maskCanvas.height = cHeight
           const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true })
           
-          // BUGFIX: Mask dimensions from AI APIs are frequently downscaled (e.g. 512x512). 
-          // Applying original image crop coordinates directly to the mask reads out-of-bounds,
-          // creating a fully transparent/black output. We must map coordinates to the mask's scale.
           const scaleX = maskImg.width / img.width
           const scaleY = maskImg.height / img.height
           
@@ -377,9 +386,7 @@ async function processPremiumImage(url) {
           }
 
           for (let i = 0; i < mainData.data.length; i += 4) {
-             // Extract true mask intensity safely
              const maskIntensity = usesAlpha ? maskData.data[i + 3] : maskData.data[i]
-             // Apply smoothly
              mainData.data[i + 3] = (mainData.data[i + 3] * maskIntensity) / 255
           }
           
@@ -413,8 +420,9 @@ async function processPremiumImage(url) {
           const cx_c = (ecx - sx) * scale
           const cy_c = (ecy - sy) * scale
           
-          // 160% of the detected eye width provides a clean localized mask for the iris and eyelid
-          const pSize = Math.max(16, Math.floor(ew * scale * 1.6))
+          // Scaled to 220% of the detected eye width. This gives a broad localized mask to 
+          // allow stronger eye movement natively without clipping the edges of the canvas.
+          const pSize = Math.max(24, Math.floor(ew * scale * 2.2))
           const pR = pSize / 2
 
           // Ensure eye is securely within the cropped bounds before isolating it
@@ -426,11 +434,12 @@ async function processPremiumImage(url) {
             
             eyeCtx.drawImage(canvas, cx_c - pR, cy_c - pR, pSize, pSize, 0, 0, pSize, pSize)
             
-            // Multiply the crop with a soft radial mask to avoid harsh edges mapping over the face
+            // Multiply the crop with a soft radial mask mapping smoothly over the face.
+            // 40% of the outer edge is pure transparency to cleanly absorb the 4% coordinate shift.
             eyeCtx.globalCompositeOperation = 'destination-in'
-            const grad = eyeCtx.createRadialGradient(pR, pR, pR * 0.1, pR, pR, pR * 0.8)
+            const grad = eyeCtx.createRadialGradient(pR, pR, pR * 0.1, pR, pR, pR * 0.6)
             grad.addColorStop(0, 'rgba(0,0,0,1)')
-            grad.addColorStop(0.5, 'rgba(0,0,0,0.8)')
+            grad.addColorStop(0.5, 'rgba(0,0,0,0.9)')
             grad.addColorStop(1, 'rgba(0,0,0,0)')
             eyeCtx.fillStyle = grad
             eyeCtx.fillRect(0, 0, pSize, pSize)
@@ -455,18 +464,16 @@ async function processPremiumImage(url) {
     const processedDataUrl = canvas.toDataURL('image/png')
     
     globalImageCache.set(fullUrl, { src: processedDataUrl, usedCanvas: true, eyeData: patches, debugInfo: { ...debugInfo.value } })
-    activeSrc.value = processedDataUrl
-    usedCanvas.value = true
+    enhancedSrc.value = processedDataUrl
     activeEyeData.value = patches
 
   } catch (e) {
     debugInfo.value.faceOK = false
     debugInfo.value.bgStatus = 'FAIL_FALLBACK'
     
-    // 4. Graceful fallback: If external analysis drops, just map the raw image
+    // 4. Graceful fallback: Keep the base image if processing completely drops
     globalImageCache.set(fullUrl, { src: fullUrl, usedCanvas: false, eyeData: null, debugInfo: { ...debugInfo.value } })
-    activeSrc.value = fullUrl
-    usedCanvas.value = false
+    enhancedSrc.value = null
     activeEyeData.value = null
   } finally {
     isProcessing.value = false
