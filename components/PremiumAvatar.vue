@@ -604,4 +604,19 @@ async function processPremiumImage(url) {
       src: fullUrl,
       usedCanvas: false,
       eyeData: null,
-      debugInfo: { .
+      debugInfo: { ...debugInfo.value }
+    })
+
+    // Leaving enhancedSrc null acts as the required fallback -> leaves `baseSrc` 
+    // visibly loaded at opacity-100 (which is the original pre-bg removal image)
+    enhancedSrc.value   = null
+    activeEyeData.value = null
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+watch(() => props.src, (newSrc) => {
+  processPremiumImage(newSrc)
+}, { immediate: true })
+</script>
