@@ -126,7 +126,7 @@
             <span class="text-slate-400 mb-1">Background</span>
             <span
               class="text-[10px] leading-relaxed break-words"
-              :class="debugInfo.bgStatus === 'REMOVED' ? 'text-emerald-400' : 'text-amber-400'"
+              :class="debugInfo.bgStatus.includes('REMOVED') ? 'text-emerald-400' : 'text-amber-400'"
             >
               {{ debugInfo.bgStatus }}
             </span>
@@ -196,14 +196,6 @@ const debugInfo = ref({
 })
 
 // ─── motion system ─────────────────────────────────────────────────────────────
-//
-// High-frequency RAF loop keeps DOM writes off the JS hot path.
-// targetShift  = where the irises should end up this frame (set on mousemove)
-// currentShift = where they actually are right now (lerped toward target)
-//
-// Using a spring lerp of 0.09 gives a pleasantly soft, organic settling speed —
-// noticeably slower than a UI transition but still reads as responsive and alive.
-
 const containerRef = ref(null)
 let eyeDOMElements = []
 let targetShift  = { x: 0, y: 0 }
@@ -219,7 +211,6 @@ const updateLoop = () => {
     const dx = targetShift.x - currentShift.x
     const dy = targetShift.y - currentShift.y
 
-    // Only write to the DOM when the remaining delta is perceptible (> 0.005 px)
     if (Math.abs(dx) > 0.005 || Math.abs(dy) > 0.005) {
       currentShift.x += dx * 0.09
       currentShift.y += dy * 0.09
@@ -247,20 +238,10 @@ const handleMouseMove = (e) => {
   const rawDy = e.clientY - cy
   const dist  = Math.sqrt(rawDx * rawDx + rawDy * rawDy)
 
-  // Influence radius: the field over which the avatar "notices" the viewer.
-  // A generous 600 / 300 px means the eyes start shifting as soon as you enter
-  // the page rather than only reacting when you hover the avatar itself.
   const R = window.innerWidth > 800 ? 600 : 300
   const t = Math.min(dist / R, 1.0)
-
-  // Smooth step ease — slow start, fast middle, soft plateau near max distance.
-  // This makes close-range motion feel subtle and far-range motion feel resolved.
   const eased = t * t * (3 - 2 * t)
 
-  // Max displacement: 3.8 % of the container's display width.
-  // With iris-only patches this reads as a natural gaze rotation, not a slide.
-  // A 96 px avatar gets ~3.6 px max shift, a 56 px avatar ~2.1 px — both visible
-  // but anatomically plausible because only the dark iris disc is moving.
   const maxMove = rect.width * 0.038
 
   const angle = Math.atan2(rawDy, rawDx)
@@ -268,7 +249,6 @@ const handleMouseMove = (e) => {
   targetShift.y = Math.sin(angle) * eased * maxMove
 }
 
-// Return irises to neutral centre when the pointer leaves the document.
 const handleMouseLeave = () => {
   targetShift.x = 0
   targetShift.y = 0
@@ -300,24 +280,7 @@ function loadImage(url, useCors) {
   })
 }
 
-/**
- * Finds the centre of the iris within a given eye bounding box using an
- * adaptive luminance-weighted centroid.
- *
- * Two-pass approach:
- *   Pass 1 — determine the minimum luminance in the sample region so the
- *             threshold adapts to the subject's actual iris darkness rather
- *             than a hardcoded absolute value. This handles blue/green/light
- *             irises as well as very dark ones.
- *   Pass 2 — compute the weighted centroid of all pixels darker than
- *             (minLum + 0.28), clamped to a 0.50 ceiling so the algorithm
- *             does not chase ambient shadow on pale skin.
- *
- * Returns: { cx, cy, irisRadius } all in canvas-space pixels.
- */
 function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
-  // Sampling region: centre 90 % of the eye box so lid-shadow doesn't pull
-  // the centroid toward the eyelid instead of the iris.
   const hw = Math.max(5, Math.floor(eyeWidthPx * 0.45))
   const hh = Math.max(4, Math.floor(eyeWidthPx * 0.36))
 
@@ -326,8 +289,6 @@ function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
   const sw = Math.min(canvasW - sx, hw * 2)
   const sh = Math.min(canvasH - sy, hh * 2)
 
-  // Estimated iris radius regardless of whether we can sample:
-  // typically ≈ 36 % of the detected eye box width.
   const irisRadius = Math.max(4, Math.round(eyeWidthPx * 0.36))
 
   if (sw < 6 || sh < 6) {
@@ -336,7 +297,6 @@ function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
 
   const px = ctx.getImageData(sx, sy, sw, sh).data
 
-  // Pass 1: find minimum luminance (≙ darkest pixel in sample → pupil core)
   let minLum = 1.0
   for (let i = 0; i < px.length; i += 4) {
     if (px[i + 3] < 64) continue
@@ -344,10 +304,7 @@ function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
     if (lum < minLum) minLum = lum
   }
 
-  // Adaptive threshold: 0.28 above darkest pixel, hard ceiling at 0.50
   const threshold = Math.min(minLum + 0.28, 0.50)
-
-  // Pass 2: weighted centroid
   let totalW = 0, wX = 0, wY = 0
 
   for (let row = 0; row < sh; row++) {
@@ -356,8 +313,6 @@ function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
       if (px[idx + 3] < 64) continue
       const lum = (0.299 * px[idx] + 0.587 * px[idx + 1] + 0.114 * px[idx + 2]) / 255
       if (lum <= threshold) {
-        // Quadratic weight: pixels much darker than the threshold count far more,
-        // sharply concentrating the centroid on the pupil rather than the iris rim.
         const w = Math.pow((threshold - lum) / threshold, 2)
         wX += col * w
         wY += row * w
@@ -367,7 +322,6 @@ function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
   }
 
   if (totalW < 8) {
-    // Not enough dark pixels found — fall back to geometric eye centre
     return { cx: eyeCx, cy: eyeCy, irisRadius }
   }
 
@@ -378,19 +332,6 @@ function locateIris(ctx, eyeCx, eyeCy, eyeWidthPx, canvasW, canvasH) {
   }
 }
 
-/**
- * Renders an iris-only canvas patch.
- *
- * The patch is sized to iris.irisRadius * 1.75 on each side so there is a
- * feather zone between the opaque iris core and the transparent outer edge.
- * The radial gradient mask transitions:
- *   0   → irisRatio * 0.35  : fully opaque (pupil + inner iris)
- *   irisRatio * 0.35 → 0.80 : smooth cosine fade (outer iris → sclera boundary)
- *   0.80 → 1.0              : transparent (clear air for the slide to breathe)
- *
- * This means when the patch shifts by a few pixels the iris edge fades cleanly
- * into the static face below — no hard cookie-cutter edge, no ghosting.
- */
 function buildIrisPatch(sourceCanvas, iris) {
   const { cx, cy, irisRadius } = iris
   const cW = sourceCanvas.width
@@ -402,9 +343,6 @@ function buildIrisPatch(sourceCanvas, iris) {
   const left = Math.round(cx - patchR)
   const top  = Math.round(cy - patchR)
 
-  // Bounds safety: the entire patch must fit within the canvas.
-  // If even a single pixel would fall outside, skip this eye rather than
-  // clipping or wrapping, which would create a visible artefact.
   if (left < 0 || top < 0 || left + patchSize > cW || top + patchSize > cH) {
     return null
   }
@@ -414,21 +352,19 @@ function buildIrisPatch(sourceCanvas, iris) {
   pc.height = patchSize
   const pCtx = pc.getContext('2d')
 
-  // 1. Copy the iris region from the processed face canvas
   pCtx.drawImage(sourceCanvas, left, top, patchSize, patchSize, 0, 0, patchSize, patchSize)
 
-  // 2. Apply radial alpha mask so only the iris disc remains opaque
   pCtx.globalCompositeOperation = 'destination-in'
   const pr         = patchSize / 2
-  const irisRatio  = irisRadius / patchR   // ≈ 0.57 of patch half-width
+  const irisRatio  = irisRadius / patchR
 
   const grad = pCtx.createRadialGradient(pr, pr, 0, pr, pr, pr)
-  grad.addColorStop(0,                  'rgba(0,0,0,1.00)') // pupil core: fully opaque
-  grad.addColorStop(irisRatio * 0.35,   'rgba(0,0,0,1.00)') // inner iris: fully opaque
-  grad.addColorStop(irisRatio * 0.75,   'rgba(0,0,0,0.90)') // iris rim: nearly opaque
-  grad.addColorStop(irisRatio * 1.00,   'rgba(0,0,0,0.55)') // sclera boundary: half
-  grad.addColorStop(Math.min(0.88, irisRatio * 1.25), 'rgba(0,0,0,0.10)') // soft feather
-  grad.addColorStop(0.96,               'rgba(0,0,0,0.00)') // fully transparent
+  grad.addColorStop(0,                  'rgba(0,0,0,1.00)')
+  grad.addColorStop(irisRatio * 0.35,   'rgba(0,0,0,1.00)')
+  grad.addColorStop(irisRatio * 0.75,   'rgba(0,0,0,0.90)')
+  grad.addColorStop(irisRatio * 1.00,   'rgba(0,0,0,0.55)')
+  grad.addColorStop(Math.min(0.88, irisRatio * 1.25), 'rgba(0,0,0,0.10)')
+  grad.addColorStop(0.96,               'rgba(0,0,0,0.00)')
 
   pCtx.fillStyle = grad
   pCtx.fillRect(0, 0, patchSize, patchSize)
@@ -474,7 +410,6 @@ async function processPremiumImage(url) {
   activeEyeData.value = null
   isProcessing.value  = true
 
-  // Fast-path: return cached result without re-processing
   if (globalImageCache.has(fullUrl)) {
     const cached = globalImageCache.get(fullUrl)
     if (cached.usedCanvas) {
@@ -505,7 +440,6 @@ async function processPremiumImage(url) {
     debugInfo.value.eyeConf = data.eyeConfidence  || null
     debugInfo.value.bgStatus = data.maskAvailable ? 'MASK_AVAILABLE' : 'SKIP'
 
-    // Retrieve image through the vision proxy to sidestep client CORS constraints
     const img = await loadImage(`${visionBase}/image/${data.imageKey}`, true)
 
     const canvas = document.createElement('canvas')
@@ -520,7 +454,6 @@ async function processPremiumImage(url) {
       sHeight = (data.cropBox.yMax - data.cropBox.yMin) * img.height
     }
 
-    // Cap canvas resolution at 256 px to avoid blocking the main thread
     const maxRes = 256
     const scale  = Math.min(1, maxRes / sWidth, maxRes / sHeight)
     const cW     = Math.floor(sWidth  * scale)
@@ -529,7 +462,6 @@ async function processPremiumImage(url) {
     canvas.height = cH
     ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, cW, cH)
 
-    // Debug: face bounding rect in canvas-percent coordinates
     if (data.faceBox) {
       const fx = data.faceBox.xMin * img.width
       const fy = data.faceBox.yMin * img.height
@@ -563,7 +495,6 @@ async function processPremiumImage(url) {
         const mainData = ctx.getImageData(0, 0, cW, cH)
         const maskData = mCtx.getImageData(0, 0, cW, cH)
 
-        // Auto-detect B/W JPEG mask (alpha = 255 everywhere) vs transparent PNG mask
         let usesAlpha = false
         for (let i = 3; i < maskData.data.length; i += 16) {
           if (maskData.data[i] < 255) { usesAlpha = true; break }
@@ -580,6 +511,32 @@ async function processPremiumImage(url) {
       }
     }
 
+    // ── Safety Check ──────────────────────────────────────────────────────────
+    // Keep the detection check tied to the final rendered result. If the mask 
+    // broke the face, we abort and automatically fall back to the original image.
+    if (data.faceDetected && debugInfo.value.bgStatus === 'REMOVED') {
+      debugInfo.value.bgStatus = 'VERIFYING_MASK'
+      const processedDataUrl = canvas.toDataURL('image/png')
+      const verifyFormData = new FormData()
+      verifyFormData.append('imageUrl', processedDataUrl)
+
+      const verifyRes = await fetch(`${visionBase}/analyze`, {
+        method: 'POST',
+        body: verifyFormData
+      }).catch(() => null)
+
+      if (verifyRes?.ok) {
+        const verifyData = await verifyRes.json()
+        if (verifyData.ok === true && !verifyData.faceDetected) {
+          throw new Error('SAFETY_CHECK_FAIL')
+        }
+        debugInfo.value.bgStatus = 'REMOVED_AND_VERIFIED'
+      } else {
+        // Assume OK if transient network issue to prevent breaking the flow
+        debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
+      }
+    }
+
     // ── Iris extraction — the premium gaze illusion ────────────────────────────
     let patches = null
 
@@ -592,7 +549,6 @@ async function processPremiumImage(url) {
         const ew      = (eye.xMax - eye.xMin) * img.width
         const eh      = (eye.yMax - eye.yMin) * img.height
 
-        // Debug: eye bounding rect in canvas-percent
         debugInfo.value.eyeRects.push({
           left:   ((ex - sx) / sWidth)  * 100,
           top:    ((eyTop - sy) / sHeight) * 100,
@@ -600,15 +556,12 @@ async function processPremiumImage(url) {
           height: (eh / sHeight) * 100
         })
 
-        // Geometric centre of the detected eye box, in canvas-space pixels
         const eyeCx = ((ex + ew / 2) - sx) * scale
         const eyeCy = ((eyTop + eh / 2) - sy) * scale
         const ewScaled = ew * scale
 
-        // Locate the actual iris centre using dark-pixel centroid analysis
         const iris = locateIris(ctx, eyeCx, eyeCy, ewScaled, cW, cH)
 
-        // Debug: iris centre dot
         debugInfo.value.irisPoints.push({
           left: (iris.cx / cW) * 100,
           top:  (iris.cy / cH) * 100
@@ -618,8 +571,6 @@ async function processPremiumImage(url) {
         if (patch) patches.push(patch)
       }
 
-      // Both irises must succeed. A single missing eye would create an
-      // asymmetric illusion that looks worse than no illusion at all.
       if (patches.length === 2) {
         debugInfo.value.followActive = true
       } else {
@@ -641,24 +592,16 @@ async function processPremiumImage(url) {
     activeEyeData.value = patches
 
   } catch (e) {
-    debugInfo.value.faceOK   = false
-    debugInfo.value.bgStatus = 'FAIL_FALLBACK'
+    if (e.message === 'SAFETY_CHECK_FAIL') {
+      debugInfo.value.bgStatus = 'MASK_REJECTED_FACE_LOST'
+      debugInfo.value.faceOK   = true // Ensure original check still reports true
+    } else {
+      debugInfo.value.faceOK   = false
+      debugInfo.value.bgStatus = 'FAIL_FALLBACK'
+    }
 
     globalImageCache.set(fullUrl, {
       src: fullUrl,
       usedCanvas: false,
       eyeData: null,
-      debugInfo: { ...debugInfo.value }
-    })
-
-    enhancedSrc.value   = null
-    activeEyeData.value = null
-  } finally {
-    isProcessing.value = false
-  }
-}
-
-watch(() => props.src, (newSrc) => {
-  processPremiumImage(newSrc)
-}, { immediate: true })
-</script>
+      debugInfo: { .
