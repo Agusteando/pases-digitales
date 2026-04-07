@@ -37,9 +37,6 @@ export default defineEventHandler(async (event) => {
 
     // In-App Quick Authorization Feature (Authorize / Reject)
     if (action === 'authorize' || action === 'reject') {
-       if (pass.employee_name === actingName) {
-         throw createError({ statusCode: 403, message: 'Operación de seguridad denegada. Es imposible auto-aprobar requerimientos creados a nombre propio.' })
-       }
        if (pass.status !== 'pendiente') {
          throw createError({ statusCode: 400, message: `No es posible alterar la decisión. El pase ya ha sido procesado (Estado actual: ${pass.status}).` })
        }
@@ -65,7 +62,6 @@ export default defineEventHandler(async (event) => {
       if (pass.user !== actingName && !isAdmin) {
         throw createError({ statusCode: 403, message: 'Permisos insuficientes para anular el registro. Se requiere ser el creador o un administrador de plataforma.' })
       }
-      // Server-side strict immutability check
       if (pass.status !== 'pendiente') {
          throw createError({ statusCode: 403, message: 'Operación denegada. No se puede anular un pase que ya ha sido resuelto por los responsables.' })
       }

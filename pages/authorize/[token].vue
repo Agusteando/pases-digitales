@@ -37,7 +37,12 @@
         <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm grid grid-cols-1 gap-5">
           <div class="pb-5 border-b border-slate-100">
             <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Colaborador</span>
-            <span class="text-lg font-black text-slate-900 leading-tight">{{ pass.employee_name }}</span>
+            <span class="text-lg font-black text-slate-900 leading-tight flex flex-col sm:flex-row sm:items-center gap-2">
+              {{ pass.employee_name }}
+              <span v-if="pass.employee_name === pass.user" class="px-2 py-0.5 bg-slate-100 text-slate-500 text-[9px] font-bold uppercase tracking-widest rounded-md border border-slate-200/60 shadow-sm w-max">
+                Registro propio
+              </span>
+            </span>
           </div>
           <div class="grid grid-cols-2 gap-4 pb-5 border-b border-slate-100">
             <div>
@@ -70,20 +75,16 @@
       </div>
 
       <footer v-if="pass.status === 'pendiente'" class="flex gap-4 relative z-10">
-        <button @click="doAction('reject')" :disabled="isProcessing || !canAuthorize" class="flex-1 py-4 bg-white text-red-600 font-black rounded-2xl hover:bg-red-50 transition-all border border-red-200 hover:border-red-300 disabled:opacity-50 outline-none flex justify-center items-center gap-2 shadow-sm">
+        <button @click="doAction('reject')" :disabled="isProcessing" class="flex-1 py-4 bg-white text-red-600 font-black rounded-2xl hover:bg-red-50 transition-all border border-red-200 hover:border-red-300 disabled:opacity-50 outline-none flex justify-center items-center gap-2 shadow-sm">
           <X class="w-5 h-5" /> Rechazar
         </button>
-        <button @click="doAction('authorize')" :disabled="isProcessing || !canAuthorize" class="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 outline-none flex justify-center items-center gap-2">
+        <button @click="doAction('authorize')" :disabled="isProcessing" class="flex-1 py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 outline-none flex justify-center items-center gap-2">
           <Check class="w-5 h-5" /> Autorizar
         </button>
       </footer>
-      
-      <p v-if="!canAuthorize && pass.status === 'pendiente'" class="text-center text-xs font-black text-amber-600 mt-6 relative z-10 bg-amber-50 p-3 rounded-xl border border-amber-200">
-        No puedes autorizar tu propia solicitud.
-      </p>
 
       <div class="mt-8 text-center relative z-10">
-         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver al inicio</NuxtLink>
+         <NuxtLink to="/" class="text-xs font-bold text-slate-400 hover:text-brand-600 transition-colors">Volver a plataforma</NuxtLink>
       </div>
     </div>
   </div>
@@ -99,20 +100,16 @@ definePageMeta({ layout: false })
 
 const route = useRoute()
 const token = route.params.token
-const { user } = useAuth()
+const rToken = route.query.r
 
 const pass = ref(null)
 const errorMsg = ref('')
 const pending = ref(true)
 const isProcessing = ref(false)
 
-const canAuthorize = computed(() => {
-  return pass.value && user.value && pass.value.employee_name !== user.value.name && pass.value.user !== user.value.name
-})
-
 const fetchPass = async () => {
   try {
-    const data = await $fetch(`/api/passes/authorize/${token}`)
+    const data = await $fetch(`/api/passes/authorize/${token}`, { query: { r: rToken } })
     pass.value = data
   } catch (err) {
     errorMsg.value = err.data?.message || 'Error al cargar la solicitud.'
@@ -122,12 +119,12 @@ const fetchPass = async () => {
 }
 
 const doAction = async (actionStr) => {
-  if (isProcessing.value || !canAuthorize.value) return
+  if (isProcessing.value) return
   isProcessing.value = true
   try {
-    const res = await $fetch(`/api/passes/authorize/${token}`, { method: 'POST', body: { action: actionStr } })
+    const res = await $fetch(`/api/passes/authorize/${token}`, { method: 'POST', body: { action: actionStr, rToken } })
     pass.value.status = res.status
-    pass.value.authorized_by = user.value.name
+    pass.value.authorized_by = pass.value._viewer || 'Responsable'
     pass.value.authorized_at = new Date().toISOString()
   } catch (err) {
     alert(err.data?.message || 'Error al procesar la solicitud.')

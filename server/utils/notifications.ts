@@ -2,7 +2,7 @@ import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser, sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
 import { getSigniaEnrichment, cleanPlantelName } from '~/server/utils/employee-engine'
 import { sendWhatsAppMessage } from '~/server/utils/whatsappModule'
-import jwt from 'jsonwebtoken'
+import { signRecipientToken } from '~/server/utils/token'
 import { useRuntimeConfig } from '#imports'
 
 const toWhatsAppChatId = (phone: string) => {
@@ -22,6 +22,7 @@ export async function dispatchNotificationsForPass(passId: number) {
   const pass = rows[0]
   pass.plantel = cleanPlantelName(pass.plantel)
 
+  const isAuthorized = pass.status === 'autorizado'
   const categories: Record<number, string> = {
     1: 'Pase de entrada', 2: 'Pase de salida', 3: 'Pase para faltar', 4: 'Pase cambio de horario', 5: 'Incapacidad'
   }
@@ -29,16 +30,16 @@ export async function dispatchNotificationsForPass(passId: number) {
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
 
-  // Variables strictly formatted for clarity
-  const motivoMsg = pass.comentarios ? ` con motivo ${pass.comentarios}` : ''
+  const motivoMsg = pass.comentarios ? ` con motivo: ${pass.comentarios}` : ''
   const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
-  const timeMsg = pass.time ? ` - Hora: - ${pass.time}` : ''
+  const timeMsg = pass.time ? ` - Hora: ${pass.time}` : ''
 
   const authUrlBase = `${config.appUrl}/authorize/${pass.auth_token}`
 
   // 1. Mandatory Global Infrastructure Audit (Fixed, Non-Configurable)
   const telegramGlobalId = '-1003057962499'
-  const tgMessage = `${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
+  const statusIcon = isAuthorized ? '✅' : '⚠️'
+  const tgMessage = `${statusIcon} ${isAuthorized ? 'Pase Autorizado' : 'Nuevo Pase Registrado'}\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -98,20 +99,21 @@ export async function dispatchNotificationsForPass(passId: number) {
 
   // 3. Dispatch Configurable Channels & Audit Trail
   for (const [email, target] of targets.entries()) {
-    // Crucial requirement: Every target gets a customized Cryptographic Recipient Token appended to the Base Auth URL
-    const rToken = jwt.sign(
-      { passId: pass.id, email: target.email, name: target.name },
-      config.jwtSecret,
-      { expiresIn: '7d' }
-    )
+    
+    // Short cryptographic recipient token
+    const rToken = signRecipientToken(target.email, target.name)
     const targetAuthUrl = `${authUrlBase}?r=${rToken}`
+
+    const headerTitle = isAuthorized ? `*Pase Autorizado* ✅` : `*Solicitud de Autorización* ⚠️`
+    const actionPhrase = isAuthorized
+      ? `esta solicitud ya fue generada y autorizada por ${pass.authorized_by}. Puedes consultar el expediente digital en el siguiente enlace:`
+      : `se requiere tu autorización para este pase digital. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:`
 
     if (target.channels.has('WHATSAPP')) {
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
         
-        // Exact inclusion of the Authorization Link within the core Notification Payload
-        const waMessage = `*Solicitud de Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, se requiere tu autorización para este pase digital. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:\n${targetAuthUrl}`
+        const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
 
         try {
           const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
@@ -135,28 +137,35 @@ export async function dispatchNotificationsForPass(passId: number) {
     }
 
     if (target.channels.has('EMAIL')) {
+      const emailSubject = isAuthorized 
+        ? `Pase Autorizado: #${paddedId} para ${pass.employee_name}`
+        : `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`
+        
+      const emailTitle = isAuthorized ? `Pase Autorizado` : `Solicitud de Autorización`
+      const emailActionBtn = isAuthorized ? `Ver Expediente` : `Revisar y Resolver Solicitud`
+
       const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
            <div style="width: 64px; height: 64px; background-color: #eef2ff; border-radius: 16px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🎫</div>
-           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Solicitud de Autorización</h1>
+           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">${emailTitle}</h1>
            <p style="margin: 0 0 32px; color: #64748b; font-size: 15px;">Folio <strong>#${paddedId}</strong> &bull; ${categoryName}</p>
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
+              ${isAuthorized ? `<p style="margin: 12px 0 0; color: #059669; font-size: 14px;"><strong>Autorizado por:</strong><br><span style="color: #064e3b; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
            </div>
 
-           <!-- Exact inclusion of the Authorization Link within the core Notification Payload -->
-           <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px; transition: background-color 0.2s;">Revisar y Resolver Solicitud</a>
+           <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px; transition: background-color 0.2s;">${emailActionBtn}</a>
            
            <p style="margin: 32px 0 0; color: #94a3b8; font-size: 12px;">Emitido por ${pass.user}<br>Plataforma Institucional de Pases Digitales</p>
         </div>
       </div>`;
 
       try {
-        await sendWorkspaceEmail(target.email, `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`, emailHtml)
+        await sendWorkspaceEmail(target.email, emailSubject, emailHtml)
         await db.execute(
           'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
           [pass.id, target.email, 'sent', `Destinatario: ${target.name} | Canal: Email`]
@@ -164,7 +173,7 @@ export async function dispatchNotificationsForPass(passId: number) {
       } catch (e: any) {
         await db.execute(
           'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
-          [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de red/proveedor`]
+          [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de Google Workspace`]
         )
       }
     }

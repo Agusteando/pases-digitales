@@ -1,6 +1,6 @@
 import { useDB } from '~/server/utils/db'
-import jwt from 'jsonwebtoken'
-import { defineEventHandler, getRouterParam, readBody, createError, useRuntimeConfig } from '#imports'
+import { verifyRecipientToken } from '~/server/utils/token'
+import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const tokenUrl = getRouterParam(event, 'token')
@@ -11,15 +11,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Petición inválida.' })
   }
 
-  if (!rToken) throw createError({ statusCode: 401, message: 'Petición de resolución denegada por ausencia de firma de destinatario.' })
+  if (!rToken) throw createError({ statusCode: 401, message: 'Petición de resolución denegada por ausencia de firma de identidad.' })
 
-  const config = useRuntimeConfig()
   let actingUser = null
 
-  // Rely purely on the cryptographic token distributed to the user via WhatsApp
   try {
-    const decoded: any = jwt.verify(rToken, config.jwtSecret)
+    const decoded = verifyRecipientToken(rToken)
     if (decoded && decoded.name) actingUser = decoded.name
+    else throw new Error()
   } catch (e) {
     throw createError({ statusCode: 401, message: 'Firma de enlace inválida o caducada.' })
   }
@@ -38,12 +37,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: `El documento seguro ya fue procesado y su estado actual es: ${pass.status}` })
     }
 
-    if (actingUser === pass.employee_name || actingUser === pass.user) {
-      throw createError({ statusCode: 403, message: 'Política de seguridad: Imposible auto-aprobar requerimientos en los que la persona interactuante es el mismo creador o el empleado afectado.' })
-    }
-
     const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
-    // Log the cryptographic identity as the source of truth
     await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = NOW() WHERE id = ?`, [newStatus, actingUser, pass.id])
     
     return { success: true, status: newStatus }

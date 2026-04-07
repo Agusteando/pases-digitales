@@ -1,22 +1,22 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
-import jwt from 'jsonwebtoken'
-import { defineEventHandler, getRouterParam, getQuery, createError, useRuntimeConfig } from '#imports'
+import { verifyRecipientToken } from '~/server/utils/token'
+import { defineEventHandler, getRouterParam, getQuery, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const token = getRouterParam(event, 'token')
   const query = getQuery(event)
   const rToken = query.r as string
 
-  if (!token) throw createError({ statusCode: 400, message: 'Enlace malformado.' })
-  if (!rToken) throw createError({ statusCode: 401, message: 'Token de destinatario ausente. Asegúrate de usar el enlace exacto enviado a tu dispositivo.' })
+  if (!token) throw createError({ statusCode: 400, message: 'Enlace malformado o incompleto.' })
+  if (!rToken) throw createError({ statusCode: 401, message: 'Identidad del destinatario ausente. Asegúrate de usar el enlace exacto enviado a tu dispositivo.' })
 
-  const config = useRuntimeConfig()
   let recipientName = null
 
   try {
-    const decoded: any = jwt.verify(rToken, config.jwtSecret)
+    const decoded = verifyRecipientToken(rToken)
     if (decoded && decoded.name) recipientName = decoded.name
+    else throw new Error()
   } catch (e) {
     throw createError({ statusCode: 401, message: 'Firma de enlace inválida o expirada.' })
   }

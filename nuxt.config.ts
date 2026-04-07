@@ -38,7 +38,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    appUrl: process.env.APP_URL || 'http://localhost:3000',
+    appUrl: (process.env.APP_URL || 'https://pases.midominio.com').replace(/\/$/, ''),
     mysqlHost: process.env.MYSQL_HOST,
     mysqlUser: process.env.MYSQL_USER,
     mysqlPassword: process.env.MYSQL_PASSWORD,
@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     googleSaPrivateKey: process.env.GOOGLE_SA_PRIVATE_KEY,
     
     public: {
+      appUrl: (process.env.APP_URL || 'https://pases.midominio.com').replace(/\/$/, ''),
       googleClientIdPublic: process.env.GOOGLE_CLIENT_ID,
       debugFace: process.env.DEBUG_FACE === 'true',
       visionApiBaseUrl: process.env.VISION_API_BASE_URL || 'https://vision.casitaapps.com',

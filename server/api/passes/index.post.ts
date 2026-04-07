@@ -4,7 +4,7 @@ import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import jwt from 'jsonwebtoken'
 import { getCookie, createError, defineEventHandler, readBody } from '#imports'
 import dayjs from 'dayjs'
-import { randomUUID } from 'crypto'
+import crypto from 'crypto'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   const { 
     employeeName, categoryId, date, endDate, time, comentarios, 
-    plantel, regreso, horaRegreso, imss, tipoIncapacidad 
+    plantel, regreso, horaRegreso, imss, tipoIncapacidad, autoAuthorize 
   } = body
 
   const dateObj = date ? dayjs(date).startOf('day') : dayjs().startOf('day')
@@ -39,13 +39,16 @@ export default defineEventHandler(async (event) => {
   const mysqlDate = dateObj.format('YYYY-MM-DD 00:00:00')
   const mysqlEndDate = endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
   
-  const authToken = randomUUID()
-  const initialStatus = 'pendiente'
+  const authToken = crypto.randomBytes(8).toString('hex') // Short 16-char hex string
+  
+  const initialStatus = autoAuthorize ? 'autorizado' : 'pendiente'
+  const authorizedBy = autoAuthorize ? actingUser : null
+  const authorizedAt = autoAuthorize ? dayjs().format('YYYY-MM-DD HH:mm:ss') : null
   
   const sql = `
     INSERT INTO hr_entries 
-    (user, employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+    (user, employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, authorized_by, authorized_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
   `
   
   try {
@@ -63,7 +66,9 @@ export default defineEventHandler(async (event) => {
       initialStatus,
       authToken,
       imss || null,
-      categoryId === 5 ? tipoIncapacidad : null
+      categoryId === 5 ? tipoIncapacidad : null,
+      authorizedBy,
+      authorizedAt
     ])
 
     // Immediately dispatch notifications asynchronously so it doesn't block the UI

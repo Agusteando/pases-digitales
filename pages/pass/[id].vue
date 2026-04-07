@@ -67,7 +67,12 @@
               <PremiumAvatar :src="enrichment?.picture || null" :name="pass.employee_name" size="lg" class="shrink-0 ring-4 ring-slate-50 shadow-sm" />
               
               <div class="flex-1 w-full text-center sm:text-left">
-                <h4 class="text-2xl font-black text-slate-900 tracking-tight">{{ pass.employee_name }}</h4>
+                <h4 class="text-2xl font-black text-slate-900 tracking-tight flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                  {{ pass.employee_name }}
+                  <span v-if="pass.employee_name === pass.user" class="inline-block px-2.5 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200/60 shadow-sm w-max mx-auto sm:mx-0">
+                    Registro propio
+                  </span>
+                </h4>
                 <div class="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
                   <span v-if="pass.plantel" class="px-3 py-1.5 bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200/80 shadow-sm flex items-center gap-1.5">
                     <Building2 class="w-3.5 h-3.5 text-brand-500" />
@@ -131,7 +136,7 @@
         <div class="space-y-8">
 
           <!-- Autorización Directa -->
-          <div v-if="pass.status === 'pendiente' && canAuthorizeInApp" class="bg-white p-6 rounded-3xl border border-emerald-100 shadow-md">
+          <div v-if="pass.status === 'pendiente' && canManage" class="bg-white p-6 rounded-3xl border border-emerald-100 shadow-md">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
               <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Autorización Directa
             </h3>
@@ -279,11 +284,9 @@ dayjs.locale('es')
 
 const route = useRoute()
 
-// Statically capture the route ID during setup instead of tracking it reactively.
 const passId = route.params.id
 const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
 
-// Fetch enrichment dynamically when the pass employee name is known
 const { data: enrichment } = useAsyncData(`enrich-pass-${passId}`, async () => {
   if (!pass.value?.employee_name) return {}
   const res = await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
@@ -299,15 +302,6 @@ const isResolving = ref(false)
 const isAdmin = computed(() => user.value?.is_admin || false)
 const isOwner = computed(() => user.value && pass.value && user.value.name === pass.value.user)
 const canManage = computed(() => isOwner.value || isAdmin.value)
-
-const canAuthorizeInApp = computed(() => {
-  if (!pass.value || !user.value) return false;
-  // Security constraint: The employee receiving the pass can never self-approve.
-  if (pass.value.employee_name === user.value.name) return false;
-  // Speed and operational convenience: Anyone with valid access to view the pass 
-  // (which is admins or the creator) can authorize it in-app to circumvent notification latency.
-  return true;
-})
 
 const isExpired = computed(() => {
   if (!pass.value) return true

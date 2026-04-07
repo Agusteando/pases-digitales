@@ -21,11 +21,14 @@
           <EmployeeSearch @select="addEmployee" />
           
           <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
-            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300">
-              <div class="flex items-center justify-between mb-2">
+            <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white border border-slate-200 p-4 rounded-2xl group shadow-sm transition-all hover:border-brand-300 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-2 relative z-10">
                 <div class="flex items-center gap-3">
-                   <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="shrink-0" />
-                   <span class="text-base font-black text-slate-800">{{ emp.name }}</span>
+                   <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-slate-100" />
+                   <div class="flex flex-col">
+                     <span class="text-base font-black text-slate-800">{{ emp.name }}</span>
+                     <span v-if="myProfile && emp.name === myProfile.name" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Registro propio</span>
+                   </div>
                 </div>
                 <button type="button" @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-white bg-slate-50 hover:bg-red-500 w-8 h-8 flex items-center justify-center rounded-full transition-colors focus:outline-none border border-slate-100 shrink-0">
                   <XIcon class="w-4 h-4" />
@@ -36,20 +39,15 @@
                 <div class="h-6 w-24 bg-slate-100 animate-pulse rounded-lg"></div>
                 <div class="h-6 w-32 bg-slate-100 animate-pulse rounded-lg"></div>
               </div>
-              <div v-else class="flex flex-col gap-3 w-full mt-1">
+              <div v-else class="flex flex-col gap-3 w-full mt-1 relative z-10">
                 <div class="flex flex-wrap items-center gap-2">
-                  <!-- Puesto -->
                   <span v-if="emp.puesto" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60">
                     {{ emp.puesto }}
                   </span>
-
-                  <!-- Plantel Base (SOAP) -->
                   <span v-if="emp.plantelBase" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5" :class="{'opacity-60': emp.plantelActual && emp.plantelActual !== emp.plantelBase}">
                     <Building2 class="w-3.5 h-3.5 text-slate-400" />
                     {{ emp.plantelBase }}
                   </span>
-
-                  <!-- Plantel Actual (Routing override) -->
                   <template v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase">
                     <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg border border-blue-200/80 shadow-sm flex items-center gap-1.5 animate-in fade-in duration-300">
                       <MapPin class="w-3.5 h-3.5 text-blue-500" />
@@ -57,14 +55,11 @@
                       <button type="button" @click.stop="resetPlantelActual(emp)" class="ml-1 hover:text-blue-900 bg-blue-100/50 p-0.5 rounded-md transition-colors outline-none"><XIcon class="w-3 h-3"/></button>
                     </span>
                   </template>
-                  
-                  <!-- Trigger to change Plantel Actual -->
                   <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-bold text-slate-500 hover:text-blue-600 px-2 py-1 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1 border border-transparent hover:border-blue-200 outline-none">
                     <MapPin class="w-3 h-3" /> Registrar desde otra ubicación
                   </button>
                 </div>
 
-                <!-- Inline Selector for Plantel Actual -->
                 <div v-if="emp._editingActual" class="p-3 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
                    <div class="flex-1">
                       <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none shadow-sm cursor-pointer transition-all">
@@ -80,13 +75,11 @@
           </div>
         </div>
 
-        <!-- Directory Coverage Loading State -->
         <div v-if="checkingCoverage" class="py-10 flex flex-col items-center justify-center bg-slate-50/50 rounded-3xl border border-slate-100 animate-pulse">
            <Loader2 class="w-8 h-8 animate-spin text-brand-400 mb-3" />
            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
         </div>
         
-        <!-- Step 2: Motivo del pase (Aparece al seleccionar empleado) -->
         <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">2</div>
@@ -105,17 +98,15 @@
           </div>
         </div>
 
-        <!-- Step 3: Detalles y Generación (Aparece al elegir motivo) -->
         <div v-if="activeScenario" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500 pb-10">
           <div class="flex items-center gap-3 mb-4 mt-2">
             <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-xs font-black shrink-0">3</div>
             <h2 class="text-base font-black text-slate-900">Detalles de la solicitud</h2>
           </div>
 
-          <form @submit.prevent="submitPass" class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-card relative overflow-hidden flex flex-col gap-6">
+          <form @submit.prevent class="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-card relative overflow-hidden flex flex-col gap-6">
             <div class="absolute top-0 left-0 w-full h-1.5 bg-brand-500"></div>
             
-            <!-- Quick Context Presets inside the form -->
             <div v-if="activeScenario.categoryId === 2" class="flex flex-wrap items-center gap-2 pb-5 border-b border-slate-100">
               <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest w-full mb-1">Atajos contextuales:</span>
               <button type="button" @click="applyPreset('now')" class="px-3 py-1.5 bg-slate-50 hover:bg-brand-50 text-slate-600 hover:text-brand-700 text-xs font-bold rounded-lg border border-slate-200 hover:border-brand-200 transition-colors flex items-center gap-1.5 outline-none">
@@ -129,7 +120,6 @@
               </button>
             </div>
 
-            <!-- Core Form Grid -->
             <div class="grid grid-cols-2 gap-5">
               <div class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha de inicio</label>
@@ -155,7 +145,6 @@
               <input type="time" v-model="form.horaRegreso" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-slate-50/50" />
             </div>
 
-            <!-- Medical specifics -->
             <div v-if="activeScenario.isMedical" class="space-y-5 p-6 bg-teal-50/50 rounded-3xl border border-teal-100">
               <div class="space-y-2">
                 <label class="block text-[10px] font-black text-teal-700 uppercase tracking-widest">Folio IMSS</label>
@@ -171,7 +160,6 @@
               </div>
             </div>
 
-            <!-- Destino Option -->
             <div class="space-y-3 pt-2">
               <div v-if="!showDestino" class="flex">
                 <button type="button" @click="showDestino = true" class="text-xs font-bold text-slate-500 hover:text-brand-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-50 transition-colors">
@@ -195,32 +183,32 @@
               <textarea v-model="form.comentarios" rows="3" placeholder="Describe el motivo de forma clara..." required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium text-slate-900 resize-none transition-all bg-slate-50/50"></textarea>
             </div>
 
-            <!-- Autorización Opt-In -->
-            <div v-if="!isAuthorizerForCurrent && selectedEmployees.length > 0" class="p-5 bg-brand-50 rounded-2xl border border-brand-100 mt-2 mb-2 transition-all">
+            <div v-if="!isAuthorizerForCurrent && selectedEmployees.length > 0" class="p-4 bg-slate-50 rounded-xl border border-slate-200/60 mt-2 mb-2 transition-all">
               <div class="flex items-start gap-3">
-                <input type="checkbox" id="optInAuth" v-model="form.optInAuthorizer" class="mt-1 w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-brand-300 cursor-pointer" />
+                <input type="checkbox" id="optInAuth" v-model="form.optInAuthorizer" class="mt-0.5 w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer" />
                 <label for="optInAuth" class="cursor-pointer select-none">
-                  <p class="text-sm font-black text-brand-900">Configurarme como responsable de autorización</p>
-                  <p class="text-xs text-brand-700 mt-0.5 leading-relaxed">Deseo recibir las notificaciones por WhatsApp o Correo para revisar y resolver futuros pases de este plantel.</p>
+                  <p class="text-sm font-bold text-slate-800">Recibir notificaciones de este plantel</p>
+                  <p class="text-xs text-slate-500 mt-0.5">Asignarme como responsable para revisar y autorizar futuros pases.</p>
                 </label>
               </div>
-              <div v-if="form.optInAuthorizer && !myProfile?.phone" class="mt-4 pt-4 border-t border-brand-200/60 animate-in fade-in slide-in-from-top-2">
-                <label class="block text-[10px] font-black text-brand-800 uppercase tracking-widest mb-1.5">Número de celular (WhatsApp)</label>
+              <div v-if="form.optInAuthorizer && !myProfile?.phone" class="mt-4 pt-4 border-t border-slate-200/60 animate-in fade-in slide-in-from-top-2">
+                <label class="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Número de celular (WhatsApp)</label>
                 <div class="flex items-center shadow-sm rounded-xl">
-                   <div class="bg-brand-100 border border-brand-200 border-r-0 px-4 py-3 rounded-l-xl text-brand-800 font-black text-sm">+52 1</div>
-                   <input v-model="form.authorizerPhone" type="tel" maxlength="10" placeholder="10 dígitos" @input="form.authorizerPhone = form.authorizerPhone.replace(/\D/g, '').substring(0, 10)" class="flex-1 px-4 py-3 rounded-r-xl border border-brand-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-black text-slate-900 bg-white" />
+                   <div class="bg-slate-100 border border-slate-200 border-r-0 px-4 py-3 rounded-l-xl text-slate-600 font-black text-sm">+52 1</div>
+                   <input v-model="form.authorizerPhone" type="tel" maxlength="10" placeholder="10 dígitos" @input="form.authorizerPhone = form.authorizerPhone.replace(/\D/g, '').substring(0, 10)" class="flex-1 px-4 py-3 rounded-r-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-black text-slate-900 bg-white" />
                 </div>
-                <p class="text-[10px] font-bold text-brand-600 mt-1.5">Requerido por única vez para enviarte las solicitudes de autorización directamente a tu dispositivo.</p>
               </div>
             </div>
 
-            <div class="pt-4 border-t border-slate-100">
-              <button type="submit" :disabled="isSubmitting" class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black text-base rounded-2xl transition-all shadow-md hover:shadow-xl disabled:opacity-70 disabled:hover:bg-brand-600 flex items-center justify-center gap-3 outline-none transform active:scale-[0.98]">
-                <Loader2 v-if="isSubmitting" class="w-5 h-5 animate-spin" />
-                <Send v-else class="w-5 h-5" />
-                <span>{{ isSubmitting ? 'Procesando...' : 'Generar pase' }}</span>
+            <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
+              <button type="button" @click="submitPass(false)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl transition-all border border-slate-200 flex items-center justify-center gap-2 outline-none">
+                <Send class="w-4 h-4" /> Generar y notificar
+              </button>
+              <button type="button" @click="submitPass(true)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 outline-none">
+                <CheckCircle class="w-4 h-4" /> Generar y autorizar
               </button>
             </div>
+            
           </form>
         </div>
 
@@ -258,7 +246,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { Loader2, X as XIcon, Cake, PenTool, Send, Building2, Briefcase, MapPin, Plus, Clock, ArrowRight } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, PenTool, Send, Building2, Briefcase, MapPin, Plus, Clock, ArrowRight, CheckCircle } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -283,7 +271,7 @@ const verifiedPlanteles = ref(new Set())
 const currentCoverageTask = computed(() => coverageQueue.value[0] || null)
 
 const isAuthorizerForCurrent = computed(() => {
-  if (!myProfile.value || selectedEmployees.value.length === 0) return true; // Hide if not loaded or no employee
+  if (!myProfile.value || selectedEmployees.value.length === 0) return true;
   const targetPlantel = selectedEmployees.value[0]?.plantelActual || selectedEmployees.value[0]?.plantelBase;
   return myProfile.value.authorizedPlanteles.includes(targetPlantel);
 })
@@ -326,7 +314,6 @@ function onSetupCancelled() {
     const plantel = currentCoverageTask.value.plantel
     coverageQueue.value.shift()
     
-    // Graceful rollback to base if the rejected plantel was the actual
     selectedEmployees.value = selectedEmployees.value.filter(e => {
        if (e.plantelActual === plantel && e.plantelBase !== plantel) {
           e.plantelActual = e.plantelBase; 
@@ -343,14 +330,11 @@ function onSetupCancelled() {
 
 async function addEmployee(emp) {
   if (!selectedEmployees.value.find(e => e.id === emp.id)) {
-    // Optimistic UI insert with enrichment skeleton
     const tempEmp = { ...emp, _enriching: true, _editingActual: false }
     selectedEmployees.value.push(tempEmp)
 
-    // Server-side enrichment query
     const enriched = await $fetch('/api/employees/enrich', { query: { name: emp.name, id: emp.id } }).catch(() => ({}))
     
-    // Update live object
     const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
     if (actualEmp) {
       actualEmp.curp = enriched.curp || emp.curp || null
@@ -489,12 +473,15 @@ watch(() => showDestino.value, (newVal) => {
   }
 });
 
-async function submitPass() {
+async function submitPass(autoAuthorize = false) {
   if (isSubmitting.value) return
+  if (!form.date || (!form.comentarios && activeScenario.value.categoryId !== 1)) {
+    alert('Por favor, completa los campos requeridos.')
+    return
+  }
   isSubmitting.value = true
   
   try {
-    // Process Authorizer Opt-In configuration first if requested
     if (form.optInAuthorizer && selectedEmployees.value.length > 0) {
       const targetPlantel = selectedEmployees.value[0].plantelActual || selectedEmployees.value[0].plantelBase;
       if (targetPlantel && myProfile.value?.email) {
@@ -509,11 +496,10 @@ async function submitPass() {
           }
         }).catch(err => console.warn('Silently ignoring authorizer opt-in fail if it already exists', err));
         
-        refreshProfile(); // Keep profile up to date for future actions
+        refreshProfile(); 
       }
     }
 
-    // Generate all passes
     await Promise.all(selectedEmployees.value.map(emp => 
       $fetch('/api/passes', {
         method: 'POST',
@@ -528,7 +514,8 @@ async function submitPass() {
           regreso: form.regreso,
           horaRegreso: form.horaRegreso,
           imss: form.imss,
-          tipoIncapacidad: form.tipoIncapacidad
+          tipoIncapacidad: form.tipoIncapacidad,
+          autoAuthorize
         }
       })
     ))
