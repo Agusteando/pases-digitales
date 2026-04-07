@@ -43,9 +43,8 @@
         <img v-for="(eye, i) in activeEyeData" :key="i"
              :ref="el => setEyeRef(el)"
              :src="eye.src"
-             class="absolute origin-center will-change-transform"
-             :style="{ left: eye.left, top: eye.top, width: eye.sizePercent, height: eye.sizePercent }"
-             style="transform: translate(-50%, -50%);"
+             class="absolute origin-center will-change-transform z-10"
+             :style="{ left: eye.left, top: eye.top, width: eye.sizePercent, height: eye.sizePercent, transform: 'translate(-50%, -50%)' }"
              aria-hidden="true" />
       </div>
 
@@ -212,8 +211,8 @@ const handleMouseMove = (e) => {
   const intensity = Math.min(dist / maxDist, 1)
   const easeIntensity = intensity * (2 - intensity)
   
-  // Cap extreme movements rigidly (3.5% of total avatar width) to ensure it is visible but realistic
-  const maxMove = rect.width * 0.035
+  // Cap extreme movements rigidly (2% of total avatar width) to ensure it is subtle, realistic and premium
+  const maxMove = rect.width * 0.02
   
   const angle = Math.atan2(dy, dx)
   targetShift.x = Math.cos(angle) * easeIntensity * maxMove
@@ -342,8 +341,7 @@ async function processPremiumImage(url) {
        }
     }
 
-    // 2. Intelligent Background Application via direct Pixel Manipulation 
-    // This securely applies both B/W JPEG masks and True Alpha PNG masks reliably
+    // 2. Intelligent Background Application via robust Pixel Manipulation
     if (data.maskAvailable && data.maskUrl) {
        const maskImg = await loadImage(data.maskUrl, true).catch(() => null)
        if (maskImg) {
@@ -352,18 +350,37 @@ async function processPremiumImage(url) {
           maskCanvas.height = cHeight
           const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true })
           
-          // Crop and scale the mask to exactly match the main image
-          maskCtx.drawImage(maskImg, sx, sy, sWidth, sHeight, 0, 0, cWidth, cHeight)
+          // BUGFIX: Mask dimensions from AI APIs are frequently downscaled (e.g. 512x512). 
+          // Applying original image crop coordinates directly to the mask reads out-of-bounds,
+          // creating a fully transparent/black output. We must map coordinates to the mask's scale.
+          const scaleX = maskImg.width / img.width
+          const scaleY = maskImg.height / img.height
+          
+          const mSx = sx * scaleX
+          const mSy = sy * scaleY
+          const mSWidth = sWidth * scaleX
+          const mSHeight = sHeight * scaleY
+
+          // Crop and scale the mask to exactly match the main canvas crop
+          maskCtx.drawImage(maskImg, mSx, mSy, mSWidth, mSHeight, 0, 0, cWidth, cHeight)
 
           const mainData = ctx.getImageData(0, 0, cWidth, cHeight)
           const maskData = maskCtx.getImageData(0, 0, cWidth, cHeight)
 
+          // Auto-detect mask format: B/W JPEG (Alpha=255 everywhere) vs Transparent Cutout (Alpha varies)
+          let usesAlpha = false
+          for (let i = 3; i < maskData.data.length; i += 16) {
+              if (maskData.data[i] < 255) {
+                  usesAlpha = true
+                  break
+              }
+          }
+
           for (let i = 0; i < mainData.data.length; i += 4) {
-             const maskLuminance = maskData.data[i]
-             const maskAlpha = maskData.data[i + 3]
-             // Combined Alpha safely evaluates B/W masks (using red channel as alpha) and Transparent masks
-             const finalAlpha = (maskLuminance * maskAlpha) / 255
-             mainData.data[i + 3] = (mainData.data[i + 3] * finalAlpha) / 255
+             // Extract true mask intensity safely
+             const maskIntensity = usesAlpha ? maskData.data[i + 3] : maskData.data[i]
+             // Apply smoothly
+             mainData.data[i + 3] = (mainData.data[i + 3] * maskIntensity) / 255
           }
           
           ctx.putImageData(mainData, 0, 0)
@@ -396,7 +413,7 @@ async function processPremiumImage(url) {
           const cx_c = (ecx - sx) * scale
           const cy_c = (ecy - sy) * scale
           
-          // 160% of the detected eye width provides a clean localized mask for the iris and eyelid without tearing
+          // 160% of the detected eye width provides a clean localized mask for the iris and eyelid
           const pSize = Math.max(16, Math.floor(ew * scale * 1.6))
           const pR = pSize / 2
 
@@ -409,7 +426,7 @@ async function processPremiumImage(url) {
             
             eyeCtx.drawImage(canvas, cx_c - pR, cy_c - pR, pSize, pSize, 0, 0, pSize, pSize)
             
-            // Multiply the crop with a soft radial mask to avoid harsh edges that cause the "floating skin" artifact
+            // Multiply the crop with a soft radial mask to avoid harsh edges mapping over the face
             eyeCtx.globalCompositeOperation = 'destination-in'
             const grad = eyeCtx.createRadialGradient(pR, pR, pR * 0.1, pR, pR, pR * 0.8)
             grad.addColorStop(0, 'rgba(0,0,0,1)')
