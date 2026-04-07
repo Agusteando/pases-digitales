@@ -289,7 +289,7 @@ async function processPremiumImage(url) {
       data = await analyzeRes.json()
     }
 
-    if (!data || !data.ok) {
+    if (!data || data.ok !== true) {
        throw new Error('Vision service failed or returned not-ok')
     }
 
@@ -307,13 +307,13 @@ async function processPremiumImage(url) {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
-    // 1. Precise Cropping driven by server AI
+    // 1. Precise Cropping driven by server AI using normalized coordinates
     let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height
     if (data.cropBox) {
-      sx = data.cropBox.x
-      sy = data.cropBox.y
-      sWidth = data.cropBox.width
-      sHeight = data.cropBox.height
+      sx = data.cropBox.xMin * img.width
+      sy = data.cropBox.yMin * img.height
+      sWidth = (data.cropBox.xMax - data.cropBox.xMin) * img.width
+      sHeight = (data.cropBox.yMax - data.cropBox.yMin) * img.height
     }
 
     // Limit canvas compute dimensions to prevent blocking the main thread (max 256px resolution)
@@ -326,20 +326,24 @@ async function processPremiumImage(url) {
     canvas.height = cHeight
     ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, cWidth, cHeight)
 
-    // Debug mapping for Face Overlay
+    // Debug mapping for Face Overlay using normalized coordinates
     if (data.faceBox) {
+       const fx = data.faceBox.xMin * img.width
+       const fy = data.faceBox.yMin * img.height
+       const fw = (data.faceBox.xMax - data.faceBox.xMin) * img.width
+       const fh = (data.faceBox.yMax - data.faceBox.yMin) * img.height
+
        debugInfo.value.faceRect = {
-         left: ((data.faceBox.x - sx) / sWidth) * 100,
-         top: ((data.faceBox.y - sy) / sHeight) * 100,
-         width: (data.faceBox.width / sWidth) * 100,
-         height: (data.faceBox.height / sHeight) * 100
+         left: ((fx - sx) / sWidth) * 100,
+         top: ((fy - sy) / sHeight) * 100,
+         width: (fw / sWidth) * 100,
+         height: (fh / sHeight) * 100
        }
     }
 
     // 2. Intelligent Background Application
-    if (data.maskAvailable) {
-       const maskUrl = data.maskUrl || `${visionBase}/mask/${data.imageKey}`
-       const maskImg = await loadImage(maskUrl, true).catch(() => null)
+    if (data.maskAvailable && data.maskUrl) {
+       const maskImg = await loadImage(data.maskUrl, true).catch(() => null)
        if (maskImg) {
           ctx.globalCompositeOperation = 'destination-in'
           ctx.drawImage(maskImg, sx, sy, sWidth, sHeight, 0, 0, cWidth, cHeight)
@@ -349,26 +353,31 @@ async function processPremiumImage(url) {
        }
     }
 
-    // 3. Eye Topology extraction for premium illusion
+    // 3. Eye Topology extraction for premium illusion using normalized coordinates
     let patches = null
-    if (data.eyesDetected && data.eyeBoxes && data.eyeBoxes.length >= 2) {
+    if (data.eyesDetected && Array.isArray(data.eyeBoxes) && data.eyeBoxes.length >= 2) {
        patches = []
        for (const eye of data.eyeBoxes.slice(0, 2)) {
+          const ex = eye.xMin * img.width
+          const ey = eye.yMin * img.height
+          const ew = (eye.xMax - eye.xMin) * img.width
+          const eh = (eye.yMax - eye.yMin) * img.height
+
           // Debug mapping for Eye Overlays
           debugInfo.value.eyeRects.push({
-             left: ((eye.x - sx) / sWidth) * 100,
-             top: ((eye.y - sy) / sHeight) * 100,
-             width: (eye.width / sWidth) * 100,
-             height: (eye.height / sHeight) * 100
+             left: ((ex - sx) / sWidth) * 100,
+             top: ((ey - sy) / sHeight) * 100,
+             width: (ew / sWidth) * 100,
+             height: (eh / sHeight) * 100
           })
 
-          const ecx = eye.x + eye.width / 2
-          const ecy = eye.y + eye.height / 2
+          const ecx = ex + ew / 2
+          const ecy = ey + eh / 2
           const cx_c = (ecx - sx) * scale
           const cy_c = (ecy - sy) * scale
           
           // 150% of the detected eye width provides a clean localized mask for the iris and eyelid
-          const pSize = Math.max(12, Math.floor(eye.width * scale * 1.5))
+          const pSize = Math.max(12, Math.floor(ew * scale * 1.5))
           const pR = pSize / 2
 
           // Ensure eye is securely within the cropped bounds before isolating it
