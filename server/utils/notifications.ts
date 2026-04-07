@@ -29,18 +29,18 @@ export async function dispatchNotificationsForPass(passId: number) {
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
 
-  // Redacción alineada a tu solicitud
+  // Variables exactly adjusted to match your requested format
   const motivoMsg = pass.comentarios ? ` con motivo ${pass.comentarios}` : ''
   const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
-  const timeMsg = pass.time ? ` - Hora: ${pass.time}` : ''
+  const timeMsg = pass.time ? ` - Hora: - ${pass.time}` : ''
 
   const authUrlBase = `${config.appUrl}/authorize/${pass.auth_token}`
 
   // 1. Mandatory Global Infrastructure Audit (Fixed, Non-Configurable)
   const telegramGlobalId = '-1003057962499'
 
-  // Mensaje en formato nativo con negritas (*) de Telegram
-  const tgMessage = `*REQUERIMIENTO OPERATIVO*\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\nEmitido por: ${pass.user}`
+  // EXACTLY your requested string
+  const tgMessage = `${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -48,16 +48,18 @@ export async function dispatchNotificationsForPass(passId: number) {
       body: {
         chatId: [telegramGlobalId],
         message: tgMessage,
-        parse_mode: 'Markdown', // Habilita que los asteriscos se vuelvan negritas en Telegram
+        parse_mode: 'Markdown',
         disable_notification: false
       }
     })
     await db.execute(
-      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
+      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+      [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
     )
   } catch (e: any) {
     await db.execute(
-      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
+      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+      [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
     )
   }
 
@@ -108,21 +110,26 @@ export async function dispatchNotificationsForPass(passId: number) {
     if (target.channels.has('WHATSAPP')) {
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
+        // Also adjusted WhatsApp to respect the cleaner text block you preferred
         const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
+
         try {
           const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
           const msgId = waRes?.messageId || waRes?.id || 'delivered'
           await db.execute(
-            'INSERT INTO notification_logs (pass_id, chat_id, status, message_id, error_text) VALUES (?, ?, ?, ?, ?)', [pass.id, chatId, 'sent', msgId, `Destinatario: ${target.name} | Canal: WhatsApp`]
+            'INSERT INTO notification_logs (pass_id, chat_id, status, message_id, error_text) VALUES (?, ?, ?, ?, ?)',
+            [pass.id, chatId, 'sent', msgId, `Destinatario: ${target.name} | Canal: WhatsApp`]
           )
         } catch (e: any) {
           await db.execute(
-            'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, chatId, 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Fallo en motor de envío`]
+            'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+            [pass.id, chatId, 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Fallo en motor de envío`]
           )
         }
       } else {
         await db.execute(
-          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, 'N/A', 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Número de teléfono inválido o ausente`]
+          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+          [pass.id, 'N/A', 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Número de teléfono inválido o ausente`]
         )
       }
     }
@@ -150,11 +157,13 @@ export async function dispatchNotificationsForPass(passId: number) {
       try {
         await sendWorkspaceEmail(target.email, `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`, emailHtml)
         await db.execute(
-          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, target.email, 'sent', `Destinatario: ${target.name} | Canal: Email`]
+          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+          [pass.id, target.email, 'sent', `Destinatario: ${target.name} | Canal: Email`]
         )
       } catch (e: any) {
         await db.execute(
-          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)', [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de Google Workspace`]
+          'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+          [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de Google Workspace`]
         )
       }
     }
