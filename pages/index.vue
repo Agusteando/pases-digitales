@@ -195,6 +195,25 @@
               <textarea v-model="form.comentarios" rows="3" placeholder="Describe el motivo de forma clara..." required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-medium text-slate-900 resize-none transition-all bg-slate-50/50"></textarea>
             </div>
 
+            <!-- Autorización Opt-In -->
+            <div v-if="!isAuthorizerForCurrent && selectedEmployees.length > 0" class="p-5 bg-brand-50 rounded-2xl border border-brand-100 mt-2 mb-2 transition-all">
+              <div class="flex items-start gap-3">
+                <input type="checkbox" id="optInAuth" v-model="form.optInAuthorizer" class="mt-1 w-5 h-5 rounded text-brand-600 focus:ring-brand-500 border-brand-300 cursor-pointer" />
+                <label for="optInAuth" class="cursor-pointer select-none">
+                  <p class="text-sm font-black text-brand-900">Configurarme como responsable de autorización</p>
+                  <p class="text-xs text-brand-700 mt-0.5 leading-relaxed">Deseo recibir las notificaciones por WhatsApp o Correo para revisar y resolver futuros pases de este plantel.</p>
+                </label>
+              </div>
+              <div v-if="form.optInAuthorizer && !myProfile?.phone" class="mt-4 pt-4 border-t border-brand-200/60 animate-in fade-in slide-in-from-top-2">
+                <label class="block text-[10px] font-black text-brand-800 uppercase tracking-widest mb-1.5">Número de celular (WhatsApp)</label>
+                <div class="flex items-center shadow-sm rounded-xl">
+                   <div class="bg-brand-100 border border-brand-200 border-r-0 px-4 py-3 rounded-l-xl text-brand-800 font-black text-sm">+52 1</div>
+                   <input v-model="form.authorizerPhone" type="tel" maxlength="10" placeholder="10 dígitos" @input="form.authorizerPhone = form.authorizerPhone.replace(/\D/g, '').substring(0, 10)" class="flex-1 px-4 py-3 rounded-r-xl border border-brand-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-black text-slate-900 bg-white" />
+                </div>
+                <p class="text-[10px] font-bold text-brand-600 mt-1.5">Requerido por única vez para enviarte las solicitudes de autorización directamente a tu dispositivo.</p>
+              </div>
+            </div>
+
             <div class="pt-4 border-t border-slate-100">
               <button type="submit" :disabled="isSubmitting" class="w-full py-4 bg-brand-600 hover:bg-brand-700 text-white font-black text-base rounded-2xl transition-all shadow-md hover:shadow-xl disabled:opacity-70 disabled:hover:bg-brand-600 flex items-center justify-center gap-3 outline-none transform active:scale-[0.98]">
                 <Loader2 v-if="isSubmitting" class="w-5 h-5 animate-spin" />
@@ -248,6 +267,7 @@ import PlantelSetupModal from '~/components/PlantelSetupModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
 const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
+const { data: myProfile, refresh: refreshProfile } = useFetch('/api/auth/profile')
 const todayDate = dayjs().format('YYYY-MM-DD')
 
 const selectedEmployees = ref([])
@@ -261,6 +281,12 @@ const coverageQueue = ref([])
 const verifiedPlanteles = ref(new Set())
 
 const currentCoverageTask = computed(() => coverageQueue.value[0] || null)
+
+const isAuthorizerForCurrent = computed(() => {
+  if (!myProfile.value || selectedEmployees.value.length === 0) return true; // Hide if not loaded or no employee
+  const targetPlantel = selectedEmployees.value[0]?.plantelActual || selectedEmployees.value[0]?.plantelBase;
+  return myProfile.value.authorizedPlanteles.includes(targetPlantel);
+})
 
 async function checkCoverageQueue(emp) {
   const plantel = emp.plantelActual || emp.plantelBase
@@ -373,7 +399,9 @@ const form = reactive({
   regreso: false,
   horaRegreso: '',
   imss: '',
-  tipoIncapacidad: 'Enfermedad general'
+  tipoIncapacidad: 'Enfermedad general',
+  optInAuthorizer: false,
+  authorizerPhone: ''
 })
 
 const predefinedScenarios = [
@@ -389,7 +417,8 @@ function selectScenario(scenario) {
   Object.assign(form, { 
     date: todayDate, endDate: todayDate, time: '', 
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
-    imss: '', tipoIncapacidad: 'Enfermedad general'
+    imss: '', tipoIncapacidad: 'Enfermedad general',
+    optInAuthorizer: false, authorizerPhone: ''
   })
 }
 
@@ -465,6 +494,26 @@ async function submitPass() {
   isSubmitting.value = true
   
   try {
+    // Process Authorizer Opt-In configuration first if requested
+    if (form.optInAuthorizer && selectedEmployees.value.length > 0) {
+      const targetPlantel = selectedEmployees.value[0].plantelActual || selectedEmployees.value[0].plantelBase;
+      if (targetPlantel && myProfile.value?.email) {
+        await $fetch('/api/directory', {
+          method: 'POST',
+          body: {
+            plantel: targetPlantel,
+            email: myProfile.value.email,
+            role: 'Lead/Manager',
+            channel: (form.authorizerPhone || myProfile.value.phone) ? 'WHATSAPP' : 'EMAIL',
+            phone: form.authorizerPhone || undefined
+          }
+        }).catch(err => console.warn('Silently ignoring authorizer opt-in fail if it already exists', err));
+        
+        refreshProfile(); // Keep profile up to date for future actions
+      }
+    }
+
+    // Generate all passes
     await Promise.all(selectedEmployees.value.map(emp => 
       $fetch('/api/passes', {
         method: 'POST',
@@ -487,6 +536,8 @@ async function submitPass() {
     activeScenario.value = null
     selectedEmployees.value = []
     coverageQueue.value = []
+    form.optInAuthorizer = false;
+    form.authorizerPhone = '';
     
     refreshNuxtData() 
   } catch(e) {

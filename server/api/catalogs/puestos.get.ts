@@ -1,10 +1,11 @@
-import { getFastSoapEmployees } from '~/server/utils/employee-engine'
+import { getSigniaData } from '~/server/utils/employee-engine'
 import { defineEventHandler } from '#imports'
 
 export default defineEventHandler(async () => {
-  // CRITICAL RULE: Must use ONLY SOAP-resolved datasets to ensure alignment 
-  // across the routing and notification engine. Signia API fallback removed.
-  const data = await getFastSoapEmployees()
+  // CRITICAL FIX: The UI needs the full actual list of hierarchical Puestos to build 
+  // accurate rules. We fetch directly from the Signia enrichment source to guarantee 
+  // that every valid Puesto name is fully populated and available to select.
+  const data = await getSigniaData()
   const puestos = new Set<string>()
   
   data.forEach(e => {

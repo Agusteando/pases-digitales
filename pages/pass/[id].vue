@@ -129,19 +129,35 @@
 
         <!-- Right Column: Status & System -->
         <div class="space-y-8">
+
+          <!-- Autorización Directa -->
+          <div v-if="pass.status === 'pendiente' && canAuthorizeInApp" class="bg-white p-6 rounded-3xl border border-emerald-100 shadow-md">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+              <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Autorización Directa
+            </h3>
+            <p class="text-xs text-slate-500 font-medium mb-4 leading-relaxed">Puedes resolver esta solicitud inmediatamente desde la plataforma sin esperar notificaciones.</p>
+            <div class="flex gap-4">
+              <button @click="handleInAppAuth('reject')" :disabled="isResolving" class="flex-1 py-3 bg-white hover:bg-red-50 border border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 outline-none">
+                <X class="w-4 h-4" /> Rechazar
+              </button>
+              <button @click="handleInAppAuth('authorize')" :disabled="isResolving" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 outline-none">
+                <Check class="w-4 h-4" /> Autorizar
+              </button>
+            </div>
+          </div>
           
           <!-- Acciones -->
           <div v-if="pass && canManage" class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <Zap class="w-4 h-4 text-brand-500" /> Acciones
+              <Zap class="w-4 h-4 text-brand-500" /> Acciones de Gestión
             </h3>
 
             <div v-if="pass.status !== 'pendiente'" class="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-4 flex items-start gap-3">
                <Lock class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                <div>
-                 <p class="text-sm font-black text-slate-700">Acciones no disponibles</p>
+                 <p class="text-sm font-black text-slate-700">Edición bloqueada</p>
                  <p class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
-                   No se puede editar: el pase ya fue resuelto.
+                   No es posible alterar o notificar un pase que ya ha sido resuelto.
                  </p>
                </div>
             </div>
@@ -155,14 +171,14 @@
               
               <button @click="showEditModal = true" :disabled="pass.status !== 'pendiente' || isExpired" class="w-full py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white outline-none">
                 <Edit2 class="w-4 h-4 text-slate-400" />
-                <span>Editar</span>
+                <span>Editar pase</span>
               </button>
               <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">No se puede editar: el tiempo límite de 48 horas ha concluido.</p>
 
               <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200 outline-none">
                 <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
                 <Trash2 v-else class="w-4 h-4 text-red-400" />
-                <span>Anular</span>
+                <span>Anular pase</span>
               </button>
             </div>
           </div>
@@ -170,7 +186,7 @@
           <!-- Status Timeline -->
           <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <ShieldCheck class="w-4 h-4 text-brand-500" /> Estado
+              <ShieldCheck class="w-4 h-4 text-brand-500" /> Historial de Estado
             </h3>
 
             <div class="relative pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
@@ -180,7 +196,7 @@
                   <div class="w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Creado</p>
+                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Generado</p>
                   <p class="text-xs font-bold text-slate-500">Por: <span class="text-slate-700">{{ pass.user }}</span></p>
                   <p class="text-[10px] font-bold text-slate-400 mt-2">{{ formatDateLong(pass.created_at) }}</p>
                 </div>
@@ -207,7 +223,7 @@
           <!-- Notification Delivery Log -->
           <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Bell class="w-4 h-4 text-brand-500" /> Notificaciones
+              <Bell class="w-4 h-4 text-brand-500" /> Trazabilidad de Notificaciones
             </h3>
 
             <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
@@ -236,7 +252,7 @@
                       :class="isSystemLog(log.error_text) && log.status === 'sent' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
                              isSystemLog(log.error_text) && log.status !== 'sent' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
                              log.status === 'sent' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'">
-                  {{ log.status === 'sent' ? 'OK' : 'Fail' }}
+                  {{ log.status === 'sent' ? 'OK' : 'Error' }}
                 </span>
               </div>
             </div>
@@ -253,7 +269,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase, CheckCircle2, X, Check } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
@@ -268,7 +284,6 @@ const passId = route.params.id
 const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
 
 // Fetch enrichment dynamically when the pass employee name is known
-// FIX: Returning a stable empty object prevents "useAsyncData must return a value" warnings.
 const { data: enrichment } = useAsyncData(`enrich-pass-${passId}`, async () => {
   if (!pass.value?.employee_name) return {}
   const res = await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
@@ -279,10 +294,20 @@ const { user } = useAuth()
 const showEditModal = ref(false)
 const isResending = ref(false)
 const isCancelling = ref(false)
+const isResolving = ref(false)
 
 const isAdmin = computed(() => user.value?.is_admin || false)
 const isOwner = computed(() => user.value && pass.value && user.value.name === pass.value.user)
 const canManage = computed(() => isOwner.value || isAdmin.value)
+
+const canAuthorizeInApp = computed(() => {
+  if (!pass.value || !user.value) return false;
+  // Security constraint: The employee receiving the pass can never self-approve.
+  if (pass.value.employee_name === user.value.name) return false;
+  // Speed and operational convenience: Anyone with valid access to view the pass 
+  // (which is admins or the creator) can authorize it in-app to circumvent notification latency.
+  return true;
+})
 
 const isExpired = computed(() => {
   if (!pass.value) return true
@@ -319,6 +344,23 @@ const handleCancel = async () => {
     alert(err.data?.message || 'Error al intentar anular el registro.')
   } finally {
     isCancelling.value = false
+  }
+}
+
+const handleInAppAuth = async (action) => {
+  if (!confirm(`¿Estás seguro de que deseas ${action === 'authorize' ? 'aprobar' : 'rechazar'} este pase digital?`)) return;
+  isResolving.value = true;
+  try {
+     await $fetch(`/api/passes/${passId}/action`, {
+       method: 'POST',
+       body: { action }
+     });
+     refresh();
+  } catch(err) {
+     console.error('Direct auth error', err)
+     alert(err.data?.message || 'Ocurrió un error al procesar la resolución de la solicitud.');
+  } finally {
+     isResolving.value = false;
   }
 }
 

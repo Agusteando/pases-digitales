@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  if (!body.log_id) throw createError({ statusCode: 400, message: 'Falta ID de registro' })
+  if (!body.log_id) throw createError({ statusCode: 400, message: 'Falta el identificador del registro a reintentar.' })
 
   const db = useDB()
   const config = useRuntimeConfig()
@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
 
     const targetName = errorText.match(/Destinatario:\s*([^|]+)/)?.[1]?.trim() || 'Responsable'
 
+    // Mandatory behavior: The usable authorization link must be sent exactly as in the original send.
     const rToken = jwt.sign(
       { passId: pass.id, email: log.chat_id, name: targetName },
       config.jwtSecret,
@@ -34,16 +35,17 @@ export default defineEventHandler(async (event) => {
     const targetAuthUrl = `${config.appUrl}/authorize/${pass.auth_token}?r=${rToken}`
 
     const categories: Record<number, string> = {
-      1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica'
+      1: 'Pase de entrada', 2: 'Pase de salida', 3: 'Pase para faltar', 4: 'Pase cambio de horario', 5: 'Incapacidad'
     }
     const categoryName = categories[pass.category_id] || 'Pase'
     const paddedId = String(pass.id).padStart(5, '0')
     const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
-    const returnMessage = pass.hora_regreso ? `\nRetorno estimado: ${pass.hora_regreso}` : ''
-    const motivoMsg = pass.comentarios ? `\nMotivo: ${pass.comentarios}` : ''
+    const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
+    const motivoMsg = pass.comentarios ? ` con motivo ${pass.comentarios}` : ''
+    const timeMsg = pass.time ? ` - Hora: - ${pass.time}` : ''
 
     if (isWhatsApp) {
-      const waMessage = `*Solicitud de autorización (Reintento)* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
+      const waMessage = `*Solicitud de Autorización (Recordatorio)* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, tienes esta solicitud pendiente de autorización. Por favor, revísala y resuélvela mediante este enlace seguro:\n${targetAuthUrl}`
 
       try {
         const response = await sendWhatsAppMessage({ chatId: log.chat_id, message: waMessage })
@@ -54,7 +56,7 @@ export default defineEventHandler(async (event) => {
         )
         return { success: true }
       } catch (apiErr: any) {
-        throw createError({ statusCode: 500, message: 'Error al enviar mensaje por WhatsApp' })
+        throw createError({ statusCode: 500, message: 'Error interno al intentar enviar el mensaje de resguardo por WhatsApp.' })
       }
     } 
     
@@ -62,7 +64,7 @@ export default defineEventHandler(async (event) => {
       const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
-           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Solicitud de autorización (Reintento)</h1>
+           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Solicitud de Autorización (Recordatorio)</h1>
            <p style="margin: 0 0 32px; color: #64748b; font-size: 15px;">Folio <strong>#${paddedId}</strong> &bull; ${categoryName}</p>
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
@@ -71,7 +73,7 @@ export default defineEventHandler(async (event) => {
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
            </div>
 
-           <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px;">Revisar solicitud</a>
+           <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px;">Revisar y Resolver Solicitud</a>
         </div>
       </div>`
       try {
@@ -82,12 +84,12 @@ export default defineEventHandler(async (event) => {
         )
         return { success: true }
       } catch (err) {
-        throw createError({ statusCode: 500, message: 'Fallo al reintentar envío por Correo' })
+        throw createError({ statusCode: 500, message: 'Fallo al reintentar el envío mediante el servidor de Correo Electrónico.' })
       }
     }
 
-    throw createError({ statusCode: 400, message: 'No se reconoce el canal de entrega para el reintento.' })
+    throw createError({ statusCode: 400, message: 'No es posible identificar la naturaleza del canal original de entrega para ejecutar el reintento.' })
   } catch (error: any) {
-    throw createError({ statusCode: error.statusCode || 500, message: error.message || "Error interno del motor de notificaciones." })
+    throw createError({ statusCode: error.statusCode || 500, message: error.message || "Error irrecuperable en el motor interno de notificaciones." })
   }
 })

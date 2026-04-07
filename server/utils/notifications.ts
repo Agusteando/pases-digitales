@@ -29,7 +29,7 @@ export async function dispatchNotificationsForPass(passId: number) {
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
 
-  // Variables exactly adjusted to match your requested format
+  // Variables strictly formatted for clarity
   const motivoMsg = pass.comentarios ? ` con motivo ${pass.comentarios}` : ''
   const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
   const timeMsg = pass.time ? ` - Hora: - ${pass.time}` : ''
@@ -38,8 +38,6 @@ export async function dispatchNotificationsForPass(passId: number) {
 
   // 1. Mandatory Global Infrastructure Audit (Fixed, Non-Configurable)
   const telegramGlobalId = '-1003057962499'
-
-  // EXACTLY your requested string
   const tgMessage = `${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
 
   try {
@@ -100,6 +98,7 @@ export async function dispatchNotificationsForPass(passId: number) {
 
   // 3. Dispatch Configurable Channels & Audit Trail
   for (const [email, target] of targets.entries()) {
+    // Crucial requirement: Every target gets a customized Cryptographic Recipient Token appended to the Base Auth URL
     const rToken = jwt.sign(
       { passId: pass.id, email: target.email, name: target.name },
       config.jwtSecret,
@@ -110,8 +109,9 @@ export async function dispatchNotificationsForPass(passId: number) {
     if (target.channels.has('WHATSAPP')) {
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
-        // Also adjusted WhatsApp to respect the cleaner text block you preferred
-        const waMessage = `*Requiere Autorización* ⚠️\n\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, por favor revisa y resuelve esta solicitud:\n${targetAuthUrl}`
+        
+        // Exact inclusion of the Authorization Link within the core Notification Payload
+        const waMessage = `*Solicitud de Autorización* ⚠️\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, se requiere tu autorización para este pase digital. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:\n${targetAuthUrl}`
 
         try {
           const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
@@ -129,7 +129,7 @@ export async function dispatchNotificationsForPass(passId: number) {
       } else {
         await db.execute(
           'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
-          [pass.id, 'N/A', 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Número de teléfono inválido o ausente`]
+          [pass.id, 'N/A', 'failed', `Destinatario: ${target.name} | Canal: WhatsApp | Error: Número de celular inválido o ausente`]
         )
       }
     }
@@ -139,7 +139,7 @@ export async function dispatchNotificationsForPass(passId: number) {
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
            <div style="width: 64px; height: 64px; background-color: #eef2ff; border-radius: 16px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🎫</div>
-           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Requiere Autorización</h1>
+           <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">Solicitud de Autorización</h1>
            <p style="margin: 0 0 32px; color: #64748b; font-size: 15px;">Folio <strong>#${paddedId}</strong> &bull; ${categoryName}</p>
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
@@ -148,6 +148,7 @@ export async function dispatchNotificationsForPass(passId: number) {
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
            </div>
 
+           <!-- Exact inclusion of the Authorization Link within the core Notification Payload -->
            <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px; transition: background-color 0.2s;">Revisar y Resolver Solicitud</a>
            
            <p style="margin: 32px 0 0; color: #94a3b8; font-size: 12px;">Emitido por ${pass.user}<br>Plataforma Institucional de Pases Digitales</p>
@@ -163,7 +164,7 @@ export async function dispatchNotificationsForPass(passId: number) {
       } catch (e: any) {
         await db.execute(
           'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
-          [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de Google Workspace`]
+          [pass.id, target.email, 'failed', `Destinatario: ${target.name} | Canal: Email | Error: Fallo interno de red/proveedor`]
         )
       }
     }
