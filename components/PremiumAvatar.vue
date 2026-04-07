@@ -1,44 +1,50 @@
 <template>
-  <!-- Root container maintains size classes and acts as hover trigger/ref -->
   <div class="relative inline-flex items-center justify-center isolate group select-none" :class="[sizeClasses, $attrs.class]" ref="containerRef">
     
-    <!-- Clipping Wrapper: replaces the previous overflow-hidden on the root -->
     <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0">
       
-      <!-- Ambient Loading State / Background Shell -->
-      <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]">
-        <div v-if="isProcessing" class="absolute inset-0 bg-gradient-to-tr from-brand-100/40 via-slate-100 to-indigo-100/40 animate-pulse"></div>
-      </div>
+      <!-- Ambient Fallback Background -->
+      <div class="absolute inset-0 bg-gradient-to-br from-brand-50/80 to-indigo-100/80 rounded-[inherit]"></div>
       
       <!-- Aura Layer (A softly blurred multiplied clone that creates the premium glow from the image's own colors) -->
       <img 
-        v-if="activeSrc" 
-        :src="activeSrc" 
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-700 pointer-events-none" 
+        v-if="displaySrc" 
+        :src="displaySrc" 
+        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-125 rounded-[inherit] mix-blend-multiply transition-opacity duration-1000 pointer-events-none" 
         aria-hidden="true" 
       />
       
-      <!-- Core Image Layer -->
+      <!-- Base Original Image Layer -->
       <img 
-        v-if="activeSrc" 
-        :src="activeSrc" 
-        class="relative z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-700 ease-out" 
-        :class="{'opacity-0 scale-90': isProcessing, 'opacity-100 scale-100': !isProcessing}" 
-        :style="!usedCanvas ? 'object-position: center 15%;' : ''" 
+        v-if="baseSrc" 
+        :src="baseSrc" 
+        class="absolute inset-0 z-10 w-full h-full object-cover rounded-[inherit] transition-all duration-1000 ease-out"
+        :class="enhancedLoaded ? 'opacity-0 scale-110 blur-sm' : 'opacity-100 scale-100 blur-0'"
+        style="object-position: center 15%;" 
         :alt="name" 
       />
 
       <!-- Fallback Initials Layer -->
       <div 
-        v-else-if="!isProcessing" 
+        v-if="!baseSrc && !enhancedSrc" 
         class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-brand-50 to-indigo-100 flex items-center justify-center font-black text-brand-600 shadow-inner border border-brand-200/50" 
         :class="textClass"
       >
         {{ initials }}
       </div>
 
+      <!-- Enhanced Image Layer (Fades in over base) -->
+      <img 
+        v-if="enhancedSrc" 
+        :src="enhancedSrc" 
+        class="absolute inset-0 z-15 w-full h-full object-cover rounded-[inherit] transition-all duration-1000 ease-out" 
+        :class="enhancedLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'"
+        @load="onEnhancedLoad"
+        :alt="name" 
+      />
+
       <!-- Eye Follow Layers -->
-      <div v-if="activeSrc && activeEyeData && !isProcessing" class="absolute inset-0 z-15 pointer-events-none rounded-[inherit] overflow-hidden">
+      <div v-if="enhancedLoaded && activeEyeData" class="absolute inset-0 z-20 pointer-events-none rounded-[inherit] overflow-hidden transition-opacity duration-1000" :class="enhancedLoaded ? 'opacity-100' : 'opacity-0'">
         <img v-for="(eye, i) in activeEyeData" :key="i"
              :ref="el => setEyeRef(el)"
              :src="eye.src"
@@ -49,9 +55,9 @@
       </div>
 
       <!-- Inner Glass / Lighting Ring -->
-      <div class="absolute inset-0 z-20 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none transition-all"></div>
+      <div class="absolute inset-0 z-30 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none transition-all"></div>
 
-      <!-- Pipeline Debug Overlay Bounds (Only visible when DEBUG_FACE is true) -->
+      <!-- Pipeline Debug Overlay Bounds -->
       <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none">
         
         <!-- Safe Face Detection Bounds -->
@@ -121,7 +127,7 @@ import { useRuntimeConfig } from '#imports'
 const props = defineProps({
   src: { type: String, default: null },
   name: { type: String, default: 'User' },
-  size: { type: String, default: 'lg' } // sm, md, lg
+  size: { type: String, default: 'lg' }
 })
 
 const config = useRuntimeConfig()
@@ -130,7 +136,7 @@ const isDebug = computed(() => config.public?.debugFace === true)
 const sizeClasses = computed(() => {
   if (props.size === 'sm') return 'w-10 h-10 rounded-full'
   if (props.size === 'md') return 'w-14 h-14 rounded-2xl'
-  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-3xl' // lg
+  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-3xl'
 })
 
 const textClass = computed(() => {
@@ -145,10 +151,13 @@ const initials = computed(() => {
   return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : props.name.slice(0, 2).toUpperCase()
 })
 
-const activeSrc = ref(null)
+const baseSrc = ref(null)
+const enhancedSrc = ref(null)
+const enhancedLoaded = ref(false)
 const activeEyeData = ref(null)
 const isProcessing = ref(false)
-const usedCanvas = ref(false)
+
+const displaySrc = computed(() => enhancedLoaded.value && enhancedSrc.value ? enhancedSrc.value : baseSrc.value)
 
 const debugInfo = ref({
   faceOK: false,
@@ -246,9 +255,17 @@ function loadImage(url, useCors) {
   })
 }
 
+function onEnhancedLoad() {
+  requestAnimationFrame(() => {
+    enhancedLoaded.value = true
+  })
+}
+
 async function processPremiumImage(url) {
   if (!url) {
-    activeSrc.value = null
+    baseSrc.value = null
+    enhancedSrc.value = null
+    enhancedLoaded.value = false
     activeEyeData.value = null
     return
   }
@@ -263,12 +280,23 @@ async function processPremiumImage(url) {
     fullUrl = `https://signia.casitaapps.com/${url.replace(/^\//, '')}`
   }
 
+  // Instant presentation of original image, guaranteeing a zero-wait state experience
+  baseSrc.value = fullUrl
+  enhancedSrc.value = null
+  enhancedLoaded.value = false
+  activeEyeData.value = null
+
   if (globalImageCache.has(fullUrl)) {
     const cached = globalImageCache.get(fullUrl)
-    activeSrc.value = cached.src
-    usedCanvas.value = cached.usedCanvas
-    activeEyeData.value = cached.eyeData || null
-    if (cached.debugInfo) debugInfo.value = cached.debugInfo
+    if (cached.usedCanvas) {
+      enhancedSrc.value = cached.src
+      activeEyeData.value = cached.eyeData || null
+      if (cached.debugInfo) debugInfo.value = cached.debugInfo
+      // Safe fallback to trigger enhanced mode if @load doesn't fire for cached data URIs
+      setTimeout(() => {
+        if (enhancedSrc.value === cached.src) enhancedLoaded.value = true
+      }, 50)
+    }
     return
   }
 
@@ -278,7 +306,7 @@ async function processPremiumImage(url) {
     const formData = new FormData()
     formData.append('imageUrl', fullUrl)
 
-    // Call external vision service for authoritative analysis
+    // Call external vision service for authoritative analysis quietly in background
     const analyzeRes = await fetch(`${visionBase}/analyze`, {
       method: 'POST',
       body: formData
@@ -418,19 +446,17 @@ async function processPremiumImage(url) {
     const processedDataUrl = canvas.toDataURL('image/png')
     
     globalImageCache.set(fullUrl, { src: processedDataUrl, usedCanvas: true, eyeData: patches, debugInfo: { ...debugInfo.value } })
-    activeSrc.value = processedDataUrl
-    usedCanvas.value = true
+    
+    // Assigning enhanced source lets the image tag load the base64 string, firing @load
+    enhancedSrc.value = processedDataUrl
     activeEyeData.value = patches
 
   } catch (e) {
     debugInfo.value.faceOK = false
     debugInfo.value.bgStatus = 'FAIL_FALLBACK'
     
-    // 4. Graceful fallback: If external analysis drops, just map the raw image
+    // 4. Graceful fallback: If external analysis drops, just keep baseSrc active seamlessly
     globalImageCache.set(fullUrl, { src: fullUrl, usedCanvas: false, eyeData: null, debugInfo: { ...debugInfo.value } })
-    activeSrc.value = fullUrl
-    usedCanvas.value = false
-    activeEyeData.value = null
   } finally {
     isProcessing.value = false
   }
