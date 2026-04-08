@@ -1,22 +1,22 @@
 <template>
-  <div class="glass-card p-6 md:p-8 rounded-3xl flex flex-col gap-8 relative overflow-hidden bg-white/90">
+  <div class="glass-panel p-8 rounded-[2.5rem] flex flex-col gap-8 relative overflow-hidden">
     <!-- Header: Employee Info -->
-    <div class="flex items-center gap-5 relative z-10">
-      <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-sm" />
+    <div class="flex items-center gap-6 relative z-10">
+      <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md" />
 
       <div class="flex-1 min-w-0">
-        <h2 class="text-2xl font-black text-slate-900 truncate tracking-tight">{{ employee.name }}</h2>
-        <div v-if="pendingEnrich" class="mt-2 space-y-2 w-1/2">
-          <div class="h-2.5 bg-slate-100 rounded animate-pulse w-full"></div>
-          <div class="h-2.5 bg-slate-100 rounded animate-pulse w-2/3"></div>
+        <h2 class="text-3xl font-black text-slate-900 truncate tracking-tight">{{ employee.name }}</h2>
+        <div v-if="pendingEnrich" class="mt-3 space-y-2 w-1/2">
+          <div class="h-2.5 bg-white rounded animate-pulse w-full"></div>
+          <div class="h-2.5 bg-white rounded animate-pulse w-2/3"></div>
         </div>
-        <div v-else class="mt-2 flex flex-wrap gap-2 items-center">
-          <span v-if="displayPlantel" class="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200/60 flex items-center gap-1.5">
-            <Building2 class="w-3.5 h-3.5 text-slate-400" />
+        <div v-else class="mt-3 flex flex-wrap gap-2 items-center">
+          <span v-if="displayPlantel" class="px-3.5 py-1.5 bg-white/70 backdrop-blur-sm text-slate-700 text-xs font-bold rounded-xl border border-white shadow-sm flex items-center gap-1.5">
+            <Building2 class="w-3.5 h-3.5 text-casita-green" />
             {{ displayPlantel }}
           </span>
-          <span v-if="displayRole" class="px-2.5 py-1 bg-brand-50 text-brand-700 text-xs font-bold rounded-lg border border-brand-100/60 flex items-center gap-1.5">
-            <Briefcase class="w-3.5 h-3.5 text-brand-400" />
+          <span v-if="displayRole" class="px-3.5 py-1.5 bg-white/70 backdrop-blur-sm text-slate-700 text-xs font-bold rounded-xl border border-white shadow-sm flex items-center gap-1.5">
+            <Briefcase class="w-3.5 h-3.5 text-iedis-blue" />
             {{ displayRole }}
           </span>
         </div>
@@ -25,17 +25,17 @@
 
     <!-- Active Folio Detection -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="bg-brand-50/50 rounded-3xl p-5 flex flex-col sm:flex-row gap-4 border border-brand-100/80 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-colors hover:bg-brand-50">
+      <div v-if="todayPasses.length > 0" class="bg-gradient-to-r from-iedis-teal/10 to-iedis-teal/5 rounded-[2rem] p-6 flex flex-col sm:flex-row gap-5 border border-iedis-teal/20 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-all hover:bg-iedis-teal/10">
         <div class="flex gap-4 items-center">
-          <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-brand-200 shadow-sm transition-transform group-hover:scale-105">
-            <FileText class="w-5 h-5 text-brand-600" />
+          <div class="w-12 h-12 rounded-[1rem] bg-white flex items-center justify-center shrink-0 border border-iedis-teal/30 shadow-sm transition-transform group-hover:scale-105">
+            <FileText class="w-5 h-5 text-iedis-teal" />
           </div>
           <div>
-            <h4 class="text-sm font-black text-brand-900 tracking-tight">Pase abierto</h4>
-            <p class="text-xs text-brand-700/90 mt-0.5 font-medium">El colaborador tiene un pase registrado el día de hoy.</p>
+            <h4 class="text-sm font-black text-iedis-teal-dark tracking-tight">Pase abierto</h4>
+            <p class="text-xs text-iedis-teal-dark/80 mt-1 font-medium">El colaborador tiene un pase registrado el día de hoy.</p>
           </div>
         </div>
-        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-black rounded-xl transition-all shadow-md flex items-center justify-center gap-2 w-full sm:w-auto outline-none">
+        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-6 py-3 bg-white hover:bg-white/80 text-iedis-teal-dark border border-white text-xs font-black rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 w-full sm:w-auto outline-none">
           <span>Abrir pase actual</span>
           <ArrowRight class="w-4 h-4" />
         </NuxtLink>
@@ -43,78 +43,78 @@
     </transition>
 
     <!-- History Timeline -->
-    <div class="relative z-10 flex-1 flex flex-col min-h-0 bg-slate-50/50 rounded-2xl border border-slate-100 p-1">
-      <div class="flex items-center justify-between mb-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm shrink-0">
+    <div class="relative z-10 flex-1 flex flex-col min-h-0 bg-white/40 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-1.5">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2 bg-white/80 p-5 rounded-[1.5rem] border border-white shadow-sm shrink-0">
         <div>
           <h3 class="text-sm font-black text-slate-900 tracking-tight">Historial</h3>
-          <p class="text-[10px] font-bold text-brand-600 uppercase tracking-widest mt-1" v-if="historyData?.cycle">Ciclo Escolar {{ historyData.cycle }}</p>
+          <p class="text-[10px] font-black text-brand-500 uppercase tracking-widest mt-1" v-if="historyData?.cycle">Ciclo Escolar {{ historyData.cycle }}</p>
         </div>
-        <div class="flex gap-2">
-          <div v-for="(count, cat) in statCounters" :key="cat" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200/60 rounded-lg text-xs font-black text-slate-700 flex gap-1.5 items-center">
+        <div class="flex flex-wrap gap-2">
+          <div v-for="(count, cat) in statCounters" :key="cat" class="px-3 py-1.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-700 flex gap-1.5 items-center shadow-sm">
             <span class="text-brand-600">{{ count }}</span>
             <span class="text-[9px] uppercase tracking-wider text-slate-500">{{ getCategoryName(Number(cat)).split(' ')[0] }}</span>
           </div>
         </div>
       </div>
 
-      <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+      <div class="p-5 flex-1 overflow-y-auto custom-scrollbar">
         <div v-if="pendingHistory" class="py-12 flex justify-center">
           <Loader2 class="w-8 h-8 animate-spin text-brand-400" />
         </div>
         
-        <div v-else-if="!groupedHistory.length" class="py-12 flex flex-col items-center justify-center text-center">
-          <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm border border-slate-100">
-            <History class="w-6 h-6 text-slate-300" />
+        <div v-else-if="!groupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center">
+          <div class="w-20 h-20 bg-white rounded-[1.5rem] flex items-center justify-center mb-4 shadow-sm border border-white">
+            <History class="w-8 h-8 text-slate-300" />
           </div>
           <p class="text-sm font-black text-slate-700">Sin registros</p>
-          <p class="text-xs font-medium text-slate-500 mt-1">No hay pases registrados en el ciclo actual.</p>
+          <p class="text-xs font-medium text-slate-500 mt-1.5">No hay pases registrados en el ciclo actual.</p>
         </div>
 
-        <div v-else class="space-y-8 pl-2">
+        <div v-else class="space-y-8 pl-4">
           <div v-for="group in groupedHistory" :key="group.month">
-            <div class="sticky top-0 bg-slate-50/90 backdrop-blur-md py-2 z-20 mb-4 -mx-2 px-2">
+            <div class="sticky top-0 bg-white/80 backdrop-blur-md py-2.5 z-20 mb-5 -mx-4 px-4 rounded-xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">{{ group.month }}</span>
             </div>
             
-            <div class="relative pl-7 space-y-5 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-200/60">
-              <div v-for="pass in group.passes" :key="pass.id" class="relative group">
+            <div class="relative pl-8 space-y-6 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-casita-green-light/40 before:via-iedis-teal/40 before:to-transparent">
+              <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.08}s` }">
                 
                 <!-- Timeline Dot -->
-                <div class="absolute -left-[31px] w-6 h-6 rounded-full border-[3px] border-slate-50 shadow-sm z-10 top-0.5 flex items-center justify-center" :class="getCategoryColor(pass.category_id)">
-                  <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+                <div class="absolute -left-[35px] w-7 h-7 rounded-full bg-white shadow-sm z-10 top-0.5 flex items-center justify-center border border-white/60">
+                  <div class="w-3.5 h-3.5 rounded-full" :class="getCategoryColor(pass.category_id)"></div>
                 </div>
                 
                 <!-- Pass Card -->
-                <div class="block bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 transition-all outline-none">
-                  <div class="flex items-start justify-between mb-3 gap-4">
+                <div class="block bg-white/70 p-5 rounded-[1.5rem] border border-white shadow-sm hover:shadow-md hover:bg-white transition-all outline-none">
+                  <div class="flex items-start justify-between mb-4 gap-4">
                     <div class="flex flex-col gap-1.5">
                       <div class="flex items-center gap-2">
                         <span class="font-mono text-sm font-black tracking-tight" :class="isToday(pass.date) ? 'text-brand-600' : 'text-slate-900'">#{{ String(pass.id).padStart(5, '0') }}</span>
-                        <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border"
-                              :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
-                                       'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
-                                       'bg-red-50 text-red-700 border-red-200': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                        <span class="text-[9px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md border"
+                              :class="{'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
+                                       'bg-casita-green/10 text-casita-green border-casita-green/30': pass.status === 'autorizado',
+                                       'bg-casita-red/10 text-casita-red border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                           {{ pass.status }}
                         </span>
                       </div>
                       <h4 class="text-sm font-bold text-slate-700">{{ getCategoryName(pass.category_id) }}</h4>
                     </div>
-                    <span class="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 shrink-0">{{ formatDateOnly(pass.date) }}</span>
+                    <span class="text-xs font-bold text-slate-500 bg-white px-2.5 py-1 rounded-lg border border-slate-100 shadow-sm shrink-0">{{ formatDateOnly(pass.date) }}</span>
                   </div>
                   
-                  <p v-if="pass.comentarios" class="text-xs font-medium text-slate-600 italic bg-slate-50/50 p-2.5 rounded-xl border border-slate-100 line-clamp-2">"{{ pass.comentarios }}"</p>
+                  <p v-if="pass.comentarios" class="text-xs font-medium text-slate-600 italic bg-white/50 p-3 rounded-2xl border border-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] line-clamp-2">"{{ pass.comentarios }}"</p>
                   
                   <!-- Bottom Bar with Explicit Action Link -->
-                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div class="mt-4 pt-3 border-t border-white flex items-center justify-between">
                     <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-2">
-                      <ShieldCheck class="w-4 h-4" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-red-400'" />
-                      <span class="text-[10px] font-bold uppercase tracking-wider" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-red-600'">
+                      <ShieldCheck class="w-4 h-4" :class="pass.status === 'autorizado' ? 'text-casita-green' : 'text-casita-red'" />
+                      <span class="text-[10px] font-bold uppercase tracking-wider" :class="pass.status === 'autorizado' ? 'text-casita-green-dark' : 'text-casita-red-dark'">
                         Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by : '' }}
                       </span>
                     </div>
                     <div v-else></div> <!-- Spacer -->
                     
-                    <NuxtLink :to="`/pass/${pass.id}`" class="text-brand-600 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg outline-none">
+                    <NuxtLink :to="`/pass/${pass.id}`" class="text-brand-600 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-white hover:bg-brand-50 px-3 py-1.5 rounded-xl border border-white hover:border-brand-100 shadow-sm outline-none">
                       <span class="text-[10px] font-black uppercase tracking-widest">Abrir detalle</span>
                       <ArrowRight class="w-3.5 h-3.5" />
                     </NuxtLink>
@@ -147,7 +147,7 @@ const getCategoryName = (id) => {
 }
 
 const getCategoryColor = (id) => {
-  const map = { 1: 'bg-orange-500', 2: 'bg-blue-500', 3: 'bg-rose-500', 4: 'bg-purple-500', 5: 'bg-teal-500' }
+  const map = { 1: 'bg-casita-peach', 2: 'bg-iedis-blue', 3: 'bg-casita-red', 4: 'bg-casita-gold', 5: 'bg-iedis-teal' }
   return map[id] || 'bg-slate-400'
 }
 

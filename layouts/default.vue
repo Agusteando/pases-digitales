@@ -1,10 +1,16 @@
 <template>
-  <div class="min-h-[100dvh] flex flex-col md:flex-row bg-slate-50">
+  <div class="min-h-[100dvh] flex flex-col md:flex-row bg-slate-50 edu-pattern relative">
+    
+    <!-- Ambient Educational Brand Motifs -->
+    <div class="fixed top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-casita-green-light/15 rounded-full blur-[120px] pointer-events-none animate-breathe mix-blend-multiply z-0"></div>
+    <div class="fixed bottom-[-10%] right-[-5%] w-[50vw] h-[50vw] bg-iedis-blue-light/15 rounded-full blur-[100px] pointer-events-none animate-breathe-slow mix-blend-multiply z-0"></div>
+    <div class="fixed top-[30%] left-[50%] w-[40vw] h-[40vw] bg-iedis-teal/10 rounded-full blur-[120px] pointer-events-none animate-breathe mix-blend-multiply z-0" style="animation-delay: -7s;"></div>
     
     <!-- Sidebar / Desktop Navigation -->
-    <aside class="hidden md:flex w-24 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 flex-col items-center py-8 gap-8 z-40 shrink-0 sticky top-0 h-screen shadow-sm">
-      <div class="w-14 h-14 bg-gradient-to-br from-brand-500 to-indigo-700 rounded-2xl shadow-lg shadow-brand-500/30 flex items-center justify-center text-white font-black text-xl select-none ring-4 ring-white">
-        PD
+    <aside class="hidden md:flex w-24 bg-white/60 backdrop-blur-2xl border-r border-white/80 flex-col items-center py-8 gap-8 z-40 shrink-0 sticky top-0 h-screen shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+      <div class="w-14 h-14 bg-white rounded-[1.25rem] shadow-sm flex items-center justify-center p-2.5 ring-1 ring-slate-100/50 relative group">
+        <div class="absolute inset-0 bg-gradient-to-tr from-casita-green-light/20 to-iedis-teal/20 rounded-[1.25rem] opacity-0 group-hover:opacity-100 transition-opacity blur-md"></div>
+        <img src="/pases.png" alt="Pases Digitales" class="w-full h-full object-contain relative z-10" />
       </div>
       
       <nav class="flex flex-col gap-4 mt-4 w-full px-4 flex-1">
@@ -42,7 +48,7 @@
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/routing' ? '' : 'text-slate-400 hover:bg-brand-50 hover:text-brand-600'"
-          title="Notificaciones"
+          title="Configuración de envíos"
         >
           <BellRing class="w-6 h-6" />
         </NuxtLink>
@@ -58,7 +64,8 @@
         </NuxtLink>
       </nav>
 
-      <div class="mt-auto pb-4 w-full px-4">
+      <div class="mt-auto pb-4 w-full px-4 flex flex-col items-center gap-6">
+        <img src="/id.png" alt="Institucional" class="w-8 opacity-40 hover:opacity-100 transition-opacity drop-shadow-sm" />
         <button @click="handleLogout" class="p-3.5 w-full text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-2xl flex justify-center transition-colors group outline-none" title="Cerrar sesión">
           <LogOut class="w-6 h-6" />
         </button>
@@ -66,18 +73,14 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="flex-1 w-full bg-slate-50/50 pb-[80px] md:pb-0 relative overflow-hidden">
-      <!-- Decorative background blur -->
-      <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-brand-200/30 rounded-full blur-[100px] pointer-events-none"></div>
-      <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-200/30 rounded-full blur-[100px] pointer-events-none"></div>
-      
+    <main class="flex-1 w-full bg-transparent pb-[80px] md:pb-0 relative z-10 overflow-hidden">
       <div class="relative z-10 h-full">
         <slot />
       </div>
     </main>
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-xl border-t border-slate-200/60 pb-safe pt-2 px-4 flex justify-around items-center z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <nav class="md:hidden fixed bottom-0 w-full bg-white/90 backdrop-blur-2xl border-t border-white/80 pb-safe pt-2 px-4 flex justify-around items-center z-50 shadow-[0_-4px_30px_rgba(0,0,0,0.05)]">
       <NuxtLink to="/" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/' ? '' : 'text-slate-400'">
         <Plus class="w-5 h-5" />
         <span class="text-[10px] font-bold">Pases</span>

@@ -16,16 +16,31 @@ export default {
       },
       colors: {
         brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81'
+          50: '#f0f9f9',
+          100: '#d7f0f0',
+          200: '#b4e2e2',
+          300: '#84cdce',
+          400: '#5fb4a9',
+          500: '#439790',
+          600: '#007f92',
+          700: '#006575',
+          800: '#00497B',
+          900: '#003357'
+        },
+        casita: {
+          green: { dark: '#00692F', DEFAULT: '#618B2F', light: '#8EC152' },
+          gold: '#6D5F24',
+          peach: '#F49A6D',
+          red: '#E83F4B',
+        },
+        iedis: {
+          blue: { dark: '#00497B', light: '#66A8D8', DEFAULT: '#66A8D8' },
+          teal: { dark: '#007F92', DEFAULT: '#5FB4A9' },
+          yellow: '#FCBF2C',
+          red: '#762728',
+        },
+        inst: {
+          gray: { DEFAULT: '#86888C', dark: '#50535A' }
         }
       },
       boxShadow: {

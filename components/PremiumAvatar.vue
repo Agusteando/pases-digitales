@@ -5,16 +5,16 @@
     ref="containerRef"
   >
     <!-- Clipping wrapper: all layers live here -->
-    <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0">
+    <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
 
       <!-- Ambient shell -->
-      <div class="absolute inset-0 bg-slate-50/80 rounded-[inherit]"></div>
+      <div class="absolute inset-0 bg-white/80 backdrop-blur-md rounded-[inherit]"></div>
 
       <!-- Aura: soft blurred colour glow derived from the image itself -->
       <img
         v-if="enhancedSrc || baseSrc"
         :src="enhancedSrc || baseSrc"
-        class="absolute inset-0 w-full h-full object-cover blur-xl opacity-50 scale-125 rounded-[inherit] mix-blend-multiply transition-all duration-700 pointer-events-none"
+        class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-60 scale-[1.35] rounded-[inherit] mix-blend-multiply transition-all duration-1000 pointer-events-none"
         aria-hidden="true"
       />
 
@@ -39,7 +39,7 @@
       <!-- Initials fallback -->
       <div
         v-else-if="!baseSrc && !isProcessing"
-        class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-brand-50 to-indigo-100 flex items-center justify-center font-black text-brand-600 shadow-inner border border-brand-200/50"
+        class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-casita-green-light/20 to-iedis-teal/20 flex items-center justify-center font-black text-iedis-blue-dark shadow-inner border border-white/80"
         :class="textClass"
       >
         {{ initials }}
@@ -73,7 +73,7 @@
       </div>
 
       <!-- Inner glass / lighting ring — always topmost inside clip -->
-      <div class="absolute inset-0 z-20 rounded-[inherit] border border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none"></div>
+      <div class="absolute inset-0 z-20 rounded-[inherit] border-[1.5px] border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none"></div>
 
       <!-- Debug overlays -->
       <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none">
@@ -162,7 +162,7 @@ const isDebug = computed(() => config.public?.debugFace === true)
 const sizeClasses = computed(() => {
   if (props.size === 'sm') return 'w-10 h-10 rounded-full'
   if (props.size === 'md') return 'w-14 h-14 rounded-2xl'
-  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-3xl'
+  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-[1.5rem]'
 })
 
 const textClass = computed(() => {

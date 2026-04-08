@@ -11,12 +11,12 @@
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 flex-1 items-start content-start">
-      <div v-for="sysUser in users" :key="sysUser.email" class="glass-card bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col gap-6 relative group">
+      <div v-for="sysUser in users" :key="sysUser.email" class="glass-panel p-6 rounded-[2.5rem] border border-white/80 shadow-sm hover:shadow-md transition-all flex flex-col gap-6 relative group">
         
-        <div class="flex flex-col items-center text-center gap-3">
-          <div class="relative shrink-0">
-            <PremiumAvatar :src="sysUser.picture" :name="sysUser.name" size="lg" class="shrink-0 ring-4 ring-white shadow-sm" />
-            <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full shadow-sm z-30" title="Cuenta Activa"></div>
+        <div class="flex flex-col items-center text-center gap-4">
+          <div class="relative shrink-0 mt-2">
+            <PremiumAvatar :src="sysUser.picture" :name="sysUser.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md" />
+            <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-casita-green border-2 border-white rounded-full shadow-sm z-30" title="Cuenta Activa"></div>
           </div>
           
           <div class="w-full mt-1">
@@ -26,33 +26,33 @@
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div class="bg-brand-50 rounded-2xl p-3 border border-brand-100/50 flex flex-col justify-center items-center text-center">
-            <span class="text-2xl font-black text-brand-700 font-mono leading-none mb-1">{{ sysUser.passesGenerated }}</span>
+          <div class="bg-white/70 rounded-2xl p-4 border border-white shadow-sm flex flex-col justify-center items-center text-center">
+            <span class="text-2xl font-black text-brand-700 font-mono leading-none mb-1.5">{{ sysUser.passesGenerated }}</span>
             <span class="text-[9px] font-black text-brand-600/70 uppercase tracking-widest">Generados</span>
           </div>
-          <div class="bg-emerald-50 rounded-2xl p-3 border border-emerald-100/50 flex flex-col justify-center items-center text-center">
-            <span class="text-2xl font-black text-emerald-700 font-mono leading-none mb-1">{{ sysUser.passesAuthorized }}</span>
-            <span class="text-[9px] font-black text-emerald-600/70 uppercase tracking-widest">Resueltos</span>
+          <div class="bg-casita-green/10 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex flex-col justify-center items-center text-center">
+            <span class="text-2xl font-black text-casita-green-dark font-mono leading-none mb-1.5">{{ sysUser.passesAuthorized }}</span>
+            <span class="text-[9px] font-black text-casita-green-dark/70 uppercase tracking-widest">Resueltos</span>
           </div>
         </div>
 
-        <div class="flex flex-col gap-4 mt-2 pt-5 border-t border-slate-100">
-          <div class="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        <div class="flex flex-col gap-4 mt-2 pt-5 border-t border-white/60">
+          <div class="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
             <span>Último Acceso</span>
             <span class="text-slate-600">{{ new Date(sysUser.last_login).toLocaleDateString() }}</span>
           </div>
-          <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+          <div class="flex items-center justify-between bg-white/70 p-4 rounded-2xl border border-white shadow-sm">
             <div class="flex items-center gap-2">
-              <Shield class="w-4 h-4" :class="sysUser.is_admin ? 'text-brand-500' : 'text-slate-400'" />
+              <Shield class="w-4 h-4" :class="sysUser.is_admin ? 'text-iedis-teal' : 'text-slate-400'" />
               <span class="text-xs font-black text-slate-700">Administrador</span>
             </div>
             <button 
               @click="toggleAdmin(sysUser)"
               :disabled="sysUser.email === 'desarrollo.tecnologico@casitaiedis.edu.mx' || isToggling === sysUser.email"
-              class="relative inline-flex h-6 w-11 items-center justify-center rounded-full transition-colors focus:outline-none disabled:opacity-50"
-              :class="sysUser.is_admin ? 'bg-brand-600' : 'bg-slate-300'"
+              class="relative inline-flex h-7 w-12 items-center justify-center rounded-full transition-colors focus:outline-none disabled:opacity-50"
+              :class="sysUser.is_admin ? 'bg-gradient-to-r from-iedis-teal to-iedis-teal-dark' : 'bg-slate-300'"
             >
-              <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow-sm" :class="sysUser.is_admin ? 'translate-x-2.5' : '-translate-x-2.5'"></span>
+              <span class="inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-sm" :class="sysUser.is_admin ? 'translate-x-2.5' : '-translate-x-2.5'"></span>
             </button>
           </div>
         </div>

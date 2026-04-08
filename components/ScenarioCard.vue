@@ -3,19 +3,21 @@
     type="button"
     @click="$emit('click')"
     :class="[
-      'flex flex-col items-start p-5 rounded-2xl border-2 transition-all duration-200 w-full text-left outline-none group',
+      'flex flex-col items-start p-5 rounded-[2rem] border transition-all duration-300 w-full text-left outline-none group relative overflow-hidden',
       active 
-        ? 'bg-brand-600 border-brand-600 shadow-md shadow-brand-500/20' 
-        : 'bg-white border-slate-200 hover:border-brand-400 hover:shadow-sm hover:bg-brand-50/30'
+        ? 'bg-gradient-to-br from-iedis-teal to-iedis-teal-dark border-transparent shadow-lg shadow-iedis-teal/20' 
+        : 'bg-white/60 backdrop-blur-sm border-white hover:border-iedis-teal/30 hover:shadow-md hover:bg-white/90'
     ]"
   >
-    <div :class="['mb-4 p-2.5 rounded-xl inline-flex transition-colors', active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-brand-100 group-hover:text-brand-600']">
+    <div :class="['mb-4 p-3 rounded-2xl inline-flex transition-colors relative z-10', active ? 'bg-white/20 text-white shadow-inner' : 'bg-slate-50 text-inst-gray group-hover:bg-iedis-teal/10 group-hover:text-iedis-teal-dark']">
       <component :is="icon" class="w-6 h-6" />
     </div>
     
-    <span :class="['font-black text-sm tracking-tight', active ? 'text-white' : 'text-slate-800']">
+    <span :class="['font-black text-sm tracking-tight relative z-10', active ? 'text-white' : 'text-inst-gray-dark']">
       {{ title }}
     </span>
+
+    <div v-if="active" class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
   </button>
 </template>
 

@@ -2,8 +2,8 @@
   <div class="p-6 md:p-10 max-w-6xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
     <div class="mb-8 shrink-0 flex items-center justify-between">
-      <button @click="$router.push('/history')" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 sm:-ml-4 rounded-xl hover:bg-white shadow-sm border border-transparent hover:border-slate-200">
-        <ArrowLeft class="w-4 h-4" /> Regresar
+      <button @click="$router.push('/history')" class="text-slate-500 hover:text-brand-600 font-black text-sm flex items-center gap-2 transition-colors outline-none px-4 py-2.5 sm:-ml-4 rounded-xl hover:bg-white/60 shadow-sm border border-transparent hover:border-white/80">
+        <ArrowLeft class="w-4 h-4" /> Regresar al historial
       </button>
     </div>
 
@@ -12,39 +12,39 @@
     </div>
 
     <div v-else-if="error || !pass" class="flex-1 flex flex-col items-center justify-center text-center">
-      <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6 border border-red-100">
-        <AlertTriangle class="w-12 h-12 text-red-500" />
+      <div class="w-24 h-24 bg-casita-red/10 rounded-full flex items-center justify-center mb-6 border border-casita-red/20 shadow-sm">
+        <AlertTriangle class="w-12 h-12 text-casita-red" />
       </div>
       <h2 class="text-3xl font-black text-slate-900 mb-2 tracking-tight">Folio no encontrado</h2>
       <p class="text-slate-500 font-bold max-w-md mx-auto">El pase que buscas no existe o fue eliminado.</p>
-      <button @click="$router.push('/history')" class="mt-6 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl transition-colors shadow-md outline-none">Regresar al historial</button>
+      <button @click="$router.push('/history')" class="mt-8 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-md hover:shadow-lg outline-none">Regresar al historial</button>
     </div>
 
     <div v-else class="space-y-8 flex-1">
       
       <!-- Header Premium Card -->
-      <div class="glass-card bg-white p-8 md:p-10 rounded-[2.5rem] border border-white/80 shadow-2xl relative overflow-hidden">
+      <div class="glass-panel p-8 md:p-12 rounded-[3rem] border border-white/80 shadow-2xl relative overflow-hidden">
         <div class="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none transform rotate-12 scale-150">
           <component :is="getCategoryIcon(pass.category_id)" class="w-64 h-64" />
         </div>
         
         <div class="flex flex-col md:flex-row md:items-start justify-between gap-8 relative z-10">
           <div class="flex items-start gap-6">
-            <div class="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg shrink-0 border-4 border-white" :class="getCategoryColorBox(pass.category_id)">
+            <div class="w-20 h-20 rounded-[1.5rem] flex items-center justify-center shadow-md shrink-0 border border-white bg-white" :class="getCategoryColorBox(pass.category_id)">
               <component :is="getCategoryIcon(pass.category_id)" class="w-10 h-10" />
             </div>
             <div class="pt-1">
               <div class="flex items-center gap-4 mb-2">
                 <h1 class="text-4xl font-black text-slate-900 tracking-tighter font-mono">#{{ String(pass.id).padStart(5, '0') }}</h1>
-                <span class="text-[10px] uppercase font-black tracking-widest px-3 py-1.5 rounded-lg border shadow-sm"
-                      :class="{'bg-amber-50 text-amber-700 border-amber-200': pass.status === 'pendiente',
-                               'bg-emerald-50 text-emerald-700 border-emerald-200': pass.status === 'autorizado',
-                               'bg-red-50 text-red-700 border-red-200': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                <span class="text-[10px] uppercase font-black tracking-widest px-3 py-1.5 rounded-lg border shadow-sm bg-white/60"
+                      :class="{'text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
+                               'text-casita-green border-casita-green/30': pass.status === 'autorizado',
+                               'text-casita-red border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                   {{ pass.status }}
                 </span>
               </div>
               <p class="text-xl font-black text-slate-700">{{ getCategoryName(pass.category_id) }}</p>
-              <p class="text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest flex items-center gap-2">
+              <p class="text-[11px] font-bold text-slate-400 mt-2 uppercase tracking-widest flex items-center gap-2">
                 <Clock class="w-3.5 h-3.5" /> Creado el {{ formatDateLong(pass.created_at) }}
               </p>
             </div>
@@ -58,28 +58,28 @@
         <div class="lg:col-span-2 space-y-8">
           
           <!-- Colaborador Block con Fotografía -->
-          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div class="glass-panel p-8 rounded-[2.5rem] border border-white/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
               <User class="w-4 h-4 text-brand-500" /> Colaborador
             </h3>
             
             <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <PremiumAvatar :src="enrichment?.picture || null" :name="pass.employee_name" size="lg" class="shrink-0 ring-4 ring-slate-50 shadow-sm" />
+              <PremiumAvatar :src="enrichment?.picture || null" :name="pass.employee_name" size="lg" class="shrink-0 ring-4 ring-white shadow-md bg-white" />
               
               <div class="flex-1 w-full text-center sm:text-left">
                 <h4 class="text-2xl font-black text-slate-900 tracking-tight flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   {{ pass.employee_name }}
-                  <span v-if="pass.employee_name === pass.user" class="inline-block px-2.5 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200/60 shadow-sm w-max mx-auto sm:mx-0">
+                  <span v-if="pass.employee_name === pass.user" class="inline-block px-3 py-1 bg-white text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-200/60 shadow-sm w-max mx-auto sm:mx-0">
                     Registro propio
                   </span>
                 </h4>
-                <div class="mt-3 flex flex-wrap justify-center sm:justify-start gap-2">
-                  <span v-if="pass.plantel" class="px-3 py-1.5 bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200/80 shadow-sm flex items-center gap-1.5">
-                    <Building2 class="w-3.5 h-3.5 text-brand-500" />
+                <div class="mt-4 flex flex-wrap justify-center sm:justify-start gap-2">
+                  <span v-if="pass.plantel" class="px-3.5 py-1.5 bg-white text-slate-700 text-xs font-bold rounded-xl border border-white shadow-sm flex items-center gap-1.5">
+                    <Building2 class="w-3.5 h-3.5 text-casita-green" />
                     {{ pass.plantel }}
                   </span>
-                  <span v-if="enrichment?.puesto" class="px-3 py-1.5 bg-brand-50 text-brand-700 text-xs font-bold rounded-xl border border-brand-100/60 shadow-sm flex items-center gap-1.5">
-                    <Briefcase class="w-3.5 h-3.5 text-brand-500" />
+                  <span v-if="enrichment?.puesto" class="px-3.5 py-1.5 bg-white text-slate-700 text-xs font-bold rounded-xl border border-white shadow-sm flex items-center gap-1.5">
+                    <Briefcase class="w-3.5 h-3.5 text-iedis-blue" />
                     {{ enrichment.puesto }}
                   </span>
                 </div>
@@ -88,42 +88,42 @@
           </div>
 
           <!-- Detalles del Pase -->
-          <div class="bg-white p-8 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div class="glass-panel p-8 rounded-[2.5rem] border border-white/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
               <Calendar class="w-4 h-4 text-brand-500" /> Detalles
             </h3>
             
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
-              <div class="border-l-2 border-brand-200 pl-4">
+              <div class="border-l-[3px] border-casita-green-light/50 pl-4 bg-white/40 py-2 rounded-r-xl">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Desde</span>
                 <span class="text-base font-black text-slate-800">{{ formatDateOnly(pass.date) }}</span>
               </div>
-              <div class="border-l-2 border-brand-200 pl-4" v-if="[3, 5].includes(pass.category_id)">
+              <div class="border-l-[3px] border-casita-peach/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="[3, 5].includes(pass.category_id)">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hasta</span>
                 <span class="text-base font-black text-slate-800">{{ pass.fecha_fin ? formatDateOnly(pass.fecha_fin) : 'N/A' }}</span>
               </div>
-              <div class="border-l-2 border-brand-200 pl-4" v-if="![3].includes(pass.category_id)">
+              <div class="border-l-[3px] border-iedis-blue/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="![3].includes(pass.category_id)">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hora</span>
                 <span class="text-base font-black text-slate-800 font-mono">{{ formatTime(pass.time) }}</span>
               </div>
-              <div class="border-l-2 border-indigo-200 pl-4 bg-indigo-50/30 rounded-r-xl py-2" v-if="pass.regreso">
-                <span class="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1.5">Hora de regreso</span>
-                <span class="text-base font-black text-indigo-700 font-mono">{{ formatTime(pass.hora_regreso) }}</span>
+              <div class="border-l-[3px] border-iedis-teal/50 pl-4 bg-iedis-teal/10 py-2 rounded-r-xl" v-if="pass.regreso">
+                <span class="block text-[10px] font-black text-iedis-teal-dark uppercase tracking-widest mb-1.5">Hora de retorno</span>
+                <span class="text-base font-black text-iedis-teal-dark font-mono">{{ formatTime(pass.hora_regreso) }}</span>
               </div>
             </div>
 
-            <div v-if="pass.category_id === 5" class="mb-8 p-6 bg-teal-50 rounded-2xl border border-teal-100 grid grid-cols-2 gap-6 shadow-sm">
+            <div v-if="pass.category_id === 5" class="mb-8 p-6 bg-iedis-teal/10 rounded-2xl border border-iedis-teal/20 grid grid-cols-2 gap-6 shadow-sm">
               <div>
-                <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Folio IMSS</span>
-                <span class="text-base font-black text-teal-900 font-mono">{{ pass.IMSS || 'No registrado' }}</span>
+                <span class="block text-[10px] font-black text-iedis-teal-dark/70 uppercase tracking-widest mb-1.5">Folio IMSS</span>
+                <span class="text-base font-black text-iedis-teal-dark font-mono">{{ pass.IMSS || 'No registrado' }}</span>
               </div>
               <div>
-                <span class="block text-[10px] font-black text-teal-600/70 uppercase tracking-widest mb-1.5">Tipo de incapacidad</span>
-                <span class="text-base font-black text-teal-900">{{ pass.tipo_incapacidad || 'N/A' }}</span>
+                <span class="block text-[10px] font-black text-iedis-teal-dark/70 uppercase tracking-widest mb-1.5">Tipo de incapacidad</span>
+                <span class="text-base font-black text-iedis-teal-dark">{{ pass.tipo_incapacidad || 'N/A' }}</span>
               </div>
             </div>
 
-            <div v-if="pass.comentarios" class="bg-slate-50/80 p-6 rounded-2xl border border-slate-200/60">
+            <div v-if="pass.comentarios" class="bg-white/60 p-6 rounded-[1.5rem] border border-white shadow-sm">
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Justificación</span>
               <p class="text-sm font-medium text-slate-800 leading-relaxed italic">
                 "{{ pass.comentarios }}"
@@ -136,129 +136,129 @@
         <div class="space-y-8">
 
           <!-- Autorización Directa -->
-          <div v-if="pass.status === 'pendiente' && canManage" class="bg-white p-6 rounded-3xl border border-emerald-100 shadow-md">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Resolución de Solicitud
+          <div v-if="pass.status === 'pendiente' && canManage" class="glass-panel bg-casita-green-light/10 p-8 rounded-[2.5rem] border border-casita-green/30 shadow-lg">
+            <h3 class="text-xs font-black text-casita-green-dark uppercase tracking-widest mb-4 flex items-center gap-2">
+              <CheckCircle2 class="w-4 h-4 text-casita-green" /> Resolver solicitud
             </h3>
-            <p class="text-xs text-slate-500 font-medium mb-5 leading-relaxed">
-              El enlace de autorización ya ha sido distribuido a los responsables. Como administrador o creador, puedes resolver la solicitud directamente desde aquí.
+            <p class="text-xs text-casita-green-dark/70 font-bold mb-6 leading-relaxed">
+              El aviso de autorización ya fue enviado. Como administrador o creador, puedes resolver la solicitud directamente desde aquí.
             </p>
-            <div class="flex gap-4">
-              <button @click="handleInAppAuth('reject')" :disabled="isResolving" class="flex-1 py-3 bg-white hover:bg-red-50 border border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 outline-none">
-                <X class="w-4 h-4" /> Rechazar
-              </button>
-              <button @click="handleInAppAuth('authorize')" :disabled="isResolving" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 outline-none">
+            <div class="flex flex-col gap-3">
+              <button @click="handleInAppAuth('authorize')" :disabled="isResolving" class="w-full py-4 bg-gradient-to-r from-casita-green to-casita-green-light text-white text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 outline-none">
                 <Check class="w-4 h-4" /> Autorizar
+              </button>
+              <button @click="handleInAppAuth('reject')" :disabled="isResolving" class="w-full py-4 bg-white/80 backdrop-blur-sm border border-casita-red/30 hover:bg-white text-casita-red-dark text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 outline-none">
+                <X class="w-4 h-4" /> Rechazar
               </button>
             </div>
           </div>
           
           <!-- Acciones -->
-          <div v-if="pass && canManage" class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div v-if="pass && canManage" class="glass-panel p-8 rounded-[2.5rem] border border-white/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-              <Zap class="w-4 h-4 text-brand-500" /> Acciones de Gestión
+              <Zap class="w-4 h-4 text-brand-500" /> Opciones
             </h3>
 
-            <div v-if="pass.status !== 'pendiente'" class="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-4 flex items-start gap-3">
+            <div v-if="pass.status !== 'pendiente'" class="p-5 bg-white/60 rounded-2xl border border-white mb-5 flex items-start gap-4 shadow-sm">
                <Lock class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                <div>
                  <p class="text-sm font-black text-slate-700">Edición bloqueada</p>
-                 <p class="text-[11px] font-medium text-slate-500 mt-1 leading-relaxed">
+                 <p class="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">
                    No es posible alterar o notificar un pase que ya ha sido resuelto.
                  </p>
                </div>
             </div>
 
-            <div class="space-y-3">
-              <button @click="handleResend" :disabled="pass.status !== 'pendiente' || isResending" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:hover:bg-brand-600 disabled:shadow-none outline-none">
+            <div class="space-y-4">
+              <button @click="handleResend" :disabled="pass.status !== 'pendiente' || isResending" class="w-full py-3.5 bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none outline-none">
                 <Loader2 v-if="isResending" class="w-4 h-4 animate-spin" />
                 <Send v-else class="w-4 h-4" />
-                <span>Reenviar notificación</span>
+                <span>Reenviar aviso</span>
               </button>
               
-              <button @click="showEditModal = true" :disabled="pass.status !== 'pendiente' || isExpired" class="w-full py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white outline-none">
+              <button @click="showEditModal = true" :disabled="pass.status !== 'pendiente' || isExpired" class="w-full py-3.5 bg-white/80 hover:bg-white border border-white text-slate-700 text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50 outline-none">
                 <Edit2 class="w-4 h-4 text-slate-400" />
                 <span>Editar pase</span>
               </button>
-              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-amber-600 mt-1 mb-2 px-1 text-center">No se puede editar: el tiempo límite de 48 horas ha concluido.</p>
+              <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-casita-gold-dark mt-1 px-1 text-center">Edición no disponible (límite de 48 hrs excedido).</p>
 
-              <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-red-600 text-sm font-black rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hover:bg-white disabled:hover:border-slate-200 outline-none">
+              <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3.5 bg-white/80 hover:bg-white border border-white text-casita-red text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50 outline-none">
                 <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
-                <Trash2 v-else class="w-4 h-4 text-red-400" />
+                <Trash2 v-else class="w-4 h-4 text-casita-red/70" />
                 <span>Anular pase</span>
               </button>
             </div>
           </div>
 
           <!-- Status Timeline -->
-          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
-            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+          <div class="glass-panel p-8 rounded-[2.5rem] border border-white/80 shadow-sm">
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-8 flex items-center gap-2">
               <ShieldCheck class="w-4 h-4 text-brand-500" /> Historial de Estado
             </h3>
 
-            <div class="relative pl-8 space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+            <div class="relative pl-8 space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-casita-green-light/40 before:via-iedis-teal/40 before:to-transparent">
               <!-- Step 1: Emission -->
-              <div class="relative">
-                <div class="absolute -left-[39px] w-6 h-6 rounded-full border-4 border-white bg-slate-200 shadow-sm flex items-center justify-center z-10">
-                  <div class="w-1.5 h-1.5 bg-slate-500 rounded-full"></div>
+              <div class="relative timeline-item" style="animation-delay: 0s;">
+                <div class="absolute -left-[39px] w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center z-10 border border-white/60">
+                  <div class="w-3.5 h-3.5 bg-slate-300 rounded-full"></div>
                 </div>
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1">Generado</p>
-                  <p class="text-xs font-bold text-slate-500">Por: <span class="text-slate-700">{{ pass.user }}</span></p>
-                  <p class="text-[10px] font-bold text-slate-400 mt-2">{{ formatDateLong(pass.created_at) }}</p>
+                <div class="bg-white/60 p-5 rounded-2xl border border-white shadow-sm">
+                  <p class="text-xs font-black text-slate-800 uppercase tracking-widest mb-1.5">Generado</p>
+                  <p class="text-[11px] font-bold text-slate-500">Por: <span class="text-slate-700">{{ pass.user }}</span></p>
+                  <p class="text-[10px] font-bold text-slate-400 mt-2.5">{{ formatDateLong(pass.created_at) }}</p>
                 </div>
               </div>
 
               <!-- Step 2: Resolution -->
-              <div class="relative">
-                <div class="absolute -left-[39px] w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10"
-                     :class="{'bg-amber-100': pass.status === 'pendiente', 'bg-emerald-100': pass.status === 'autorizado', 'bg-red-100': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                  <div class="w-1.5 h-1.5 rounded-full" :class="{'bg-amber-500': pass.status === 'pendiente', 'bg-emerald-500': pass.status === 'autorizado', 'bg-red-500': pass.status === 'rechazado' || pass.status === 'cancelado'}"></div>
+              <div class="relative timeline-item" style="animation-delay: 0.15s;">
+                <div class="absolute -left-[39px] w-7 h-7 rounded-full bg-white shadow-sm flex items-center justify-center z-10 border border-white/60"
+                     :class="{'bg-white': pass.status === 'pendiente'}">
+                  <div class="w-3.5 h-3.5 rounded-full" :class="{'bg-casita-gold': pass.status === 'pendiente', 'bg-casita-green': pass.status === 'autorizado', 'bg-casita-red': pass.status === 'rechazado' || pass.status === 'cancelado'}"></div>
                 </div>
-                <div class="p-4 rounded-2xl border" :class="{'bg-amber-50/50 border-amber-100': pass.status === 'pendiente', 'bg-emerald-50/50 border-emerald-100': pass.status === 'autorizado', 'bg-red-50/50 border-red-100': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                  <p class="text-xs font-black uppercase tracking-widest mb-1"
-                     :class="{'text-amber-700': pass.status === 'pendiente', 'text-emerald-700': pass.status === 'autorizado', 'text-red-700': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                <div class="p-5 rounded-2xl border shadow-sm" :class="{'bg-casita-gold/10 border-casita-gold/20': pass.status === 'pendiente', 'bg-casita-green/10 border-casita-green/20': pass.status === 'autorizado', 'bg-casita-red/10 border-casita-red/20': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                  <p class="text-xs font-black uppercase tracking-widest mb-1.5"
+                     :class="{'text-casita-gold-dark': pass.status === 'pendiente', 'text-casita-green-dark': pass.status === 'autorizado', 'text-casita-red-dark': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                     {{ pass.status === 'pendiente' ? 'Pendiente' : `Estado: ${pass.status}` }}
                   </p>
-                  <p v-if="pass.authorized_by" class="text-xs font-bold text-slate-600 mt-1">Por: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
-                  <p v-if="pass.authorized_at" class="text-[10px] font-bold text-slate-500 mt-2 opacity-80">{{ formatDateLong(pass.authorized_at) }}</p>
+                  <p v-if="pass.authorized_by" class="text-[11px] font-bold text-slate-600 mt-1">Por: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
+                  <p v-if="pass.authorized_at" class="text-[10px] font-bold text-slate-500 mt-2.5 opacity-80">{{ formatDateLong(pass.authorized_at) }}</p>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Notification Delivery Log -->
-          <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div class="glass-panel p-8 rounded-[2.5rem] border border-white/80 shadow-sm">
             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <Bell class="w-4 h-4 text-brand-500" /> Trazabilidad de Notificaciones
+              <Bell class="w-4 h-4 text-brand-500" /> Registro de envíos
             </h3>
 
-            <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-6 bg-slate-50 rounded-2xl border border-slate-100 border-dashed">
+            <div v-if="!pass.notifications || !pass.notifications.length" class="text-center py-8 bg-white/60 rounded-[2rem] border border-white border-dashed shadow-sm">
               <p class="text-sm font-bold text-slate-400">No hay registros de envío.</p>
             </div>
-            <div v-else class="space-y-3 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
-              <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-4 rounded-2xl border flex items-start justify-between gap-4 transition-colors"
-                   :class="isSystemLog(log.error_text) ? 'bg-slate-900 border-slate-800 text-white' : 'bg-slate-50 border-slate-100 hover:bg-white hover:shadow-sm'">
-                <div class="flex items-center gap-3 w-full min-w-0">
-                  <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm" :class="getChannelColor(log.error_text)">
+            <div v-else class="space-y-4 max-h-[350px] overflow-y-auto custom-scrollbar pr-2">
+              <div v-for="(log, idx) in pass.notifications" :key="idx" class="p-5 rounded-2xl border flex items-start justify-between gap-4 transition-colors"
+                   :class="isSystemLog(log.error_text) ? 'bg-slate-900 border-slate-800 text-white shadow-md' : 'bg-white/80 border-white hover:bg-white hover:shadow-sm shadow-sm'">
+                <div class="flex items-center gap-4 w-full min-w-0">
+                  <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border bg-white shadow-sm" :class="getChannelColor(log.error_text)">
                     <component :is="getChannelIcon(log.error_text)" class="w-4 h-4" />
                   </div>
                   <div class="min-w-0 flex-1">
                     <p class="text-sm font-black tracking-tight truncate" :class="isSystemLog(log.error_text) ? 'text-white' : 'text-slate-800'">
                       {{ extractTargetName(log.error_text) }}
                     </p>
-                    <p class="text-[10px] font-bold mt-0.5 truncate" :class="isSystemLog(log.error_text) ? 'text-slate-400' : 'text-slate-500'" :title="getDeliveryDetail(log)">
+                    <p class="text-[10px] font-bold mt-1.5 truncate" :class="isSystemLog(log.error_text) ? 'text-slate-400' : 'text-slate-500'" :title="getDeliveryDetail(log)">
                       {{ getDeliveryDetail(log) }}
                     </p>
-                    <p class="text-[9px] font-bold mt-1.5 uppercase tracking-widest" :class="isSystemLog(log.error_text) ? 'text-slate-500' : 'text-slate-400'">
+                    <p class="text-[9px] font-black mt-2 uppercase tracking-widest" :class="isSystemLog(log.error_text) ? 'text-slate-500' : 'text-slate-400'">
                       {{ formatDateLong(log.created_at) }}
                     </p>
                   </div>
                 </div>
                 <span class="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border shadow-sm shrink-0"
-                      :class="isSystemLog(log.error_text) && log.status === 'sent' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                             isSystemLog(log.error_text) && log.status !== 'sent' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                             log.status === 'sent' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-red-700 bg-red-50 border-red-200'">
+                      :class="isSystemLog(log.error_text) && log.status === 'sent' ? 'bg-casita-green/20 text-casita-green-light border-casita-green/30' :
+                             isSystemLog(log.error_text) && log.status !== 'sent' ? 'bg-casita-red/20 text-casita-red-light border-casita-red/30' :
+                             log.status === 'sent' ? 'text-casita-green bg-casita-green/10 border-casita-green/20' : 'text-casita-red bg-casita-red/10 border-casita-red/20'">
                   {{ log.status === 'sent' ? 'OK' : 'Error' }}
                 </span>
               </div>
@@ -318,7 +318,7 @@ const handleResend = async () => {
     refresh()
   } catch (err) {
     console.error('Resend error', err)
-    alert(err.data?.message || 'Ocurrió un error al intentar reenviar la notificación.')
+    alert(err.data?.message || 'Ocurrió un error al intentar reenviar el aviso.')
   } finally {
     isResending.value = false
   }
@@ -367,13 +367,13 @@ const getCategoryIcon = (id) => {
 
 const getCategoryColorBox = (id) => {
   const map = { 
-    1: 'bg-orange-50 text-orange-600 border-orange-200', 
-    2: 'bg-blue-50 text-blue-600 border-blue-200', 
-    3: 'bg-rose-50 text-rose-600 border-rose-200', 
-    4: 'bg-purple-50 text-purple-600 border-purple-200', 
-    5: 'bg-teal-50 text-teal-600 border-teal-200' 
+    1: 'text-casita-peach border-casita-peach/20 bg-casita-peach/10', 
+    2: 'text-iedis-blue border-iedis-blue/20 bg-iedis-blue/10', 
+    3: 'text-casita-red border-casita-red/20 bg-casita-red/10', 
+    4: 'text-casita-gold border-casita-gold/20 bg-casita-gold/10', 
+    5: 'text-iedis-teal border-iedis-teal/20 bg-iedis-teal/10' 
   }
-  return map[id] || 'bg-slate-50 text-slate-600 border-slate-200'
+  return map[id] || 'bg-white text-slate-600 border-white'
 }
 
 const getCategoryName = (id) => {
@@ -397,11 +397,11 @@ const extractTargetName = (text) => {
 }
 
 const getChannelColor = (text) => {
-  if (!text) return 'bg-slate-100 text-slate-500 border-slate-200'
-  if (text.includes('Telegram') || isSystemLog(text)) return 'bg-slate-800 text-slate-300 border-slate-700'
-  if (text.includes('WhatsApp')) return 'bg-emerald-100 text-emerald-600 border-emerald-200'
-  if (text.includes('Email')) return 'bg-brand-100 text-brand-600 border-brand-200'
-  return 'bg-slate-100 text-slate-500 border-slate-200'
+  if (!text) return 'text-slate-500 border-white bg-white'
+  if (text.includes('Telegram') || isSystemLog(text)) return 'text-slate-300 border-slate-700 bg-slate-800'
+  if (text.includes('WhatsApp')) return 'text-casita-green-dark border-casita-green/30 bg-casita-green/10'
+  if (text.includes('Email')) return 'text-iedis-blue-dark border-iedis-blue/30 bg-iedis-blue/10'
+  return 'text-slate-500 border-white bg-white'
 }
 
 const getChannelIcon = (text) => {
