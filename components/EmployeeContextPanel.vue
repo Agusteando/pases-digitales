@@ -76,7 +76,7 @@
               <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">{{ group.month }}</span>
             </div>
             
-            <div class="relative pl-8 space-y-6 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gradient-to-b before:from-casita-green-light/40 before:via-iedis-teal/40 before:to-transparent">
+            <div class="relative pl-[30px] space-y-6 before:absolute before:inset-0 before:left-[14px] before:top-2 before:bottom-2 before:w-[3px] before:bg-[linear-gradient(to_bottom,rgba(97,139,47,0.5),rgba(0,127,146,0.5),rgba(97,139,47,0.5))] before:animate-timeline-flow before:rounded-full">
               <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.08}s` }">
                 
                 <!-- Timeline Dot -->

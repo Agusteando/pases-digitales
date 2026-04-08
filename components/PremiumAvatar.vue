@@ -14,7 +14,7 @@
       <img
         v-if="enhancedSrc || baseSrc"
         :src="enhancedSrc || baseSrc"
-        class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-60 scale-[1.35] rounded-[inherit] mix-blend-multiply transition-all duration-1000 pointer-events-none"
+        class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-60 rounded-[inherit] mix-blend-multiply transition-all duration-1000 pointer-events-none animate-aura"
         aria-hidden="true"
       />
 

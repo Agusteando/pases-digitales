@@ -12,25 +12,52 @@ body {
 
 .edu-pattern {
   background-image: 
-    radial-gradient(circle at 100% 100%, rgba(97, 139, 47, 0.035) 0, rgba(97, 139, 47, 0.035) 12px, transparent 12px),
-    radial-gradient(circle at 0% 0%, rgba(0, 127, 146, 0.035) 0, rgba(0, 127, 146, 0.035) 12px, transparent 12px);
+    radial-gradient(circle at 100% 100%, rgba(97, 139, 47, 0.025) 0, rgba(97, 139, 47, 0.025) 12px, transparent 12px),
+    radial-gradient(circle at 0% 0%, rgba(0, 127, 146, 0.025) 0, rgba(0, 127, 146, 0.025) 12px, transparent 12px);
   background-size: 60px 60px;
   background-attachment: fixed;
 }
 
-@keyframes ambient-breathe {
-  0% { transform: scale(1) translate(0, 0); opacity: 0.6; }
-  33% { transform: scale(1.05) translate(2%, -2%); opacity: 0.8; }
-  66% { transform: scale(0.95) translate(-1%, 2%); opacity: 0.5; }
-  100% { transform: scale(1) translate(0, 0); opacity: 0.6; }
+/* Page Transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(15px) scale(0.99);
+}
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-15px) scale(0.99);
 }
 
-.animate-breathe {
-  animation: ambient-breathe 22s ease-in-out infinite;
+.layout-enter-active,
+.layout-leave-active {
+  transition: opacity 0.4s ease;
+}
+.layout-enter-from,
+.layout-leave-to {
+  opacity: 0;
 }
 
-.animate-breathe-slow {
-  animation: ambient-breathe 28s ease-in-out infinite reverse;
+/* Timeline Flow */
+@keyframes timeline-flow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% -200%; }
+}
+.animate-timeline-flow {
+  background-size: 100% 200%;
+  animation: timeline-flow 4s linear infinite;
+}
+
+/* Aura Flow */
+@keyframes aura-flow {
+  0% { transform: scale(1.35) rotate(0deg); border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%; opacity: 0.5; }
+  100% { transform: scale(1.45) rotate(15deg); border-radius: 60% 40% 40% 60% / 40% 60% 50% 40%; opacity: 0.8; }
+}
+.animate-aura {
+  animation: aura-flow 8s ease-in-out infinite alternate;
 }
 
 @keyframes timeline-enter {

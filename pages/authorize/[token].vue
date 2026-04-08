@@ -1,9 +1,6 @@
 <template>
-  <div class="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-slate-50 relative overflow-hidden font-sans edu-pattern">
-    <!-- Decorative Blurs -->
-    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-casita-green-light/20 rounded-full blur-[120px] pointer-events-none animate-breathe"></div>
-    <div class="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-iedis-blue-light/20 rounded-full blur-[100px] pointer-events-none animate-breathe-slow"></div>
-
+  <div class="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-transparent relative overflow-hidden font-sans">
+    
     <div v-if="pending" class="flex flex-col items-center z-10 glass-panel p-12 rounded-[3rem] shadow-2xl">
       <Loader2 class="w-12 h-12 animate-spin text-iedis-teal mb-5" />
       <p class="text-sm font-black text-slate-800 tracking-tight">Cargando solicitud...</p>
@@ -26,7 +23,7 @@
       </div>
 
       <header class="mb-10 relative z-10 text-center flex flex-col items-center">
-        <div class="w-20 h-20 rounded-[1.5rem] bg-white flex items-center justify-center mb-6 border border-white shadow-md relative group">
+        <div class="w-20 h-20 rounded-[1.5rem] bg-white/80 backdrop-blur-sm flex items-center justify-center mb-6 border border-white shadow-md relative group">
           <div class="absolute inset-0 bg-gradient-to-tr from-casita-green-light/20 to-iedis-teal/20 rounded-[1.5rem] opacity-50 blur-sm"></div>
           <component :is="getCategoryIcon(pass.category_id)" class="w-10 h-10 text-iedis-teal-dark relative z-10" />
         </div>
@@ -91,7 +88,7 @@
       </footer>
 
       <div class="mt-10 text-center relative z-10 flex flex-col items-center gap-4">
-         <img src="/id.png" alt="Identidad Institucional" class="h-6 opacity-40 hover:opacity-80 transition-opacity" />
+         <img src="/id.png" alt="Identidad Institucional" class="h-6 opacity-50 hover:opacity-100 transition-opacity mix-blend-multiply" />
       </div>
     </div>
   </div>

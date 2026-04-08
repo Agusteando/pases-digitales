@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   
   build: {
-    transpile: ['lucide-vue-next']
+    transpile: ['lucide-vue-next', 'three']
   },
 
   vite: {
@@ -23,11 +23,13 @@ export default defineNuxtConfig({
   },
 
   app: {
+    pageTransition: { name: 'page', mode: 'out-in' },
+    layoutTransition: { name: 'layout', mode: 'out-in' },
     head: {
       title: 'Pases Digitales',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover' },
-        { name: 'theme-color', content: '#ffffff' },
+        { name: 'theme-color', content: '#f8fafc' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' }
       ],
