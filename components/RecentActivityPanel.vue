@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 relative before:absolute before:inset-0 before:left-[23px] before:top-2 before:bottom-2 before:w-[3px] before:bg-[linear-gradient(to_bottom,rgba(97,139,47,0.5),rgba(0,127,146,0.5),rgba(97,139,47,0.5))] before:animate-timeline-flow before:rounded-full">
+    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 relative before:absolute before:inset-0 before:left-[23px] before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:timeline-line">
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-10 h-10 animate-spin text-iedis-teal" /></div>
       
       <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-5">

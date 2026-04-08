@@ -1,7 +1,7 @@
 <template>
-  <div class="antialiased selection:bg-brand-200 selection:text-brand-900 font-sans text-slate-900 bg-slate-50/40 min-h-[100dvh] relative overflow-x-hidden edu-pattern">
+  <div class="antialiased selection:bg-brand-200 selection:text-brand-900 font-sans text-slate-900 bg-slate-50/50 min-h-[100dvh] relative overflow-x-hidden">
     
-    <!-- Seamless background persists across route transitions -->
+    <!-- Seamless living background persists across route transitions -->
     <AmbientCanvas />
 
     <div class="relative z-10">

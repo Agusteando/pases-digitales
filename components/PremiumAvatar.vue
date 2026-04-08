@@ -10,13 +10,19 @@
       <!-- Ambient shell -->
       <div class="absolute inset-0 bg-white/80 backdrop-blur-md rounded-[inherit]"></div>
 
-      <!-- Aura: soft blurred colour glow derived from the image itself -->
-      <img
-        v-if="enhancedSrc || baseSrc"
-        :src="enhancedSrc || baseSrc"
-        class="absolute inset-0 w-full h-full object-cover blur-2xl opacity-60 rounded-[inherit] mix-blend-multiply transition-all duration-1000 pointer-events-none animate-aura"
-        aria-hidden="true"
-      />
+      <!-- Living Aura: Abstract layered gradients providing energy -->
+      <div v-if="enhancedSrc || baseSrc" class="absolute inset-0 overflow-hidden rounded-[inherit] opacity-60">
+        <!-- Base derived from image itself -->
+        <img
+          :src="enhancedSrc || baseSrc"
+          class="absolute inset-0 w-full h-full object-cover blur-2xl scale-[1.3] mix-blend-multiply opacity-50"
+          aria-hidden="true"
+        />
+        <!-- Morphing, rotating energy blob -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] mix-blend-overlay">
+          <div class="w-full h-full bg-gradient-to-tr from-casita-green-light/40 via-white/20 to-iedis-teal/40 blur-xl animate-morph-blob"></div>
+        </div>
+      </div>
 
       <!-- Base image: instant first paint, crossfades out once enhanced is ready -->
       <img

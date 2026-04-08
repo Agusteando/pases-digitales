@@ -10,31 +10,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.edu-pattern {
-  background-image: 
-    radial-gradient(circle at 100% 100%, rgba(97, 139, 47, 0.025) 0, rgba(97, 139, 47, 0.025) 12px, transparent 12px),
-    radial-gradient(circle at 0% 0%, rgba(0, 127, 146, 0.025) 0, rgba(0, 127, 146, 0.025) 12px, transparent 12px);
-  background-size: 60px 60px;
-  background-attachment: fixed;
-}
-
-/* Page Transitions */
+/* Page & Layout Transitions */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .page-enter-from {
   opacity: 0;
-  transform: translateY(15px) scale(0.99);
+  transform: translateY(10px) scale(0.995);
 }
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-15px) scale(0.99);
+  transform: translateY(-10px) scale(0.995);
 }
 
 .layout-enter-active,
 .layout-leave-active {
-  transition: opacity 0.4s ease;
+  transition: opacity 0.5s ease;
 }
 .layout-enter-from,
 .layout-leave-to {
@@ -44,20 +36,29 @@ body {
 /* Timeline Flow */
 @keyframes timeline-flow {
   0% { background-position: 0% 0%; }
-  100% { background-position: 0% -200%; }
+  100% { background-position: 0% 200%; }
 }
-.animate-timeline-flow {
+.timeline-line {
+  background: linear-gradient(to bottom, 
+    transparent 0%, 
+    rgba(142, 193, 82, 0.8) 20%, /* Casita Light Green */
+    rgba(95, 180, 169, 0.8) 50%, /* IEDIS Light Teal */
+    rgba(244, 154, 109, 0.8) 80%, /* Casita Peach */
+    transparent 100%
+  );
   background-size: 100% 200%;
   animation: timeline-flow 4s linear infinite;
 }
 
-/* Aura Flow */
-@keyframes aura-flow {
-  0% { transform: scale(1.35) rotate(0deg); border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%; opacity: 0.5; }
-  100% { transform: scale(1.45) rotate(15deg); border-radius: 60% 40% 40% 60% / 40% 60% 50% 40%; opacity: 0.8; }
+/* Premium Avatar Morphing Aura */
+@keyframes morph-blob {
+  0% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(0deg) scale(1); }
+  34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; transform: rotate(120deg) scale(1.05); }
+  67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; transform: rotate(240deg) scale(0.95); }
+  100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; transform: rotate(360deg) scale(1); }
 }
-.animate-aura {
-  animation: aura-flow 8s ease-in-out infinite alternate;
+.animate-morph-blob {
+  animation: morph-blob 12s linear infinite;
 }
 
 @keyframes timeline-enter {
@@ -69,15 +70,16 @@ body {
   animation: timeline-enter 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/* Refined Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200/80 rounded-full transition-colors;
+  @apply bg-slate-200/60 rounded-full transition-colors;
 }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   @apply bg-slate-300;
@@ -115,7 +117,7 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
