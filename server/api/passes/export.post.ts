@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError } from '#imports'
 import { useDB } from '~/server/utils/db'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 const categoryMapping: Record<number, string> = {
   1: 'Pase de entrada',
@@ -20,7 +20,6 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDB()
 
-    // Consulta con JOIN de múltiples esquemas (Sistemas y nomina)
     const sql = `
       SELECT 
           Sistemas.hr_entries.id, 
@@ -47,7 +46,6 @@ export default defineEventHandler(async (event) => {
           Sistemas.hr_entries.date BETWEEN ? AND ?
     `
 
-    // Aseguramos cubrir el día completo para no perder registros si date incluye horas
     const start = `${body.startDate} 00:00:00`
     const end = `${body.endDate} 23:59:59`
 
@@ -61,7 +59,6 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: 'No se encontraron datos para la búsqueda.' })
     }
 
-    // Excluir category_id y mapear nombre de la categoría
     const dataWithCategoryName = queryResult.map((entry: any) => ({
       id: entry.id,
       category_name: categoryMapping[entry.category_id] || 'Otro',
@@ -78,23 +75,29 @@ export default defineEventHandler(async (event) => {
       nomina_plantel: entry.nomina_plantel
     }))
 
-    // Crear el libro de trabajo (workbook)
-    const wb = XLSX.utils.book_new()
+    // Inicializar el libro de trabajo usando ExcelJS
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Data')
 
-    // Crear la hoja de cálculo con el resultado de la base de datos
-    const ws = XLSX.utils.json_to_sheet(dataWithCategoryName)
+    // Definir las columnas automáticamente basándose en las llaves del primer objeto
+    worksheet.columns = Object.keys(dataWithCategoryName[0]).map(key => ({
+      header: key.toUpperCase(),
+      key: key,
+      width: 22
+    }))
 
-    // Agregar hoja de cálculo al libro
-    XLSX.utils.book_append_sheet(wb, ws, 'Data')
+    // Insertar los datos
+    worksheet.addRows(dataWithCategoryName)
 
-    // Escribir el libro a una cadena en base64 (tal como lo espera el cliente Vue)
-    const base64Excel = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' })
+    // Escribir a un Buffer en memoria y convertirlo a Base64
+    const buffer = await workbook.xlsx.writeBuffer()
+    const base64Excel = Buffer.from(buffer).toString('base64')
 
     return { base64: base64Excel }
     
   } catch (error: any) {
     console.error('Export DB error:', error)
-    if (error.statusCode) throw error // Relanzar errores previstos (ej. 404, 400)
+    if (error.statusCode) throw error
     throw createError({ statusCode: 500, message: 'Fallo al procesar y construir la exportación del reporte.' })
   }
 })
