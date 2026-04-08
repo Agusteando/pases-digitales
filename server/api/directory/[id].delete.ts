@@ -1,8 +1,13 @@
 import { useDB } from '~/server/utils/db'
-import { defineEventHandler, getRouterParam, createError } from '#imports'
+import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
+  
+  let body: any = {}
+  try { body = await readBody(event) || {} } catch (e) {}
+  const replacement_id = body.replacement_id
+
   const db = useDB()
   
   try {
@@ -11,7 +16,6 @@ export default defineEventHandler(async (event) => {
     
     const contact = contactRows[0]
     
-    // Safeguard: Do not allow deletion of the last Director or Administrador of a given plantel
     if (['Director', 'Administrador'].includes(contact.role)) {
       const [countRows]: any = await db.execute(
         'SELECT COUNT(*) as count FROM hr_directory WHERE plantel = ? AND role = ?', 
@@ -19,10 +23,14 @@ export default defineEventHandler(async (event) => {
       )
       
       if (countRows[0].count <= 1) {
-        throw createError({ 
-          statusCode: 400, 
-          message: `Acción denegada. El plantel debe mantener al menos un contacto con el rol ${contact.role}.` 
-        })
+        if (!replacement_id) {
+           throw createError({ 
+             statusCode: 400, 
+             message: `Acción denegada. El plantel debe mantener al menos un contacto con el rol ${contact.role}.` 
+           })
+        }
+        // Secure transaction behavior: Swap the replacement contact to the required hierarchy role
+        await db.execute('UPDATE hr_directory SET role = ? WHERE id = ?', [contact.role, replacement_id])
       }
     }
 
