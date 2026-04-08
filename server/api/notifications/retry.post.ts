@@ -30,6 +30,9 @@ export default defineEventHandler(async (event) => {
     const targetAuthUrl = `${config.appUrl}/authorize/${pass.auth_token}?r=${rToken}`
 
     const isAuthorized = pass.status === 'autorizado'
+    const isRejected = pass.status === 'rechazado'
+    const isCancelled = pass.status === 'cancelado'
+
     const categories: Record<number, string> = {
       1: 'Pase de entrada', 2: 'Pase de salida', 3: 'Pase para faltar', 4: 'Pase cambio de horario', 5: 'Incapacidad'
     }
@@ -40,10 +43,31 @@ export default defineEventHandler(async (event) => {
     const motivoMsg = pass.comentarios ? ` con motivo: ${pass.comentarios}` : ''
     const timeMsg = pass.time ? ` - Hora: ${pass.time}` : ''
 
-    const headerTitle = isAuthorized ? `*Pase Autorizado (Recordatorio)* ✅` : `*Solicitud de Autorización (Recordatorio)* ⚠️`
-    const actionPhrase = isAuthorized
-      ? `esta solicitud ya fue autorizada por ${pass.authorized_by}. Puedes consultar el registro aquí:`
-      : `tienes esta solicitud pendiente de autorización. Por favor, revísala y resuélvela mediante este enlace seguro:`
+    let headerTitle = `*Solicitud de Autorización (Recordatorio)* ⚠️`
+    let actionPhrase = `tienes esta solicitud pendiente de autorización. Por favor, revísala y resuélvela mediante este enlace seguro:`
+    let emailSubject = `Recordatorio: Solicitud #${paddedId} requiere atención`
+    let emailTitle = `Solicitud de Autorización (Recordatorio)`
+    let emailActionBtn = `Revisar y Resolver Solicitud`
+
+    if (isAuthorized) {
+      headerTitle = `*Pase Autorizado (Recordatorio)* ✅`
+      actionPhrase = `esta solicitud ya fue autorizada por ${pass.authorized_by}. Puedes consultar el registro aquí:`
+      emailSubject = `Recordatorio: Pase Autorizado #${paddedId}`
+      emailTitle = `Pase Autorizado (Recordatorio)`
+      emailActionBtn = `Ver Expediente`
+    } else if (isRejected) {
+      headerTitle = `*Pase Rechazado (Recordatorio)* ❌`
+      actionPhrase = `esta solicitud ha sido rechazada por ${pass.authorized_by}. Puedes consultar los detalles en el siguiente enlace:`
+      emailSubject = `Recordatorio: Pase Rechazado #${paddedId}`
+      emailTitle = `Pase Rechazado (Recordatorio)`
+      emailActionBtn = `Ver Expediente`
+    } else if (isCancelled) {
+      headerTitle = `*Pase Anulado (Recordatorio)* 🚫`
+      actionPhrase = `esta solicitud ha sido anulada operativa o administrativamente. Puedes verificarlo aquí:`
+      emailSubject = `Recordatorio: Pase Anulado #${paddedId}`
+      emailTitle = `Pase Anulado (Recordatorio)`
+      emailActionBtn = `Ver Expediente`
+    }
 
     if (isWhatsApp) {
       const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
@@ -62,13 +86,6 @@ export default defineEventHandler(async (event) => {
     } 
     
     if (isEmail) {
-      const emailSubject = isAuthorized 
-        ? `Recordatorio: Pase Autorizado #${paddedId}` 
-        : `Recordatorio: Solicitud #${paddedId} requiere atención`
-      
-      const emailTitle = isAuthorized ? `Pase Autorizado (Recordatorio)` : `Solicitud de Autorización (Recordatorio)`
-      const emailActionBtn = isAuthorized ? `Ver Expediente` : `Revisar y Resolver Solicitud`
-
       const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
@@ -79,7 +96,7 @@ export default defineEventHandler(async (event) => {
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
-              ${isAuthorized ? `<p style="margin: 12px 0 0; color: #059669; font-size: 14px;"><strong>Autorizado por:</strong><br><span style="color: #064e3b; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
+              ${(isAuthorized || isRejected) && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${isAuthorized ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${isAuthorized ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${isAuthorized ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
            </div>
 
            <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px;">${emailActionBtn}</a>

@@ -23,6 +23,9 @@ export async function dispatchNotificationsForPass(passId: number) {
   pass.plantel = cleanPlantelName(pass.plantel)
 
   const isAuthorized = pass.status === 'autorizado'
+  const isRejected = pass.status === 'rechazado'
+  const isCancelled = pass.status === 'cancelado'
+
   const categories: Record<number, string> = {
     1: 'Pase de entrada', 2: 'Pase de salida', 3: 'Pase para faltar', 4: 'Pase cambio de horario', 5: 'Incapacidad'
   }
@@ -36,10 +39,16 @@ export async function dispatchNotificationsForPass(passId: number) {
 
   const authUrlBase = `${config.appUrl}/authorize/${pass.auth_token}`
 
-  // 1. Mandatory Global Infrastructure Audit (Fixed, Non-Configurable)
+  // 1. Mandatory Global Infrastructure Audit
   const telegramGlobalId = '-1003057962499'
-  const statusIcon = isAuthorized ? '✅' : '⚠️'
-  const tgMessage = `${statusIcon} ${isAuthorized ? 'Pase Autorizado' : 'Nuevo Pase Registrado'}\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
+  
+  let statusIcon = '⚠️'
+  let statusTitle = 'Nuevo Pase Registrado'
+  if (isAuthorized) { statusIcon = '✅'; statusTitle = 'Pase Autorizado'; }
+  else if (isRejected) { statusIcon = '❌'; statusTitle = 'Pase Rechazado'; }
+  else if (isCancelled) { statusIcon = '🚫'; statusTitle = 'Pase Anulado'; }
+
+  const tgMessage = `${statusIcon} ${statusTitle}\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -97,17 +106,39 @@ export async function dispatchNotificationsForPass(passId: number) {
     }
   }
 
+  // Define dynamic notification text templates based on authorization state
+  let headerTitle = `*Solicitud de Autorización* ⚠️`
+  let actionPhrase = `se requiere tu autorización para este pase digital. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:`
+  let emailTitle = `Solicitud de Autorización`
+  let emailActionBtn = `Revisar y Resolver Solicitud`
+  let emailSubject = `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`
+
+  if (isAuthorized) {
+    headerTitle = `*Pase Autorizado* ✅`
+    actionPhrase = `esta solicitud ya fue generada y autorizada por ${pass.authorized_by}. Puedes consultar el expediente digital en el siguiente enlace:`
+    emailTitle = `Pase Autorizado`
+    emailActionBtn = `Ver Expediente`
+    emailSubject = `Pase Autorizado: #${paddedId} para ${pass.employee_name}`
+  } else if (isRejected) {
+    headerTitle = `*Pase Rechazado* ❌`
+    actionPhrase = `esta solicitud ha sido rechazada por ${pass.authorized_by}. Puedes consultar los detalles en el siguiente enlace:`
+    emailTitle = `Pase Rechazado`
+    emailActionBtn = `Ver Expediente`
+    emailSubject = `Pase Rechazado: #${paddedId} para ${pass.employee_name}`
+  } else if (isCancelled) {
+    headerTitle = `*Pase Anulado* 🚫`
+    actionPhrase = `esta solicitud ha sido anulada operativa o administrativamente. Puedes verificarlo aquí:`
+    emailTitle = `Pase Anulado`
+    emailActionBtn = `Ver Expediente`
+    emailSubject = `Pase Anulado: #${paddedId} para ${pass.employee_name}`
+  }
+
   // 3. Dispatch Configurable Channels & Audit Trail
   for (const [email, target] of targets.entries()) {
     
     // Short cryptographic recipient token
     const rToken = signRecipientToken(target.email, target.name)
     const targetAuthUrl = `${authUrlBase}?r=${rToken}`
-
-    const headerTitle = isAuthorized ? `*Pase Autorizado* ✅` : `*Solicitud de Autorización* ⚠️`
-    const actionPhrase = isAuthorized
-      ? `esta solicitud ya fue generada y autorizada por ${pass.authorized_by}. Puedes consultar el expediente digital en el siguiente enlace:`
-      : `se requiere tu autorización para este pase digital. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:`
 
     if (target.channels.has('WHATSAPP')) {
       const chatId = toWhatsAppChatId(target.phone)
@@ -137,13 +168,6 @@ export async function dispatchNotificationsForPass(passId: number) {
     }
 
     if (target.channels.has('EMAIL')) {
-      const emailSubject = isAuthorized 
-        ? `Pase Autorizado: #${paddedId} para ${pass.employee_name}`
-        : `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`
-        
-      const emailTitle = isAuthorized ? `Pase Autorizado` : `Solicitud de Autorización`
-      const emailActionBtn = isAuthorized ? `Ver Expediente` : `Revisar y Resolver Solicitud`
-
       const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-w: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
@@ -155,7 +179,7 @@ export async function dispatchNotificationsForPass(passId: number) {
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
-              ${isAuthorized ? `<p style="margin: 12px 0 0; color: #059669; font-size: 14px;"><strong>Autorizado por:</strong><br><span style="color: #064e3b; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
+              ${(isAuthorized || isRejected) && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${isAuthorized ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${isAuthorized ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${isAuthorized ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
            </div>
 
            <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px; transition: background-color 0.2s;">${emailActionBtn}</a>

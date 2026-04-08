@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   const mysqlDate = dateObj.format('YYYY-MM-DD 00:00:00')
   const mysqlEndDate = endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
   
-  const authToken = crypto.randomBytes(8).toString('hex') // Short 16-char hex string
+  const authToken = crypto.randomBytes(8).toString('hex') 
   
   const initialStatus = autoAuthorize ? 'autorizado' : 'pendiente'
   const authorizedBy = autoAuthorize ? actingUser : null
@@ -71,8 +71,8 @@ export default defineEventHandler(async (event) => {
       authorizedAt
     ])
 
-    // Immediately dispatch notifications asynchronously so it doesn't block the UI
-    dispatchNotificationsForPass(result.insertId).catch(console.error)
+    // Enforce notifications as a mandatory system behavior before responding
+    await dispatchNotificationsForPass(result.insertId)
 
     return { success: true, id: result.insertId, auth_token: authToken }
   } catch (error) {

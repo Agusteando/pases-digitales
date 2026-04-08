@@ -1,4 +1,5 @@
 import { useDB } from '~/server/utils/db'
+import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import jwt from 'jsonwebtoken'
 import { getCookie, defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 
@@ -42,6 +43,8 @@ export default defineEventHandler(async (event) => {
        }
        const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
        await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = NOW() WHERE id = ?`, [newStatus, actingName, id])
+       // Mandatory notification trigger
+       await dispatchNotificationsForPass(Number(id))
        return { success: true }
     }
 
@@ -54,6 +57,7 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 403, message: 'No se permite reenviar notificaciones de un pase que ya ha sido resuelto o anulado operativamente.' })
       }
       await db.execute(`UPDATE hr_entries SET sync_request = 0 WHERE id = ?`, [id])
+      await dispatchNotificationsForPass(Number(id))
       return { success: true }
     } 
     
@@ -66,6 +70,8 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 403, message: 'Operación denegada. No se puede anular un pase que ya ha sido resuelto por los responsables.' })
       }
       await db.execute(`UPDATE hr_entries SET status = 'cancelado' WHERE id = ?`, [id])
+      // Mandatory notification trigger for cancellation context
+      await dispatchNotificationsForPass(Number(id))
       return { success: true }
     }
 

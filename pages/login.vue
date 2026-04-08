@@ -38,35 +38,43 @@ const isProcessing = ref(false)
 definePageMeta({ layout: false })
 
 onMounted(() => {
-  if (window.google) {
-    window.google.accounts.id.initialize({
-      client_id: config.public.googleClientIdPublic,
-      callback: async (response) => {
-        isProcessing.value = true
-        try {
-          await $fetch('/api/auth/login', {
-            method: 'POST',
-            body: { credential: response.credential }
-          })
-          const { fetchUser } = useAuth()
-          await fetchUser()
-          
-          const redirectCookie = useCookie('auth-redirect')
-          const redirect = redirectCookie.value || '/'
-          redirectCookie.value = null
-          
-          await navigateTo(redirect, { replace: true })
-        } catch (error) {
-          console.error('Auth error:', error)
-          isProcessing.value = false
+  const initGoogle = () => {
+    // Prevent rendering attempts if the Google SDK script has not finished downloading
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      window.google.accounts.id.initialize({
+        client_id: config.public.googleClientIdPublic,
+        callback: async (response) => {
+          isProcessing.value = true
+          try {
+            await $fetch('/api/auth/login', {
+              method: 'POST',
+              body: { credential: response.credential }
+            })
+            const { fetchUser } = useAuth()
+            await fetchUser()
+            
+            const redirectCookie = useCookie('auth-redirect')
+            const redirect = redirectCookie.value || '/'
+            redirectCookie.value = null
+            
+            await navigateTo(redirect, { replace: true })
+          } catch (error) {
+            console.error('Auth error:', error)
+            isProcessing.value = false
+          }
         }
-      }
-    })
-    
-    window.google.accounts.id.renderButton(
-      document.getElementById('google-btn-container'),
-      { theme: 'outline', size: 'large', width: 280, text: 'continue_with', shape: 'pill' }
-    )
+      })
+      
+      window.google.accounts.id.renderButton(
+        document.getElementById('google-btn-container'),
+        { theme: 'outline', size: 'large', width: 280, text: 'continue_with', shape: 'pill' }
+      )
+    } else {
+      // Loop seamlessly until hydration is complete to guarantee initial render
+      setTimeout(initGoogle, 100)
+    }
   }
+
+  initGoogle()
 })
 </script>

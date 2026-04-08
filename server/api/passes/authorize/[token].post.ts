@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { verifyRecipientToken } from '~/server/utils/token'
+import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
@@ -39,6 +40,9 @@ export default defineEventHandler(async (event) => {
 
     const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
     await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = NOW() WHERE id = ?`, [newStatus, actingUser, pass.id])
+    
+    // Mandatory notification trigger
+    await dispatchNotificationsForPass(pass.id)
     
     return { success: true, status: newStatus }
   } catch (error: any) {
