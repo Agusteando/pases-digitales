@@ -1,5 +1,7 @@
 import { LRUCache } from 'lru-cache'
 
+// Caché en memoria (RAM) para las funciones Serverless mientras estén "calientes".
+// Reduce enormemente el tiempo de procesamiento si Vercel reutiliza la instancia.
 const cache = new LRUCache<string, any[]>({ max: 5, ttl: 1000 * 60 * 30 }) 
 
 export function normalizeName(name: any) {
@@ -7,10 +9,6 @@ export function normalizeName(name: any) {
   return String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-/**
- * Assumes the authoritative API source provides clean names.
- * Ensures the value is trimmed and safe for database entry.
- */
 export function cleanPlantelName(raw: any): string | null {
   if (raw === null || raw === undefined || raw === '') return null;
   const cleaned = String(raw).trim();
@@ -18,13 +16,13 @@ export function cleanPlantelName(raw: any): string | null {
 }
 
 /**
- * Prevents cross-employee leakage by filtering out truly invalid or generic public identities.
- * Relaxed to ensure genuine CURP formats provided by SOAP are always evaluated.
+ * Filtro de seguridad: ignora identidades de relleno genéricas (ej. XAXX010101000) 
+ * para prevenir colisiones masivas entre empleados sin datos completos.
  */
 function isGenericIdentity(val: any): boolean {
   if (!val) return true;
   const clean = String(val).trim().toUpperCase();
-  if (clean.length < 10) return true; // Too short to be a valid RFC or CURP
+  if (clean.length < 10) return true;
   if (/^[0]+$/.test(clean) || /^[1]+$/.test(clean) || /^[X]+$/.test(clean)) return true;
   if (clean.startsWith('XAXX010101') || clean.startsWith('XEXX010101')) return true;
   return false;
@@ -47,9 +45,9 @@ function parseSoapXML(xmlString: string) {
       name: getTag('NombreCompleto'),
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
-      plantel: getTag('ClaveArea'), // Base SOAP value that drives truth downstream
+      plantel: getTag('ClaveArea'), 
       email: getTag('Correo'),
-      ingressioId: getTag('ClaveNomina') // Extracted to use as a strong fallback
+      ingressioId: getTag('ClaveNomina') 
     })
   }
   return employees
@@ -95,8 +93,6 @@ export async function getFastSoapEmployees() {
   const soapData = await fetchSoapEmployees()
   const signiaData = await getSigniaData()
 
-  // Build a fast lookup map from the authoritative Signia API
-  // We use arrays per key to handle duplicates securely.
   const signiaMap = new Map<string, any[]>()
   
   const addToMap = (key: string, emp: any) => {
@@ -116,7 +112,6 @@ export async function getFastSoapEmployees() {
     addToMap(sName, s)
   }
 
-  // Cross-reference fast SOAP typeahead results with real PlantelNames and logic priorities
   let finalData = (soapData || []).map(emp => {
      const normName = normalizeName(emp.name);
      const cKey = !isGenericIdentity(emp.curp) ? String(emp.curp).toLowerCase() : null;
@@ -139,11 +134,13 @@ export async function getFastSoapEmployees() {
      if (cKey && signiaMap.has(cKey)) bestMatch = findBestInList(signiaMap.get(cKey)!);
      if (!bestMatch && iKey && signiaMap.has(iKey)) bestMatch = findBestInList(signiaMap.get(iKey)!);
      if (!bestMatch && rKey && signiaMap.has(rKey)) bestMatch = findBestInList(signiaMap.get(rKey)!);
-     if (!bestMatch && signiaMap.has(normName)) bestMatch = findBestInList(signiaMap.get(normName)!);
+     
+     if (!bestMatch && !cKey && signiaMap.has(normName)) {
+       bestMatch = findBestInList(signiaMap.get(normName)!);
+     }
 
      return {
         ...emp,
-        // Enforce SOAP Plantel priority for routing alignment while retaining fallback
         plantel: cleanPlantelName(emp.plantel) || cleanPlantelName(bestMatch?.plantel?.name),
         puesto: bestMatch?.puesto || emp.puesto,
         email: bestMatch?.email || emp.email,
@@ -151,7 +148,6 @@ export async function getFastSoapEmployees() {
      }
   })
 
-  // Safe fallback if the fast SOAP API breaks completely
   if (!soapData || soapData.length === 0) {
     finalData = signiaData.filter(e => e.isActive !== false).map(e => ({
       id: e.id,
@@ -194,20 +190,22 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
 
   let match = null;
 
-  // 1. Strict CURP Priority
+  // Prioridad 1: Match Exacto y Seguro por CURP
   if (validCurp && !match) {
     match = findBestInList(signia.filter(e => e.curp && String(e.curp).toLowerCase() === validCurp));
   }
-  // 2. ingressioId (ClaveNomina) Priority
+  // Prioridad 2: ClaveNomina de Ingressio
   if (validIngressio && !match) {
     match = findBestInList(signia.filter(e => e.ingressioId && String(e.ingressioId).trim() === validIngressio));
   }
-  // 3. RFC Priority
+  // Prioridad 3: RFC
   if (validRfc && !match) {
     match = findBestInList(signia.filter(e => e.rfc && String(e.rfc).toLowerCase() === validRfc));
   }
-  // 4. Exact Name Match Fallback
-  if (!match) {
+  // Prioridad 4 (Fallback): Solo busca por nombre si NO teníamos un CURP válido.
+  // Esto previene que una identidad ambigua "robe" los datos (como la fotografía) de otra persona
+  // simplemente porque compartan nombre pero difieran en documentos oficiales.
+  if (!match && !validCurp) {
     match = findBestInList(signia.filter(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
       return sName === normName && sName !== ''
@@ -215,19 +213,6 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   }
 
   if (match) {
-    // Background Auto-Sync Mechanism: 
-    // If we confidently matched by CURP, and the local SOAP ingressioId (ClaveNomina) differs from the one in Signia,
-    // we fire a background request to the external API to patch the missing/wrong data.
-    if (validCurp && validIngressio && match.curp && String(match.curp).toLowerCase() === validCurp) {
-       const signiaIngressio = match.ingressioId ? String(match.ingressioId).trim() : null;
-       if (signiaIngressio !== validIngressio) {
-         $fetch('https://signia.casitaapps.com/api/export/employees/update', {
-           method: 'PATCH',
-           body: { match: { curp: match.curp }, ingressioId: validIngressio }
-         }).catch(err => console.error('[Signia Sync] Fallo al actualizar ingressioId:', err));
-       }
-    }
-
     let pictureUrl = match.picture
     if (pictureUrl && !pictureUrl.startsWith('http')) {
       pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`

@@ -1,7 +1,9 @@
 import { getFastSoapEmployees, getSigniaEnrichment, cleanPlantelName } from '~/server/utils/employee-engine'
-import { defineEventHandler, getQuery } from '#imports'
+import { defineCachedEventHandler, getQuery } from '#imports'
 
-export default defineEventHandler(async (event) => {
+// defineCachedEventHandler envuelve el endpoint en el Caché de Vercel (Edge Cache).
+// Las peticiones repetidas para el mismo ID/Nombre no ejecutarán código, respondiendo en milisegundos con costo de cómputo $0.
+export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event)
   const id = query.id as string
   const name = query.name as string
@@ -38,5 +40,13 @@ export default defineEventHandler(async (event) => {
     plantel: finalPlantel,
     isActive: enriched.isActive !== false,
     curp: enriched.curp || empMatch?.curp || null
+  }
+}, {
+  maxAge: 60 * 60 * 12, // Caché dura 12 horas en el CDN de Vercel
+  swr: true, // Stale-While-Revalidate: Devuelve caché rápido y actualiza en background sin bloquear al usuario
+  name: 'enrichment-cache',
+  getKey: (event) => {
+    const q = getQuery(event)
+    return `${q.id || 'noid'}-${q.name || 'noname'}`
   }
 })
