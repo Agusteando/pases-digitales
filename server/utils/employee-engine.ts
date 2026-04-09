@@ -4,6 +4,10 @@ import { LRUCache } from 'lru-cache'
 // Reduce enormemente el tiempo de procesamiento si Vercel reutiliza la instancia.
 const cache = new LRUCache<string, any[]>({ max: 5, ttl: 1000 * 60 * 30 }) 
 
+// Set global para rastrear parcheos en curso y evitar condiciones de carrera
+// si múltiples requests concurrentes intentan arreglar al mismo empleado.
+const inFlightPatches = new Set<string>();
+
 export function normalizeName(name: any) {
   if (!name) return ''
   return String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, ' ').trim();
@@ -135,7 +139,7 @@ export async function getFastSoapEmployees() {
      if (!bestMatch && iKey && signiaMap.has(iKey)) bestMatch = findBestInList(signiaMap.get(iKey)!);
      if (!bestMatch && rKey && signiaMap.has(rKey)) bestMatch = findBestInList(signiaMap.get(rKey)!);
      
-     // FIX: Block name-based matching if ANY authoritative key is present but failed
+     // Block name-based matching if ANY authoritative key is present but failed
      const hasAuthKey = cKey || iKey || rKey;
      if (!bestMatch && !hasAuthKey && signiaMap.has(normName)) {
        bestMatch = findBestInList(signiaMap.get(normName)!);
@@ -230,25 +234,35 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
 
   if (match) {
     // ---------------------------------------------------------------------------------
-    // LÓGICA DE SINCRONIZACIÓN Y PARCHEO (AUTO-HEALING):
-    // Si la coincidencia es altamente confiable (hasAuthority = true) vía CURP o RFC,
-    // pero el registro en Signia carece del IngressioID (o difiere de la ClaveNomina oficial),
-    // disparamos un PATCH para mantener los sistemas unificados.
+    // LÓGICA DE SINCRONIZACIÓN Y PARCHEO (AUTO-HEALING): VERCEL OPTIMIZED
     // ---------------------------------------------------------------------------------
     if (hasAuthority && validIngressio && String(match.ingressioId).trim() !== validIngressio) {
-      try {
-        // En un entorno Serverless (Vercel/AWS Lambda), ES OBLIGATORIO usar 'await'.
-        // Si usamos fire-and-forget sin await, el contenedor se congelará al momento 
-        // de devolver la respuesta HTTP y la petición externa a Signia morirá a la mitad.
-        await $fetch(`https://signia.casitaapps.com/api/employees/${match.id}`, {
-          method: 'PATCH',
-          body: { ingressioId: validIngressio }
-        });
+      const patchKey = `${match.id}-${validIngressio}`;
+      
+      // La validación en inFlightPatches previene que peticiones concurrentes lancen múltiples PATCHes idénticos.
+      if (!inFlightPatches.has(patchKey)) {
+        inFlightPatches.add(patchKey);
         
-        // Aplicamos el cambio optimista a la respuesta en memoria de este ciclo
-        match.ingressioId = validIngressio;
-      } catch (e) {
-        console.warn(`[Auto-Healing] Fallo al parchear ingressioId para el empleado ${match.id} en Signia.`, e);
+        try {
+          // El await previene que Vercel congele la lambda, asegurando la ejecución.
+          // El timeout de 3000ms garantiza que el "hot-path" del usuario nunca se congele si Signia falla.
+          await $fetch(`https://signia.casitaapps.com/api/employees/${match.id}`, {
+            method: 'PATCH',
+            body: { ingressioId: validIngressio },
+            timeout: 3000 
+          });
+          
+          // La mutación optimista aquí actualiza la referencia de 'match' que reside directamente en 'cache'.
+          // Gracias a esto, el sistema se auto-corrige en memoria en milisegundos. Todas las peticiones
+          // subsiguientes (hasta que la caché LRU caduque) verán el ID correcto y no volverán a disparar el PATCH,
+          // resultando en costo $0 de cómputo adicional tras la primera reparación exitosa.
+          match.ingressioId = validIngressio;
+        } catch (e) {
+          console.warn(`[Auto-Healing] Fallo al parchear ingressioId para el empleado ${match.id} en Signia.`, e);
+        } finally {
+          // Liberar el candado
+          inFlightPatches.delete(patchKey);
+        }
       }
     }
 
