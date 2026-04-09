@@ -122,24 +122,30 @@ export async function getFastSoapEmployees() {
      const cKey = emp.curp && !isGenericIdentity(emp.curp) ? String(emp.curp).toLowerCase() : null;
      const rKey = emp.rfc && !isGenericIdentity(emp.rfc) ? String(emp.rfc).toLowerCase() : null;
 
-     const matchLists = [];
-     if (cKey && signiaMap.has(cKey)) matchLists.push(signiaMap.get(cKey));
-     if (rKey && signiaMap.has(rKey)) matchLists.push(signiaMap.get(rKey));
-     if (signiaMap.has(normName)) matchLists.push(signiaMap.get(normName));
-
      let bestMatch = null;
-     for (const list of matchLists) {
-       if (list && list.length === 1) {
-         bestMatch = list[0];
-         break;
-       } else if (list && list.length > 1) {
-         // Resolve ambiguity by name similarity to definitively link the avatar to the right person
-         bestMatch = list.find(e => {
-            const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`);
-            return sName === normName || sName.includes(normName) || normName.includes(sName);
-         });
-         if (bestMatch) break;
-       }
+
+     // 1. Strict CURP Match Priority
+     if (cKey && signiaMap.has(cKey)) {
+         const list = signiaMap.get(cKey)!;
+         bestMatch = list.length === 1 ? list[0] : (list.find(e => normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`) === normName) || list[0]);
+     }
+     // 2. Strict RFC Match Priority (Only if CURP didn't exist)
+     else if (rKey && signiaMap.has(rKey)) {
+         const list = signiaMap.get(rKey)!;
+         bestMatch = list.length === 1 ? list[0] : (list.find(e => normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`) === normName) || list[0]);
+     }
+     // 3. Exact Name Match (ONLY if no valid CURP/RFC was provided by the source dataset)
+     else if (!cKey && !rKey && signiaMap.has(normName)) {
+         const list = [...signiaMap.get(normName)!];
+         if (list.length === 1) {
+             bestMatch = list[0];
+         } else {
+             // Duplicate records in Signia (e.g., ID 784 and 787). Resolve securely:
+             // Order by ID descending (newest first) and prefer active records to avoid old contracts.
+             list.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+             const active = list.filter(e => e.isActive !== false);
+             bestMatch = active.length > 0 ? active[0] : list[0];
+         }
      }
 
      return {
@@ -180,38 +186,44 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   const validRfc = isGenericIdentity(rfc) ? null : String(rfc).trim().toLowerCase()
   const validCurp = isGenericIdentity(curp) ? null : String(curp).trim().toLowerCase()
 
-  let matches: any[] = [];
-
-  if (validCurp || validRfc) {
-    matches = signia.filter(e => 
-      (validCurp && e.curp && String(e.curp).toLowerCase() === validCurp) || 
-      (validRfc && e.rfc && String(e.rfc).toLowerCase() === validRfc)
-    )
-  }
-
   let match = null;
 
-  if (matches.length === 1) {
-    match = matches[0];
-  } else if (matches.length > 1) {
-    // Duplicate CURP/RFC found! Fallback to name similarity to pick the right one.
-    match = matches.find(e => {
-      const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
-      return sName === normName || sName.includes(normName) || normName.includes(sName)
-    })
-    
-    // If still no clear match among duplicates, reject ambiguous identity to avoid showing another person's photo
-    if (!match) {
-       match = null; 
-    }
-  }
+  // RULE 1: Prioritize CURP/RFC strictly
+  if (validCurp || validRfc) {
+    const matches = signia.filter(e =>
+      (validCurp && e.curp && String(e.curp).toLowerCase() === validCurp) ||
+      (validRfc && e.rfc && String(e.rfc).toLowerCase() === validRfc)
+    )
 
-  // Fallback to strict name match if no CURP/RFC match or if ambiguity rejected
-  if (!match) {
-    match = signia.find(e => {
+    if (matches.length === 1) {
+      match = matches[0];
+    } else if (matches.length > 1) {
+      // Tie-break identical CURPs by exact name match
+      match = matches.find(e => {
+        const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`);
+        return sName === normName;
+      }) || matches[0];
+    }
+    
+    // CRITICAL: If a valid CURP was provided, but 'match' is null (Signia doesn't have it),
+    // NEVER fall back to name-based matching. This intentionally returns empty to prevent data leakage.
+  } 
+  // RULE 2: Fallback to exact name matching ONLY if no valid CURP/RFC was provided initially
+  else {
+    const matches = signia.filter(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
-      return sName === normName
+      return sName === normName && sName !== ''
     })
+
+    if (matches.length === 1) {
+      match = matches[0];
+    } else if (matches.length > 1) {
+      // Duplicate exact names found without CURP (e.g. Employee ID 784 vs 787).
+      // Safely resolve by prioritizing the newest record (ID Descending) that remains active.
+      matches.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+      const activeMatches = matches.filter(e => e.isActive !== false);
+      match = activeMatches.length > 0 ? activeMatches[0] : matches[0];
+    }
   }
 
   if (match) {
@@ -219,10 +231,10 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     if (pictureUrl && !pictureUrl.startsWith('http')) {
       pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`
     }
-    return { 
-      ...match, 
-      picture: pictureUrl, 
-      plantelName: cleanPlantelName(match.plantel?.name) 
+    return {
+      ...match,
+      picture: pictureUrl,
+      plantelName: cleanPlantelName(match.plantel?.name)
     }
   }
 
