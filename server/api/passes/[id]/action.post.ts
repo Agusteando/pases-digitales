@@ -3,8 +3,8 @@ import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import jwt from 'jsonwebtoken'
 import { getCookie, defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 
 dayjs.extend(utc)
 dayjs.extend(timezone)

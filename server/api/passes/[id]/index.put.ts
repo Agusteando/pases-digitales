@@ -1,8 +1,8 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 import jwt from 'jsonwebtoken'
 import { defineEventHandler, getRouterParam, readBody, getCookie, createError } from '#imports'
 
