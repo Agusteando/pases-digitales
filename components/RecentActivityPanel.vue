@@ -1,52 +1,52 @@
 <template>
-  <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] flex flex-col h-full min-h-0">
+  <div class="glass-panel p-6 lg:p-8 rounded-[2.5rem] flex flex-col h-full min-h-0 relative overflow-hidden">
     
-    <div class="flex items-center justify-between pb-6 border-b border-white/60 shrink-0">
+    <div class="flex items-center justify-between pb-4 border-b border-white/60 shrink-0 relative z-20">
       <div>
-        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
-        <p class="text-xs font-bold text-slate-500 mt-1.5 uppercase tracking-wider">Últimos pases registrados</p>
+        <h2 class="text-xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
+        <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Últimos pases registrados</p>
       </div>
-      <button @click="refresh" class="p-3 text-slate-400 hover:text-iedis-teal-dark bg-white hover:bg-white/80 rounded-[1rem] shadow-sm transition-all focus:outline-none border border-white/80 hover:shadow-md">
-        <RefreshCcw :class="{'animate-spin': pending}" class="w-5 h-5" />
+      <button @click="refresh" class="p-2.5 text-slate-400 hover:text-iedis-teal-dark bg-white hover:bg-white/80 rounded-[1rem] shadow-sm transition-all focus:outline-none border border-white/80 hover:shadow-md">
+        <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4" />
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 min-h-0 relative">
-      <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-10 h-10 animate-spin text-iedis-teal" /></div>
+    <div class="flex-1 overflow-y-auto mt-5 custom-scrollbar pr-3 min-h-0 relative z-10 pb-16" style="mask-image: linear-gradient(to bottom, black 80%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
+      <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-iedis-teal" /></div>
       
-      <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-5">
-        <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
-          <FileText class="w-10 h-10 text-slate-300" />
+      <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 gap-4">
+        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
+          <FileText class="w-8 h-8 text-slate-300" />
         </div>
         <span class="text-sm font-bold text-slate-500">No hay pases recientes.</span>
       </div>
 
-      <div v-else class="relative pl-[60px] space-y-6 before:absolute before:inset-0 before:left-[23px] before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:timeline-line">
+      <div v-else class="relative pl-[48px] space-y-4 before:absolute before:inset-0 before:left-[19px] before:top-2 before:bottom-2 before:w-[2px] before:rounded-full before:timeline-line">
         <div v-for="(pass, index) in data" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
           
-          <div class="absolute -left-[60px] w-12 h-12 rounded-[1.25rem] border border-white bg-white flex items-center justify-center shadow-sm z-10" :class="getCategoryColorText(pass.category_id)">
-            <component :is="getCategoryIcon(pass.category_id)" class="w-5 h-5" />
+          <div class="absolute -left-[48px] w-10 h-10 rounded-[1rem] border border-white bg-white flex items-center justify-center shadow-sm z-10" :class="getCategoryColorText(pass.category_id)">
+            <component :is="getCategoryIcon(pass.category_id)" class="w-4 h-4" />
           </div>
 
-          <div class="bg-white/70 backdrop-blur-sm p-5 rounded-[1.5rem] border border-white hover:border-iedis-teal/30 hover:shadow-md transition-all shadow-sm hover:bg-white">
-            <div class="flex items-start justify-between gap-3 mb-3">
+          <div class="bg-white/70 backdrop-blur-sm p-4 rounded-[1.25rem] border border-white hover:border-iedis-teal/30 hover:shadow-md transition-all shadow-sm hover:bg-white">
+            <div class="flex items-start justify-between gap-3 mb-2">
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-2 mb-1.5">
                   <span class="font-mono text-sm font-black text-brand-600 tracking-tight">
                     #{{ String(pass.id).padStart(5, '0') }}
                   </span>
-                  <span class="text-[9px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md border shadow-sm"
+                  <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border shadow-sm"
                         :class="{'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
                                  'bg-casita-green/10 text-casita-green border-casita-green/30': pass.status === 'autorizado',
                                  'bg-casita-red/10 text-casita-red border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                     {{ pass.status }}
                   </span>
                 </div>
-                <h4 class="text-base font-black text-slate-800 truncate">{{ pass.employee_name }}</h4>
+                <h4 class="text-sm font-black text-slate-800 truncate">{{ pass.employee_name }}</h4>
               </div>
             </div>
             
-            <p class="text-xs font-bold text-slate-500 truncate flex flex-wrap items-center gap-2 mt-2 bg-white/60 px-3 py-2 rounded-xl border border-white shadow-sm">
+            <p class="text-[11px] font-bold text-slate-500 truncate flex flex-wrap items-center gap-1.5 mt-2 bg-white/60 px-2.5 py-1.5 rounded-lg border border-white shadow-sm">
               <span class="text-slate-700">{{ getCategoryName(pass.category_id) }}</span>
               <span v-if="pass.plantel" class="text-slate-300">•</span>
               <span v-if="pass.plantel">{{ pass.plantel }}</span>
@@ -54,10 +54,10 @@
               <span class="font-medium text-slate-400">Emitido por {{ pass.user }}</span>
             </p>
 
-            <div class="mt-4 pt-4 border-t border-white/60 flex justify-end">
-               <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center gap-1.5 text-xs font-black text-iedis-teal hover:text-iedis-teal-dark bg-white hover:bg-iedis-teal/10 px-4 py-2.5 rounded-xl border border-white hover:border-iedis-teal/20 transition-colors shadow-sm outline-none">
-                 <span>Abrir detalle del pase</span>
-                 <ArrowRight class="w-4 h-4" />
+            <div class="mt-3 pt-3 border-t border-white/60 flex justify-end">
+               <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center gap-1 text-[11px] font-black text-iedis-teal hover:text-iedis-teal-dark bg-white hover:bg-iedis-teal/10 px-3 py-2 rounded-lg border border-white hover:border-iedis-teal/20 transition-colors shadow-sm outline-none">
+                 <span>Abrir detalle</span>
+                 <ArrowRight class="w-3.5 h-3.5" />
                </NuxtLink>
             </div>
           </div>
