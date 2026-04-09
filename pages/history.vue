@@ -11,7 +11,6 @@
       </button>
     </header>
 
-    <!-- Search & Filter Bar -->
     <div class="glass-panel p-5 rounded-[2rem] mb-8 flex flex-col lg:flex-row gap-5 items-center shrink-0">
       <div class="relative w-full lg:flex-1">
         <Search class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -40,7 +39,6 @@
       </div>
     </div>
 
-    <!-- Data Table -->
     <div class="glass-panel rounded-[2.5rem] flex-1 flex flex-col overflow-hidden min-h-[400px]">
       <div class="overflow-x-auto custom-scrollbar flex-1">
         <table class="w-full text-left border-collapse whitespace-nowrap">
@@ -181,6 +179,8 @@ const search = async () => {
     passes.value = data || []
   } catch (error) {
     console.error('Search error:', error)
+    passes.value = []
+    alert('Ocurrió un error al intentar consultar la base de datos. Por favor, reintenta.')
   } finally {
     pending.value = false
   }

@@ -1,13 +1,13 @@
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
-import { defineEventHandler, setResponseHeader } from '#imports'
+import { defineEventHandler, setResponseHeader, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   setResponseHeader(event, 'Access-Control-Allow-Origin', '*')
   
-  const db = useDB()
   try {
+    const db = useDB()
     const [rows]: any = await db.execute('SELECT plantel, email, role, puesto FROM hr_directory ORDER BY plantel ASC, role ASC')
     
     const enrichedContacts = await Promise.all(
@@ -33,6 +33,6 @@ export default defineEventHandler(async (event) => {
     return directory
   } catch (error) {
     console.error('Public Directory fetch error:', error)
-    return {}
+    throw createError({ statusCode: 500, message: 'Fallo al procesar el directorio público de responsables.' })
   }
 })

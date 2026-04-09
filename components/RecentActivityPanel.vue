@@ -15,6 +15,13 @@
       
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-iedis-teal" /></div>
       
+      <div v-else-if="error" class="flex flex-col items-center justify-center py-12 text-casita-red gap-4">
+        <div class="w-16 h-16 bg-casita-red/10 rounded-full flex items-center justify-center border border-casita-red/20 shadow-sm">
+          <AlertTriangle class="w-8 h-8 text-casita-red" />
+        </div>
+        <span class="text-sm font-bold text-casita-red-dark">Error de conexión al cargar la actividad.</span>
+      </div>
+
       <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 gap-4">
         <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
           <FileText class="w-8 h-8 text-slate-300" />
@@ -23,19 +30,16 @@
       </div>
 
       <div v-else class="relative mt-2">
-        <!-- Continuous Timeline Line -->
         <div class="absolute top-2 bottom-0 left-[23px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
         <div class="absolute top-2 bottom-0 left-[23px] w-[2px] rounded-full z-0 timeline-line opacity-50"></div>
 
         <div class="space-y-0">
           <div v-for="(pass, index) in data" :key="pass.id" class="relative pl-14 pb-6 group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
             
-            <!-- Timeline Marker -->
             <div class="absolute left-[4px] top-1 w-10 h-10 rounded-[1rem] bg-white flex items-center justify-center shadow-sm z-10 ring-[4px] ring-white/90 transition-transform duration-300 group-hover:scale-110" :class="getCategoryColorText(pass.category_id)">
               <component :is="getCategoryIcon(pass.category_id)" class="w-4 h-4" />
             </div>
 
-            <!-- Content Card -->
             <div class="bg-white/80 backdrop-blur-md p-4 rounded-[1.25rem] border border-white hover:border-iedis-teal/30 hover:shadow-md transition-all shadow-sm">
               <div class="flex items-start justify-between gap-3 mb-2">
                 <div class="min-w-0 flex-1">
@@ -52,7 +56,6 @@
                   </div>
                   <h4 class="text-sm font-black text-slate-800 truncate">{{ pass.employee_name }}</h4>
                 </div>
-                <!-- Temporal Cue -->
                 <span class="text-[10px] font-black text-slate-400 shrink-0 text-right bg-white/50 px-2 py-1 rounded-md border border-slate-100 shadow-sm">
                   {{ formatDateTime(pass.date, pass.time) }}
                 </span>
@@ -80,10 +83,10 @@
 </template>
 
 <script setup>
-import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight, AlertTriangle } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
-const { data, pending, refresh } = useFetch('/api/passes/recent')
+const { data, pending, error, refresh } = useFetch('/api/passes/recent')
 
 const getCategoryIcon = (id) => {
   const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope }

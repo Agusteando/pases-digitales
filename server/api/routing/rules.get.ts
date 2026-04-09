@@ -1,11 +1,11 @@
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
-import { defineEventHandler } from '#imports'
+import { defineEventHandler, createError } from '#imports'
 
 export default defineEventHandler(async () => {
-  const db = useDB()
   try {
+    const db = useDB()
     const [rows]: any = await db.execute('SELECT * FROM notification_rules ORDER BY id DESC')
     
     const enriched = await Promise.all(rows.map(async (r: any) => {
@@ -23,8 +23,8 @@ export default defineEventHandler(async () => {
     }))
     
     return enriched
-  } catch (e) { 
-    console.error('Rules GET error:', e)
-    return [] 
+  } catch (error) { 
+    console.error('Rules GET error:', error)
+    throw createError({ statusCode: 500, message: 'Fallo al recuperar las reglas de enrutamiento.' })
   }
 })

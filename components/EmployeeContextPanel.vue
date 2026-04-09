@@ -1,7 +1,6 @@
 <template>
   <div class="glass-panel p-6 lg:p-8 rounded-[2.5rem] flex flex-col flex-1 min-h-0 relative overflow-hidden gap-5">
     
-    <!-- Header: Employee Info -->
     <div class="flex items-center gap-5 relative z-10 shrink-0">
       <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md bg-white" />
 
@@ -24,7 +23,6 @@
       </div>
     </div>
 
-    <!-- Active Folio Detection -->
     <transition name="fade">
       <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-iedis-teal/10 to-iedis-teal/5 rounded-[1.5rem] p-4 flex flex-col sm:flex-row gap-4 border border-iedis-teal/20 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-all hover:bg-iedis-teal/10">
         <div class="flex gap-3 items-center">
@@ -43,7 +41,6 @@
       </div>
     </transition>
 
-    <!-- History Timeline Wrapper -->
     <div class="relative z-10 flex flex-col flex-1 min-h-0 bg-white/40 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-1 overflow-hidden">
       
       <div class="shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white/80 p-4 rounded-[1.5rem] border border-white shadow-sm">
@@ -59,13 +56,20 @@
         </div>
       </div>
 
-      <!-- Scrolling container with Visual Cue -->
       <div class="flex-1 overflow-y-auto p-4 custom-scrollbar min-h-0 pb-12 relative" style="mask-image: linear-gradient(to bottom, black 85%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);">
         
         <div v-if="pendingHistory" class="py-10 flex justify-center">
           <Loader2 class="w-6 h-6 animate-spin text-brand-400" />
         </div>
         
+        <div v-else-if="historyError" class="py-12 flex flex-col items-center justify-center text-center">
+          <div class="w-16 h-16 bg-casita-red/10 rounded-2xl flex items-center justify-center mb-3 shadow-sm border border-casita-red/20">
+            <AlertTriangle class="w-6 h-6 text-casita-red" />
+          </div>
+          <p class="text-sm font-black text-casita-red-dark">Error de conexión</p>
+          <p class="text-xs font-medium text-casita-red-dark/80 mt-1">No se pudo recuperar el historial de la base de datos.</p>
+        </div>
+
         <div v-else-if="!groupedHistory.length" class="py-12 flex flex-col items-center justify-center text-center">
           <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-3 shadow-sm border border-white">
             <History class="w-6 h-6 text-slate-300" />
@@ -75,13 +79,11 @@
         </div>
 
         <div v-else class="relative">
-          <!-- Continuous Timeline Line -->
           <div class="absolute top-2 bottom-0 left-[23px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
           <div class="absolute top-2 bottom-0 left-[23px] w-[2px] rounded-full z-0 timeline-line opacity-40"></div>
 
           <div v-for="group in groupedHistory" :key="group.month" class="mb-6">
             
-            <!-- Month Header as a Timeline Knot -->
             <div class="relative pl-14 mb-4 flex items-center">
                <div class="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-slate-300 ring-4 ring-slate-50/80 z-10 shadow-sm"></div>
                <span class="sticky top-0 z-20 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-500 border border-white shadow-sm">
@@ -92,10 +94,8 @@
             <div class="space-y-0">
               <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-14 pb-5 group timeline-item" :style="{ animationDelay: `${index * 0.08}s` }">
                 
-                <!-- Entry Knot -->
                 <div class="absolute left-[17px] top-5 w-3.5 h-3.5 rounded-full z-10 ring-[4px] ring-slate-50/80 transition-transform duration-300 group-hover:scale-125 shadow-sm" :class="getCategoryColor(pass.category_id)"></div>
                 
-                <!-- Entry Card -->
                 <div class="block bg-white/80 p-4 rounded-[1.25rem] border border-white shadow-sm hover:shadow-md hover:bg-white transition-all outline-none">
                   <div class="flex items-start justify-between mb-3 gap-3">
                     <div class="flex flex-col gap-1">
@@ -141,7 +141,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { FileText, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight } from 'lucide-vue-next'
+import { FileText, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight, AlertTriangle } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -165,7 +165,7 @@ const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/en
   query: { id: props.employee.id, name: props.employee.name }
 })
 
-const { data: historyData, pending: pendingHistory } = useFetch('/api/passes/employee', {
+const { data: historyData, pending: pendingHistory, error: historyError } = useFetch('/api/passes/employee', {
   query: { name: props.employee.name }
 })
 

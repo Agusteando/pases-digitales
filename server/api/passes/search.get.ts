@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
+import { defineEventHandler, getQuery, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -8,7 +9,6 @@ export default defineEventHandler(async (event) => {
   const startDate = query.startDate as string
   const endDate = query.endDate as string
 
-  const db = useDB()
   let sql = `SELECT id, employee_name, date, fecha_fin, time, comentarios, category_id, status, user, plantel, regreso, hora_regreso, IMSS, tipo_incapacidad, processed FROM hr_entries WHERE 1=1`
   const params: any[] = []
 
@@ -22,8 +22,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Si se busca un plantel limpiado, intentamos hacer match con comodines en caso de que 
-  // la BD aún contenga datos antiguos con prefijos numéricos que no hayan sido migrados.
   if (plantel && plantel !== '') {
     sql += ` AND plantel LIKE ?`
     params.push(`%${plantel}`)
@@ -42,10 +40,11 @@ export default defineEventHandler(async (event) => {
   sql += ` ORDER BY id DESC LIMIT 100`
 
   try {
+    const db = useDB()
     const [rows]: any = await db.execute(sql, params)
     return rows.map((r: any) => ({ ...r, plantel: cleanPlantelName(r.plantel) }))
   } catch (error) {
     console.error('Search error:', error)
-    return []
+    throw createError({ statusCode: 500, message: 'Fallo al ejecutar la búsqueda de registros en la base de datos.' })
   }
 })

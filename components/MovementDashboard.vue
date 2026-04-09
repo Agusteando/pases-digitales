@@ -14,8 +14,13 @@
       <Loader2 class="w-12 h-12 animate-spin text-iedis-teal" />
     </div>
 
+    <div v-else-if="error" class="flex flex-col items-center justify-center py-20 text-center">
+      <AlertTriangle class="w-12 h-12 text-casita-red/50 mb-4" />
+      <p class="text-sm font-black text-casita-red-dark">Fallo al procesar las estadísticas</p>
+      <p class="text-xs text-casita-red-dark/70 mt-1">No se pudo establecer conexión con la base de datos.</p>
+    </div>
+
     <div v-else-if="data" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Chart: Categories -->
       <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-sm hover:shadow-md transition-shadow border border-white">
         <h3 class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest">Motivos</h3>
         <div class="space-y-6">
@@ -35,7 +40,6 @@
         </div>
       </div>
 
-      <!-- Chart: Planteles -->
       <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] shadow-sm hover:shadow-md transition-shadow border border-white">
         <h3 class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest">Distribución por Plantel</h3>
         <div class="space-y-6">
@@ -60,9 +64,9 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Loader2 } from 'lucide-vue-next'
+import { Loader2, AlertTriangle } from 'lucide-vue-next'
 
-const { data, pending } = useFetch('/api/stats/movements', { lazy: true })
+const { data, pending, error } = useFetch('/api/stats/movements', { lazy: true })
 
 const maxPlantelCount = computed(() => {
   if (!data.value || !data.value.byPlantel.length) return 1

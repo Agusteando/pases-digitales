@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
+import { defineEventHandler, createError } from '#imports'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -8,14 +9,10 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 export default defineEventHandler(async () => {
-  const db = useDB()
-  
-  // CRITICAL FIX: Entorno Vercel Serverless opera en UTC de forma estricta.
-  // Forzamos el reloj del servidor a la hora de México para garantizar que 
-  // las estadísticas evalúen la jornada correcta independientemente de la hora UTC.
   const todayDate = dayjs().tz('America/Mexico_City').format('YYYY-MM-DD')
 
   try {
+    const db = useDB()
     const [rows]: any = await db.execute(`
       SELECT category_id, plantel, COUNT(*) as count 
       FROM hr_entries 
@@ -57,6 +54,6 @@ export default defineEventHandler(async () => {
 
   } catch (error) {
     console.error("Stats Error:", error)
-    return { totalToday: 0, byCategory: [], byPlantel: [] }
+    throw createError({ statusCode: 500, message: 'Fallo al procesar las métricas de operación en la base de datos.' })
   }
 })

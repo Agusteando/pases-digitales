@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
+import { defineEventHandler, getQuery, createError } from '#imports'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -13,7 +14,6 @@ export default defineEventHandler(async (event) => {
 
   if (!employeeName) return []
 
-  // Estabilidad de cálculo independientemente de la zona horaria del servidor
   const now = dayjs().tz('America/Mexico_City')
   const currentYear = now.year()
   const currentMonth = now.month()
@@ -28,9 +28,8 @@ export default defineEventHandler(async (event) => {
   const startDate = `${startYear}-08-01 00:00:00`
   const endDate = `${endYear}-07-31 23:59:59`
 
-  const db = useDB()
-
   try {
+    const db = useDB()
     const [rows]: any = await db.execute(
       `SELECT id, date, time, comentarios, category_id, status, user, plantel, authorized_by, authorized_at
        FROM hr_entries 
@@ -45,6 +44,6 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     console.error("Database read error:", error)
-    return { cycle: 'Desconocido', history: [] }
+    throw createError({ statusCode: 500, message: 'Fallo al recuperar el historial del colaborador.' })
   }
 })
