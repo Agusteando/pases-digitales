@@ -1,5 +1,5 @@
 <template>
-  <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] flex flex-col h-full min-h-[400px]">
+  <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] flex flex-col">
     <div class="flex items-center justify-between pb-6 border-b border-white/60 shrink-0">
       <div>
         <h2 class="text-2xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
@@ -10,7 +10,8 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 min-h-0">
+    <!-- Contenedor orgánico. Pierde los scrollbars y límites rígidos de altura -->
+    <div class="mt-6 relative">
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-10 h-10 animate-spin text-iedis-teal" /></div>
       
       <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-5">
@@ -20,7 +21,6 @@
         <span class="text-sm font-bold text-slate-500">No hay pases recientes.</span>
       </div>
 
-      <!-- Timeline line classes moved strictly to inner items container to correctly track scroll bounds -->
       <div v-else class="relative pl-[60px] space-y-6 before:absolute before:inset-0 before:left-[23px] before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:timeline-line">
         <div v-for="(pass, index) in data" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
           

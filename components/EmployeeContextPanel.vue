@@ -2,7 +2,7 @@
   <div class="glass-panel p-8 rounded-[2.5rem] flex flex-col gap-8 relative overflow-hidden">
     <!-- Header: Employee Info -->
     <div class="flex items-center gap-6 relative z-10">
-      <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md" />
+      <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md bg-white" />
 
       <div class="flex-1 min-w-0">
         <h2 class="text-3xl font-black text-slate-900 truncate tracking-tight">{{ employee.name }}</h2>
@@ -43,7 +43,7 @@
     </transition>
 
     <!-- History Timeline -->
-    <div class="relative z-10 flex-1 flex flex-col min-h-0 bg-white/40 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-1.5">
+    <div class="relative z-10 flex flex-col bg-white/40 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-1.5 mt-2">
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2 bg-white/80 p-5 rounded-[1.5rem] border border-white shadow-sm shrink-0">
         <div>
           <h3 class="text-sm font-black text-slate-900 tracking-tight">Historial</h3>
@@ -57,7 +57,8 @@
         </div>
       </div>
 
-      <div class="p-5 flex-1 overflow-y-auto custom-scrollbar">
+      <!-- Contenedor de listado con flujo libre -->
+      <div class="p-5">
         <div v-if="pendingHistory" class="py-12 flex justify-center">
           <Loader2 class="w-8 h-8 animate-spin text-brand-400" />
         </div>
@@ -72,7 +73,7 @@
 
         <div v-else class="space-y-8 pl-4">
           <div v-for="group in groupedHistory" :key="group.month">
-            <div class="sticky top-0 bg-white/80 backdrop-blur-md py-2.5 z-20 mb-5 -mx-4 px-4 rounded-xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            <div class="sticky top-[100px] bg-white/80 backdrop-blur-md py-2.5 z-20 mb-5 -mx-4 px-4 rounded-xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">{{ group.month }}</span>
             </div>
             
@@ -90,7 +91,7 @@
                     <div class="flex flex-col gap-1.5">
                       <div class="flex items-center gap-2">
                         <span class="font-mono text-sm font-black tracking-tight" :class="isToday(pass.date) ? 'text-brand-600' : 'text-slate-900'">#{{ String(pass.id).padStart(5, '0') }}</span>
-                        <span class="text-[9px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md border"
+                        <span class="text-[9px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md border shadow-sm"
                               :class="{'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
                                        'bg-casita-green/10 text-casita-green border-casita-green/30': pass.status === 'autorizado',
                                        'bg-casita-red/10 text-casita-red border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">

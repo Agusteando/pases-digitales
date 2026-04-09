@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col xl:flex-row h-full w-full overflow-y-auto xl:overflow-hidden custom-scrollbar">
+  <div class="flex flex-col xl:flex-row w-full min-h-screen">
     
-    <!-- Left Column: Step-by-Step Creation Flow -->
+    <!-- Left Column: Step-by-Step Creation Flow (Sticky on Desktop) -->
     <section class="w-full xl:w-[48%] shrink-0 flex flex-col glass-panel border-r border-white/60 z-20 xl:h-screen xl:sticky xl:top-0">
       
       <header class="px-6 md:px-8 py-6 border-b border-white/50 bg-white/30 shrink-0">
@@ -232,17 +232,17 @@
       </div>
     </section>
 
-    <!-- Right Column: Operational Context -->
-    <section class="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar relative xl:h-screen bg-transparent z-10 min-h-0">
-      <div class="max-w-3xl mx-auto flex flex-col gap-8 h-full">
+    <!-- Right Column: Operational Context (Natural Scroll Flow) -->
+    <section class="flex-1 p-6 lg:p-10 relative bg-transparent z-10">
+      <div class="max-w-3xl mx-auto flex flex-col gap-8">
         <template v-if="selectedEmployees.length > 0">
           <div class="flex items-center justify-between pb-4 border-b border-white/40 shrink-0">
             <h2 class="text-2xl font-black text-slate-900 tracking-tight">Historial del colaborador</h2>
           </div>
-          <EmployeeContextPanel v-for="emp in selectedEmployees" :key="emp.id" :employee="emp" class="flex-1 min-h-0 animate-in fade-in slide-in-from-right-8 duration-500" />
+          <EmployeeContextPanel v-for="emp in selectedEmployees" :key="emp.id" :employee="emp" class="animate-in fade-in slide-in-from-right-8 duration-500" />
         </template>
         <template v-else>
-          <RecentActivityPanel class="flex-1 min-h-0 animate-in fade-in duration-700" />
+          <RecentActivityPanel class="animate-in fade-in duration-700" />
         </template>
       </div>
     </section>
