@@ -123,19 +123,48 @@
               </button>
             </div>
 
+            <!-- Cambio de Horario Controls -->
+            <div v-if="activeScenario.isShiftChange" class="space-y-5 p-6 bg-casita-gold/5 rounded-3xl border border-casita-gold/20 shadow-sm">
+              <p class="text-[10px] font-black text-casita-gold-dark uppercase tracking-widest mb-1">Generador de Cobertura Extendida</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div class="space-y-2">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase">Fecha a cubrir</label>
+                  <input type="date" v-model="form.shiftDate" :min="todayDate" class="w-full px-4 py-3 rounded-2xl border border-white focus:border-casita-gold focus:ring-2 focus:ring-casita-gold/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm" />
+                </div>
+                <div class="space-y-2">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase">De (Inicio)</label>
+                  <input type="time" v-model="form.shiftStart" class="w-full px-4 py-3 rounded-2xl border border-white focus:border-casita-gold focus:ring-2 focus:ring-casita-gold/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm" />
+                </div>
+                <div class="space-y-2">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase">A (Fin)</label>
+                  <input type="time" v-model="form.shiftEnd" class="w-full px-4 py-3 rounded-2xl border border-white focus:border-casita-gold focus:ring-2 focus:ring-casita-gold/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm" />
+                </div>
+              </div>
+            </div>
+
             <!-- Core Form Grid -->
             <div class="grid grid-cols-2 gap-5">
               <div class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha de inicio</label>
                 <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-4 py-3 rounded-2xl border border-white/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" />
               </div>
+              
               <div v-if="activeScenario.needsEndDate" class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Fecha de término</label>
                 <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-4 py-3 rounded-2xl border border-white/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" />
               </div>
+
               <div v-if="activeScenario.needsTime" class="space-y-2 col-span-2 md:col-span-1">
                 <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Hora</label>
                 <input type="time" v-model="form.time" required class="w-full px-4 py-3 rounded-2xl border border-white/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" />
+              </div>
+
+              <div v-if="activeScenario.hasSubcategories" class="space-y-2 col-span-2">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo de Permiso (Opcional)</label>
+                <select v-model="form.tipoPermiso" class="w-full px-4 py-3 rounded-2xl border border-white/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] cursor-pointer">
+                  <option value="">Seleccione una clasificación...</option>
+                  <option v-for="sub in subcategories" :key="sub" :value="sub">{{ sub }}</option>
+                </select>
               </div>
             </div>
 
@@ -280,6 +309,15 @@ const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: (
 const { data: myProfile, refresh: refreshProfile } = useFetch('/api/auth/profile')
 const todayDate = dayjs().format('YYYY-MM-DD')
 
+const subcategories = [
+  'Cuidados Maternos',
+  'Comisiones',
+  'Por Estudios',
+  'Por Embarazo',
+  'Por Definir',
+  'Permiso de Paternidad'
+]
+
 const selectedEmployees = ref([])
 const activeScenario = ref(null)
 const isSubmitting = ref(false)
@@ -400,6 +438,15 @@ const getCurrentTime = () => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+function formatAmPm(timeStr) {
+  if (!timeStr) return ''
+  let [h, m] = timeStr.split(':')
+  h = parseInt(h, 10)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  h = h % 12 || 12
+  return `${h}:${m} ${ampm}`
+}
+
 const form = reactive({
   date: todayDate,
   endDate: todayDate,
@@ -411,13 +458,27 @@ const form = reactive({
   imss: '',
   tipoIncapacidad: 'Enfermedad general',
   optInAuthorizer: false,
-  authorizerPhone: ''
+  authorizerPhone: '',
+  tipoPermiso: '',
+  shiftDate: '',
+  shiftStart: '',
+  shiftEnd: ''
+})
+
+watch([() => form.shiftDate, () => form.shiftStart, () => form.shiftEnd], ([d, s, e]) => {
+  if (activeScenario.value?.isShiftChange && d && s && e) {
+    const fmtDate = dayjs(d).format('DD/MM/YYYY')
+    const fmtStart = formatAmPm(s)
+    const fmtEnd = formatAmPm(e)
+    form.comentarios = `Cubre tiempo extendido a partir del ${fmtDate} de ${fmtStart} a ${fmtEnd}`
+  }
 })
 
 const predefinedScenarios = [
-  { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
+  { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false, hasSubcategories: true },
   { id: 'llegada', title: 'Llegada tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
-  { id: 'falta', title: 'Ausencia justificada', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
+  { id: 'falta', title: 'Ausencia justificada', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false, hasSubcategories: true },
+  { id: 'cambio', title: 'Cambio de horario', icon: 'Clock', categoryId: 4, needsTime: false, canReturn: false, isMedical: false, isShiftChange: true },
   { id: 'imss', title: 'Incapacidad médica', icon: 'Stethoscope', categoryId: 5, needsTime: false, canReturn: false, needsEndDate: true, isMedical: true }
 ]
 
@@ -428,7 +489,8 @@ function selectScenario(scenario) {
     date: todayDate, endDate: todayDate, time: '', 
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
     imss: '', tipoIncapacidad: 'Enfermedad general',
-    optInAuthorizer: false, authorizerPhone: ''
+    optInAuthorizer: false, authorizerPhone: '',
+    tipoPermiso: '', shiftDate: '', shiftStart: '', shiftEnd: ''
   })
 }
 
@@ -541,6 +603,7 @@ async function submitPass(autoAuthorize = false) {
           horaRegreso: form.horaRegreso,
           imss: form.imss,
           tipoIncapacidad: form.tipoIncapacidad,
+          tipoPermiso: form.tipoPermiso,
           autoAuthorize
         }
       })

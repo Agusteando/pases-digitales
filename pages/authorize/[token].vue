@@ -52,6 +52,10 @@
               <span class="text-sm font-bold text-slate-800">{{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}</span>
             </div>
           </div>
+          <div v-if="pass.tipo_permiso" class="pb-6 border-b border-slate-100">
+             <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Permiso</span>
+             <span class="text-sm font-bold text-slate-800">{{ pass.tipo_permiso }}</span>
+          </div>
           <div v-if="pass.comentarios">
             <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Justificación</span>
             <span class="text-sm font-medium text-slate-700 italic block bg-white/60 p-5 rounded-2xl border border-white shadow-sm">"{{ pass.comentarios }}"</span>

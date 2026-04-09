@@ -55,6 +55,19 @@
             </div>
           </div>
 
+          <div v-if="[2, 3].includes(form.categoryId)" class="space-y-2">
+             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Tipo de permiso (Opcional)</label>
+             <select v-model="form.tipoPermiso" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500 cursor-pointer">
+               <option value="">Seleccione una clasificación...</option>
+               <option value="Cuidados Maternos">Cuidados Maternos</option>
+               <option value="Comisiones">Comisiones</option>
+               <option value="Por Estudios">Por Estudios</option>
+               <option value="Por Embarazo">Por Embarazo</option>
+               <option value="Por Definir">Por Definir</option>
+               <option value="Permiso de Paternidad">Permiso de Paternidad</option>
+             </select>
+          </div>
+
           <div class="space-y-2">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Plantel</label>
             <input type="text" v-model="form.plantel" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500" />
@@ -144,7 +157,8 @@ const form = ref({
   horaRegreso: '',
   comentarios: '',
   imss: '',
-  tipoIncapacidad: ''
+  tipoIncapacidad: '',
+  tipoPermiso: ''
 })
 
 const formatToDateInput = (val) => {
@@ -169,7 +183,8 @@ onMounted(() => {
       horaRegreso: formatToTimeInput(props.pass.hora_regreso),
       comentarios: props.pass.comentarios || '',
       imss: props.pass.IMSS || '',
-      tipoIncapacidad: props.pass.tipo_incapacidad || ''
+      tipoIncapacidad: props.pass.tipo_incapacidad || '',
+      tipoPermiso: props.pass.tipo_permiso || ''
     }
   }
 })

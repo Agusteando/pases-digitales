@@ -33,6 +33,7 @@ export async function dispatchNotificationsForPass(passId: number) {
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
 
+  const tipoPermisoMsg = pass.tipo_permiso ? `\nTipo de permiso: ${pass.tipo_permiso}` : ''
   const motivoMsg = pass.comentarios ? ` con motivo: ${pass.comentarios}` : ''
   const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
   const timeMsg = pass.time ? ` - Hora: ${pass.time}` : ''
@@ -48,7 +49,7 @@ export async function dispatchNotificationsForPass(passId: number) {
   else if (isRejected) { statusIcon = '❌'; statusTitle = 'Pase Rechazado'; }
   else if (isCancelled) { statusIcon = '🚫'; statusTitle = 'Pase Anulado'; }
 
-  const tgMessage = `${statusIcon} ${statusTitle}\n${categoryName} de *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
+  const tgMessage = `${statusIcon} ${statusTitle}\n${categoryName} de *${pass.employee_name}*${tipoPermisoMsg}${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
 
   try {
     await $fetch('https://tgbot.casitaapps.com/sendMessages', {
@@ -136,7 +137,6 @@ export async function dispatchNotificationsForPass(passId: number) {
   // 3. Dispatch Configurable Channels & Audit Trail
   for (const [email, target] of targets.entries()) {
     
-    // Short cryptographic recipient token
     const rToken = signRecipientToken(target.email, target.name)
     const targetAuthUrl = `${authUrlBase}?r=${rToken}`
 
@@ -144,7 +144,7 @@ export async function dispatchNotificationsForPass(passId: number) {
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
         
-        const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
+        const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${tipoPermisoMsg}${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
 
         try {
           const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
@@ -178,6 +178,7 @@ export async function dispatchNotificationsForPass(passId: number) {
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>
+              ${pass.tipo_permiso ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Tipo de Permiso:</strong><br><span style="color: #0f172a;">${pass.tipo_permiso}</span></p>` : ''}
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
               ${(isAuthorized || isRejected) && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${isAuthorized ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${isAuthorized ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${isAuthorized ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
            </div>

@@ -123,6 +123,11 @@
               </div>
             </div>
 
+            <div v-if="pass.tipo_permiso" class="bg-white/60 p-6 rounded-[1.5rem] border border-white shadow-sm mb-6">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Clasificación / Permiso</span>
+              <p class="text-sm font-black text-slate-800">{{ pass.tipo_permiso }}</p>
+            </div>
+
             <div v-if="pass.comentarios" class="bg-white/60 p-6 rounded-[1.5rem] border border-white shadow-sm">
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Justificación</span>
               <p class="text-sm font-medium text-slate-800 leading-relaxed italic">

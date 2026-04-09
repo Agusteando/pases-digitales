@@ -84,6 +84,7 @@
               </td>
               <td class="px-6 py-5">
                 <span class="text-xs font-bold text-slate-600 bg-white/60 px-2.5 py-1 rounded-lg border border-white shadow-sm">{{ getCategoryName(pass.category_id) }}</span>
+                <span v-if="pass.tipo_permiso" class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mt-1.5">{{ pass.tipo_permiso }}</span>
               </td>
               <td class="px-6 py-5">
                 <span class="text-sm font-bold text-slate-600">{{ formatDate(pass.date) }}</span>

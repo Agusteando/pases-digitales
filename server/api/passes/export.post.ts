@@ -20,8 +20,6 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDB()
 
-    // Consulta mejorada usando alias (h y e) para mayor claridad.
-    // Ahora el WHERE evalúa el plantel del pase Y el plantel de nómina.
     const sql = `
       SELECT 
           h.id, 
@@ -33,6 +31,7 @@ export default defineEventHandler(async (event) => {
           h.status, 
           h.plantel as sistemas_plantel,
           h.comentarios, 
+          h.tipo_permiso,
           h.user, 
           h.autoriza, 
           e.position,
@@ -52,7 +51,6 @@ export default defineEventHandler(async (event) => {
     const end = `${body.endDate} 23:59:59`
     const plantelParam = `%${body.plantel}%`
 
-    // Pasamos el parámetro del plantel dos veces para que cubra los dos OR del WHERE
     const [queryResult]: any = await db.execute(sql, [
       plantelParam,
       plantelParam,
@@ -77,6 +75,7 @@ export default defineEventHandler(async (event) => {
       status: entry.status,
       sistemas_plantel: entry.sistemas_plantel,
       comentarios: entry.comentarios,
+      tipo_permiso: entry.tipo_permiso,
       user: entry.user,
       autoriza: entry.autoriza,
       position: entry.position,
@@ -101,7 +100,7 @@ export default defineEventHandler(async (event) => {
     
   } catch (error: any) {
     if (error.statusCode === 404) {
-      throw error // Respetar el 404 si genuinamente no hay datos para que el Front-End no reviente
+      throw error 
     }
     console.error('Export DB error:', error)
     throw createError({ statusCode: 500, message: 'Fallo al procesar y construir la exportación del reporte.' })

@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
 
     const sql = `
       UPDATE hr_entries
-      SET date = ?, fecha_fin = ?, time = ?, comentarios = ?, category_id = ?, plantel = ?, regreso = ?, hora_regreso = ?, IMSS = ?, tipo_incapacidad = ?
+      SET date = ?, fecha_fin = ?, time = ?, comentarios = ?, category_id = ?, plantel = ?, regreso = ?, hora_regreso = ?, IMSS = ?, tipo_incapacidad = ?, tipo_permiso = ?
       WHERE id = ?
     `
     await db.execute(sql, [
@@ -78,6 +78,7 @@ export default defineEventHandler(async (event) => {
        body.horaRegreso || null,
        body.imss || null,
        body.tipoIncapacidad || null,
+       body.tipoPermiso || null,
        id
     ])
 

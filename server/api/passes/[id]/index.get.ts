@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
 
   try {
+    // Retain full wildcard retrieval mapping since the specific ID restricts the payload cleanly 
     const [passRows]: any = await db.execute('SELECT * FROM hr_entries WHERE id = ?', [id])
     if (!passRows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado.' })
 

@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   const startDate = query.startDate as string
   const endDate = query.endDate as string
 
-  let sql = `SELECT id, employee_name, date, fecha_fin, time, comentarios, category_id, status, user, plantel, regreso, hora_regreso, IMSS, tipo_incapacidad, processed FROM hr_entries WHERE 1=1`
+  let sql = `SELECT id, employee_name, date, fecha_fin, time, comentarios, category_id, status, user, plantel, regreso, hora_regreso, IMSS, tipo_incapacidad, tipo_permiso, processed FROM hr_entries WHERE 1=1`
   const params: any[] = []
 
   if (q && q.trim() !== '') {

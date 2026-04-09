@@ -108,7 +108,10 @@
                           {{ pass.status }}
                         </span>
                       </div>
-                      <h4 class="text-[13px] font-bold text-slate-700">{{ getCategoryName(pass.category_id) }}</h4>
+                      <h4 class="text-[13px] font-bold text-slate-700">
+                        {{ getCategoryName(pass.category_id) }}
+                        <span v-if="pass.tipo_permiso" class="text-[10px] font-black bg-slate-100 text-slate-500 uppercase tracking-widest px-2 py-0.5 rounded ml-1">{{ pass.tipo_permiso }}</span>
+                      </h4>
                     </div>
                     <span class="text-[10px] font-black text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-sm shrink-0">{{ formatDateOnly(pass.date) }}</span>
                   </div>
