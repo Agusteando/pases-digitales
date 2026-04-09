@@ -4,7 +4,12 @@ import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import jwt from 'jsonwebtoken'
 import { getCookie, createError, defineEventHandler, readBody } from '#imports'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
 import crypto from 'crypto'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
@@ -28,9 +33,12 @@ export default defineEventHandler(async (event) => {
     plantel, regreso, horaRegreso, imss, tipoIncapacidad, autoAuthorize 
   } = body
 
-  const dateObj = date ? dayjs(date).startOf('day') : dayjs().startOf('day')
-  const endDateObj = endDate ? dayjs(endDate).startOf('day') : dateObj
-  const todayObj = dayjs().startOf('day')
+  // Anclaje de evaluación temporal a zona local para prevenir inserciones con saltos de día por UTC
+  const nowTz = dayjs().tz('America/Mexico_City')
+  
+  const dateObj = date ? dayjs.tz(date, 'America/Mexico_City').startOf('day') : nowTz.startOf('day')
+  const endDateObj = endDate ? dayjs.tz(endDate, 'America/Mexico_City').startOf('day') : dateObj
+  const todayObj = nowTz.startOf('day')
 
   if (dateObj.isBefore(todayObj) || endDateObj.isBefore(todayObj)) {
     throw createError({ statusCode: 400, message: 'No se permite registrar pases con fechas en el pasado.' })
@@ -43,7 +51,7 @@ export default defineEventHandler(async (event) => {
   
   const initialStatus = autoAuthorize ? 'autorizado' : 'pendiente'
   const authorizedBy = autoAuthorize ? actingUser : null
-  const authorizedAt = autoAuthorize ? dayjs().format('YYYY-MM-DD HH:mm:ss') : null
+  const authorizedAt = autoAuthorize ? nowTz.format('YYYY-MM-DD HH:mm:ss') : null
   
   const sql = `
     INSERT INTO hr_entries 
@@ -71,7 +79,6 @@ export default defineEventHandler(async (event) => {
       authorizedAt
     ])
 
-    // Enforce notifications as a mandatory system behavior before responding
     await dispatchNotificationsForPass(result.insertId)
 
     return { success: true, id: result.insertId, auth_token: authToken }

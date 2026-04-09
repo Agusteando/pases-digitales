@@ -2,6 +2,12 @@ import { useDB } from '~/server/utils/db'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import jwt from 'jsonwebtoken'
 import { getCookie, defineEventHandler, getRouterParam, readBody, createError } from '#imports'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -36,19 +42,19 @@ export default defineEventHandler(async (event) => {
 
     const pass = rows[0]
 
-    // In-App Quick Authorization Feature (Authorize / Reject)
     if (action === 'authorize' || action === 'reject') {
        if (pass.status !== 'pendiente') {
          throw createError({ statusCode: 400, message: `No es posible alterar la decisión. El pase ya ha sido procesado (Estado actual: ${pass.status}).` })
        }
+       
+       const nowTzStr = dayjs().tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss')
        const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
-       await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = NOW() WHERE id = ?`, [newStatus, actingName, id])
-       // Mandatory notification trigger
+       
+       await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = ? WHERE id = ?`, [newStatus, actingName, nowTzStr, id])
        await dispatchNotificationsForPass(Number(id))
        return { success: true }
     }
 
-    // Resend Notification Action
     if (action === 'resend') {
       if (pass.user !== actingName && !isAdmin) {
          throw createError({ statusCode: 403, message: 'Permisos insuficientes para reenviar notificaciones. Se requiere ser el creador del registro o un administrador.' })
@@ -61,7 +67,6 @@ export default defineEventHandler(async (event) => {
       return { success: true }
     } 
     
-    // Cancel Action
     if (action === 'cancel') {
       if (pass.user !== actingName && !isAdmin) {
         throw createError({ statusCode: 403, message: 'Permisos insuficientes para anular el registro. Se requiere ser el creador o un administrador de plataforma.' })
@@ -70,7 +75,6 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 403, message: 'Operación denegada. No se puede anular un pase que ya ha sido resuelto por los responsables.' })
       }
       await db.execute(`UPDATE hr_entries SET status = 'cancelado' WHERE id = ?`, [id])
-      // Mandatory notification trigger for cancellation context
       await dispatchNotificationsForPass(Number(id))
       return { success: true }
     }

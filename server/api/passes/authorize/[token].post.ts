@@ -2,6 +2,12 @@ import { useDB } from '~/server/utils/db'
 import { verifyRecipientToken } from '~/server/utils/token'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
 import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default defineEventHandler(async (event) => {
   const tokenUrl = getRouterParam(event, 'token')
@@ -38,10 +44,10 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: `El documento seguro ya fue procesado y su estado actual es: ${pass.status}` })
     }
 
+    const nowTzStr = dayjs().tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss')
     const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
-    await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = NOW() WHERE id = ?`, [newStatus, actingUser, pass.id])
     
-    // Mandatory notification trigger
+    await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = ? WHERE id = ?`, [newStatus, actingUser, nowTzStr, pass.id])
     await dispatchNotificationsForPass(pass.id)
     
     return { success: true, status: newStatus }

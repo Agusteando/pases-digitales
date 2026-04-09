@@ -1,10 +1,19 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default defineEventHandler(async () => {
   const db = useDB()
-  const todayDate = dayjs().format('YYYY-MM-DD')
+  
+  // CRITICAL FIX: Entorno Vercel Serverless opera en UTC de forma estricta.
+  // Forzamos el reloj del servidor a la hora de México para garantizar que 
+  // las estadísticas evalúen la jornada correcta independientemente de la hora UTC.
+  const todayDate = dayjs().tz('America/Mexico_City').format('YYYY-MM-DD')
 
   try {
     const [rows]: any = await db.execute(`

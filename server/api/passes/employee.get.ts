@@ -1,6 +1,11 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -8,7 +13,8 @@ export default defineEventHandler(async (event) => {
 
   if (!employeeName) return []
 
-  const now = dayjs()
+  // Estabilidad de cálculo independientemente de la zona horaria del servidor
+  const now = dayjs().tz('America/Mexico_City')
   const currentYear = now.year()
   const currentMonth = now.month()
   
