@@ -1,5 +1,6 @@
 <template>
-  <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] flex flex-col">
+  <div class="glass-panel p-8 md:p-10 rounded-[2.5rem] flex flex-col h-full min-h-0">
+    
     <div class="flex items-center justify-between pb-6 border-b border-white/60 shrink-0">
       <div>
         <h2 class="text-2xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
@@ -10,8 +11,7 @@
       </button>
     </div>
 
-    <!-- Contenedor orgánico. Pierde los scrollbars y límites rígidos de altura -->
-    <div class="mt-6 relative">
+    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 min-h-0 relative">
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-10 h-10 animate-spin text-iedis-teal" /></div>
       
       <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-5">

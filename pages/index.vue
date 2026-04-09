@@ -1,15 +1,15 @@
 <template>
-  <div class="flex flex-col xl:flex-row w-full min-h-screen">
+  <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden">
     
-    <!-- Left Column: Step-by-Step Creation Flow (Sticky on Desktop) -->
-    <section class="w-full xl:w-[48%] shrink-0 flex flex-col glass-panel border-r border-white/60 z-20 xl:h-screen xl:sticky xl:top-0">
+    <!-- Left Column: Step-by-Step Creation Flow (Strictly Bounded) -->
+    <section class="w-full xl:w-[48%] shrink-0 flex flex-col glass-panel border-r border-white/60 z-20 xl:h-full">
       
       <header class="px-6 md:px-8 py-6 border-b border-white/50 bg-white/30 shrink-0">
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Nuevo pase</h1>
         <p class="text-slate-500 mt-1 text-sm font-medium">Registro y justificación de incidencias.</p>
       </header>
 
-      <div class="flex-1 overflow-y-auto px-6 py-8 md:px-8 custom-scrollbar relative flex flex-col gap-10">
+      <div class="flex-1 overflow-y-auto px-6 py-8 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0">
         
         <!-- Step 1: Seleccionar Colaborador -->
         <div class="relative">
@@ -232,17 +232,22 @@
       </div>
     </section>
 
-    <!-- Right Column: Operational Context (Natural Scroll Flow) -->
-    <section class="flex-1 p-6 lg:p-10 relative bg-transparent z-10">
-      <div class="max-w-3xl mx-auto flex flex-col gap-8">
+    <!-- Right Column: Operational Context (Strictly Bounded) -->
+    <section class="w-full xl:flex-1 flex flex-col p-6 lg:p-10 relative bg-transparent z-10 xl:h-full min-w-0 overflow-x-hidden overflow-y-auto custom-scrollbar">
+      <div class="w-full max-w-3xl mx-auto flex flex-col gap-6 flex-1 min-h-0">
         <template v-if="selectedEmployees.length > 0">
           <div class="flex items-center justify-between pb-4 border-b border-white/40 shrink-0">
             <h2 class="text-2xl font-black text-slate-900 tracking-tight">Historial del colaborador</h2>
           </div>
-          <EmployeeContextPanel v-for="emp in selectedEmployees" :key="emp.id" :employee="emp" class="animate-in fade-in slide-in-from-right-8 duration-500" />
+          <EmployeeContextPanel 
+            v-for="emp in selectedEmployees" 
+            :key="emp.id" 
+            :employee="emp" 
+            class="flex-1 min-h-[500px] animate-in fade-in slide-in-from-right-8 duration-500" 
+          />
         </template>
         <template v-else>
-          <RecentActivityPanel class="animate-in fade-in duration-700" />
+          <RecentActivityPanel class="flex-1 min-h-0 animate-in fade-in duration-700" />
         </template>
       </div>
     </section>

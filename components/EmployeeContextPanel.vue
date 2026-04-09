@@ -1,7 +1,8 @@
 <template>
-  <div class="glass-panel p-8 rounded-[2.5rem] flex flex-col gap-8 relative overflow-hidden">
+  <div class="glass-panel p-8 rounded-[2.5rem] flex flex-col h-full min-h-0 relative overflow-hidden">
+    
     <!-- Header: Employee Info -->
-    <div class="flex items-center gap-6 relative z-10">
+    <div class="flex items-center gap-6 relative z-10 shrink-0">
       <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md bg-white" />
 
       <div class="flex-1 min-w-0">
@@ -25,7 +26,7 @@
 
     <!-- Active Folio Detection -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="bg-gradient-to-r from-iedis-teal/10 to-iedis-teal/5 rounded-[2rem] p-6 flex flex-col sm:flex-row gap-5 border border-iedis-teal/20 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-all hover:bg-iedis-teal/10">
+      <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-iedis-teal/10 to-iedis-teal/5 rounded-[2rem] p-6 flex flex-col sm:flex-row gap-5 border border-iedis-teal/20 shadow-sm relative z-10 items-start sm:items-center justify-between group transition-all hover:bg-iedis-teal/10 mt-6">
         <div class="flex gap-4 items-center">
           <div class="w-12 h-12 rounded-[1rem] bg-white flex items-center justify-center shrink-0 border border-iedis-teal/30 shadow-sm transition-transform group-hover:scale-105">
             <FileText class="w-5 h-5 text-iedis-teal" />
@@ -42,9 +43,10 @@
       </div>
     </transition>
 
-    <!-- History Timeline -->
-    <div class="relative z-10 flex flex-col bg-white/40 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-1.5 mt-2">
-      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2 bg-white/80 p-5 rounded-[1.5rem] border border-white shadow-sm shrink-0">
+    <!-- History Timeline Wrapper -->
+    <div class="relative z-10 flex flex-col flex-1 min-h-0 bg-white/40 backdrop-blur-md rounded-[2rem] border border-white shadow-sm p-1.5 mt-6">
+      
+      <div class="shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-2 bg-white/80 p-5 rounded-[1.5rem] border border-white shadow-sm">
         <div>
           <h3 class="text-sm font-black text-slate-900 tracking-tight">Historial</h3>
           <p class="text-[10px] font-black text-brand-500 uppercase tracking-widest mt-1" v-if="historyData?.cycle">Ciclo Escolar {{ historyData.cycle }}</p>
@@ -57,8 +59,8 @@
         </div>
       </div>
 
-      <!-- Contenedor de listado con flujo libre -->
-      <div class="p-5">
+      <!-- Scrolling container -->
+      <div class="flex-1 overflow-y-auto p-5 custom-scrollbar min-h-0">
         <div v-if="pendingHistory" class="py-12 flex justify-center">
           <Loader2 class="w-8 h-8 animate-spin text-brand-400" />
         </div>
@@ -73,19 +75,17 @@
 
         <div v-else class="space-y-8 pl-4">
           <div v-for="group in groupedHistory" :key="group.month">
-            <div class="sticky top-[100px] bg-white/80 backdrop-blur-md py-2.5 z-20 mb-5 -mx-4 px-4 rounded-xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            <div class="sticky top-0 bg-white/80 backdrop-blur-md py-2.5 z-20 mb-5 -mx-4 px-4 rounded-xl border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
               <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">{{ group.month }}</span>
             </div>
             
             <div class="relative pl-[30px] space-y-6 before:absolute before:inset-0 before:left-[14px] before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:timeline-line">
               <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.08}s` }">
                 
-                <!-- Timeline Dot -->
                 <div class="absolute -left-[35px] w-7 h-7 rounded-full bg-white shadow-sm z-10 top-0.5 flex items-center justify-center border border-white/60">
                   <div class="w-3.5 h-3.5 rounded-full" :class="getCategoryColor(pass.category_id)"></div>
                 </div>
                 
-                <!-- Pass Card -->
                 <div class="block bg-white/70 p-5 rounded-[1.5rem] border border-white shadow-sm hover:shadow-md hover:bg-white transition-all outline-none">
                   <div class="flex items-start justify-between mb-4 gap-4">
                     <div class="flex flex-col gap-1.5">
@@ -105,7 +105,6 @@
                   
                   <p v-if="pass.comentarios" class="text-xs font-medium text-slate-600 italic bg-white/50 p-3 rounded-2xl border border-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] line-clamp-2">"{{ pass.comentarios }}"</p>
                   
-                  <!-- Bottom Bar with Explicit Action Link -->
                   <div class="mt-4 pt-3 border-t border-white flex items-center justify-between">
                     <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-2">
                       <ShieldCheck class="w-4 h-4" :class="pass.status === 'autorizado' ? 'text-casita-green' : 'text-casita-red'" />
@@ -113,7 +112,7 @@
                         Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by : '' }}
                       </span>
                     </div>
-                    <div v-else></div> <!-- Spacer -->
+                    <div v-else></div>
                     
                     <NuxtLink :to="`/pass/${pass.id}`" class="text-brand-600 flex items-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-white hover:bg-brand-50 px-3 py-1.5 rounded-xl border border-white hover:border-brand-100 shadow-sm outline-none">
                       <span class="text-[10px] font-black uppercase tracking-widest">Abrir detalle</span>
