@@ -10,7 +10,7 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 relative before:absolute before:inset-0 before:left-[23px] before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:timeline-line">
+    <div class="flex-1 overflow-y-auto mt-6 custom-scrollbar pr-2 min-h-0">
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-10 h-10 animate-spin text-iedis-teal" /></div>
       
       <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-5">
@@ -20,7 +20,8 @@
         <span class="text-sm font-bold text-slate-500">No hay pases recientes.</span>
       </div>
 
-      <div v-else class="relative pl-[60px] space-y-6">
+      <!-- Timeline line classes moved strictly to inner items container to correctly track scroll bounds -->
+      <div v-else class="relative pl-[60px] space-y-6 before:absolute before:inset-0 before:left-[23px] before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:timeline-line">
         <div v-for="(pass, index) in data" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
           
           <div class="absolute -left-[60px] w-12 h-12 rounded-[1.25rem] border border-white bg-white flex items-center justify-center shadow-sm z-10" :class="getCategoryColorText(pass.category_id)">

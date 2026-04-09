@@ -11,6 +11,7 @@ let scene, camera, renderer, animationId
 const particles = []
 const orbs = []
 const flowLines = []
+const geometryMeshes = []
 
 onMounted(() => {
   if (!canvasContainer.value) return
@@ -113,7 +114,9 @@ onMounted(() => {
       speedY: (Math.random() - 0.5) * 0.01,
       originX: orb.position.x,
       originY: orb.position.y,
-      angle: Math.random() * Math.PI * 2
+      angle: Math.random() * Math.PI * 2,
+      colorPhase: Math.random() * Math.PI * 2,
+      baseColorIdx: i % colors.length
     }
     
     scene.add(orb)
@@ -150,6 +153,60 @@ onMounted(() => {
     flowLines.push(line)
   }
 
+  // 4. Floating Abstract Glass Geometry
+  const geometries = [
+    new THREE.IcosahedronGeometry(6, 0),
+    new THREE.OctahedronGeometry(8, 0),
+    new THREE.TetrahedronGeometry(10, 0)
+  ]
+
+  for (let i = 0; i < 5; i++) {
+    const geo = geometries[i % geometries.length]
+    
+    // Transparent soft faces
+    const faceMat = new THREE.MeshBasicMaterial({
+      color: colors[i % colors.length],
+      transparent: true,
+      opacity: 0.02,
+      blending: THREE.NormalBlending,
+      depthWrite: false,
+      wireframe: false
+    })
+    
+    // Elegant glowing edges
+    const edgeMat = new THREE.LineBasicMaterial({
+      color: colors[(i + 1) % colors.length],
+      transparent: true,
+      opacity: 0.08,
+      blending: THREE.AdditiveBlending
+    })
+    
+    const mesh = new THREE.Mesh(geo, faceMat)
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), edgeMat)
+    mesh.add(edges)
+    
+    const scale = 1 + Math.random() * 1.5
+    mesh.scale.set(scale, scale, scale)
+
+    mesh.position.set(
+      (Math.random() - 0.5) * 50,
+      (Math.random() - 0.5) * 40,
+      -8 - Math.random() * 4
+    )
+    
+    mesh.userData = {
+      rotSpeedX: (Math.random() - 0.5) * 0.003,
+      rotSpeedY: (Math.random() - 0.5) * 0.003,
+      rotSpeedZ: (Math.random() - 0.5) * 0.003,
+      moveSpeedY: Math.random() * 0.015 + 0.005,
+      colorPhase: Math.random() * Math.PI * 2,
+      baseColorIdx: i % colors.length
+    }
+    
+    scene.add(mesh)
+    geometryMeshes.push(mesh)
+  }
+
   // Animation Loop
   const animate = () => {
     animationId = requestAnimationFrame(animate)
@@ -158,26 +215,27 @@ onMounted(() => {
     const positions = particleSystem.geometry.attributes.position.array
     for (let i = 0; i < particleCount; i++) {
       const data = pData[i]
-      
-      // Move up
       positions[i * 3 + 1] += data.speed
-      // Sway X
       data.phaseX += data.phaseSpeedX
       positions[i * 3] += Math.sin(data.phaseX) * data.ampX
-
-      // Reset to bottom
-      if (positions[i * 3 + 1] > 20) {
-        positions[i * 3 + 1] = -20
+      if (positions[i * 3 + 1] > 25) {
+        positions[i * 3 + 1] = -25
         positions[i * 3] = (Math.random() - 0.5) * 60
       }
     }
     particleSystem.geometry.attributes.position.needsUpdate = true
 
-    // Update Orbs
+    // Update Orbs & Color Morphing
     orbs.forEach(orb => {
       orb.userData.angle += 0.002
       orb.position.x = orb.userData.originX + Math.sin(orb.userData.angle) * 5
       orb.position.y = orb.userData.originY + Math.cos(orb.userData.angle * 0.8) * 5
+      
+      orb.userData.colorPhase += 0.002
+      const c1 = new THREE.Color(colors[orb.userData.baseColorIdx])
+      const c2 = new THREE.Color(colors[(orb.userData.baseColorIdx + 1) % colors.length])
+      const mix = (Math.sin(orb.userData.colorPhase) + 1) / 2
+      orb.material.color.lerpColors(c1, c2, mix)
     })
 
     // Update Flow Lines
@@ -186,10 +244,31 @@ onMounted(() => {
       const linePositions = line.geometry.attributes.position.array
       for (let j = 0; j < 60; j++) {
         const y = linePositions[j * 3 + 1]
-        // Smooth sine wave based on Y position and time phase
         linePositions[j * 3] = line.userData.xOffset + Math.sin(y * line.userData.frequency + line.userData.phase) * line.userData.amplitude
       }
       line.geometry.attributes.position.needsUpdate = true
+    })
+
+    // Update Geometric Forms & Color Interpolation
+    geometryMeshes.forEach(mesh => {
+      mesh.rotation.x += mesh.userData.rotSpeedX
+      mesh.rotation.y += mesh.userData.rotSpeedY
+      mesh.rotation.z += mesh.userData.rotSpeedZ
+      mesh.position.y += mesh.userData.moveSpeedY
+      
+      if (mesh.position.y > 30) {
+        mesh.position.y = -30
+        mesh.position.x = (Math.random() - 0.5) * 50
+      }
+
+      mesh.userData.colorPhase += 0.002
+      const c1 = new THREE.Color(colors[mesh.userData.baseColorIdx])
+      const c2 = new THREE.Color(colors[(mesh.userData.baseColorIdx + 1) % colors.length])
+      const mix = (Math.sin(mesh.userData.colorPhase) + 1) / 2
+      
+      mesh.material.color.lerpColors(c1, c2, mix)
+      // Edge color inverses the gradient for soft contrast
+      mesh.children[0].material.color.lerpColors(c2, c1, mix)
     })
 
     renderer.render(scene, camera)
@@ -209,11 +288,28 @@ onMounted(() => {
   }
   window.addEventListener('resize', onWindowResize)
 
-  // Cleanup attachment to prevent memory leaks
+  // Proper Disposal to prevent memory leaks in SPA navigation
   canvasContainer.value._cleanup = () => {
     window.removeEventListener('resize', onWindowResize)
     cancelAnimationFrame(animationId)
     renderer.dispose()
+    
+    particleSystem.geometry.dispose()
+    particleMaterial.dispose()
+    softTexture.dispose()
+    
+    orbs.forEach(orb => orb.material.dispose())
+    flowLines.forEach(line => {
+      line.geometry.dispose()
+      line.material.dispose()
+    })
+    geometryMeshes.forEach(mesh => {
+      mesh.geometry.dispose()
+      mesh.material.dispose()
+      mesh.children[0].geometry.dispose()
+      mesh.children[0].material.dispose()
+    })
+
     scene.clear()
   }
 })
