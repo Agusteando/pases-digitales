@@ -17,6 +17,18 @@ export function cleanPlantelName(raw: any): string | null {
   return cleaned === '' ? null : cleaned;
 }
 
+/**
+ * Prevents cross-employee leakage by filtering out invalid, short, or generic public identities.
+ */
+function isGenericIdentity(val: any): boolean {
+  if (!val) return true;
+  const clean = String(val).trim().toUpperCase();
+  if (clean.length < 10) return true;
+  if (/^0+$/.test(clean) || /^1+$/.test(clean) || /^X+$/.test(clean)) return true;
+  if (clean === 'XAXX010101000' || clean === 'XEXX010101000') return true;
+  return false;
+}
+
 function parseSoapXML(xmlString: string) {
   const employees = []
   const blocks = xmlString.match(/<T_Empleado[^>]*>([\s\S]*?)<\/T_Empleado>/g) || []
@@ -82,30 +94,61 @@ export async function getFastSoapEmployees() {
   const signiaData = await getSigniaData()
 
   // Build a fast lookup map from the authoritative Signia API
-  const signiaMap = new Map()
+  // We use arrays per key to handle duplicates without overwriting, preventing typeahead leakage
+  const signiaMap = new Map<string, any[]>()
+  
+  const addToMap = (key: string, emp: any) => {
+    if (!key) return;
+    const list = signiaMap.get(key) || [];
+    list.push(emp);
+    signiaMap.set(key, list);
+  }
+
   for (const s of signiaData) {
-    if (s.curp && s.curp.length > 10) signiaMap.set(s.curp.toLowerCase(), s)
-    else if (s.rfc && s.rfc.length > 8) signiaMap.set(s.rfc.toLowerCase(), s)
-    else {
-       const norm = normalizeName(s.name || `${s.nombres || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`)
-       signiaMap.set(norm, s)
-    }
+    const sName = normalizeName(s.name || `${s.nombres || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`)
+    
+    const curpValid = !isGenericIdentity(s.curp);
+    const rfcValid = !isGenericIdentity(s.rfc);
+
+    if (curpValid) addToMap(String(s.curp).toLowerCase(), s)
+    if (rfcValid) addToMap(String(s.rfc).toLowerCase(), s)
+    
+    addToMap(sName, s)
   }
 
   // Cross-reference fast SOAP typeahead results with real PlantelNames to completely kill indexed regressions
   let finalData = (soapData || []).map(emp => {
      const normName = normalizeName(emp.name);
-     const match = (emp.curp && signiaMap.get(emp.curp.toLowerCase())) ||
-                   (emp.rfc && signiaMap.get(emp.rfc.toLowerCase())) ||
-                   signiaMap.get(normName);
+     const cKey = emp.curp && !isGenericIdentity(emp.curp) ? String(emp.curp).toLowerCase() : null;
+     const rKey = emp.rfc && !isGenericIdentity(emp.rfc) ? String(emp.rfc).toLowerCase() : null;
+
+     const matchLists = [];
+     if (cKey && signiaMap.has(cKey)) matchLists.push(signiaMap.get(cKey));
+     if (rKey && signiaMap.has(rKey)) matchLists.push(signiaMap.get(rKey));
+     if (signiaMap.has(normName)) matchLists.push(signiaMap.get(normName));
+
+     let bestMatch = null;
+     for (const list of matchLists) {
+       if (list && list.length === 1) {
+         bestMatch = list[0];
+         break;
+       } else if (list && list.length > 1) {
+         // Resolve ambiguity by name similarity to definitively link the avatar to the right person
+         bestMatch = list.find(e => {
+            const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`);
+            return sName === normName || sName.includes(normName) || normName.includes(sName);
+         });
+         if (bestMatch) break;
+       }
+     }
 
      return {
         ...emp,
         // Enforce SOAP Plantel priority for routing alignment while retaining fallback
-        plantel: cleanPlantelName(emp.plantel) || cleanPlantelName(match?.plantel?.name),
-        puesto: match?.puesto || emp.puesto,
-        email: match?.email || emp.email,
-        picture: match?.picture || null
+        plantel: cleanPlantelName(emp.plantel) || cleanPlantelName(bestMatch?.plantel?.name),
+        puesto: bestMatch?.puesto || emp.puesto,
+        email: bestMatch?.email || emp.email,
+        picture: bestMatch?.picture || null
      }
   })
 
@@ -134,18 +177,36 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   if (!signia || signia.length === 0) return {}
 
   const normName = normalizeName(name)
-  const normRfc = rfc?.trim().toLowerCase()
-  const normCurp = curp?.trim().toLowerCase()
+  const validRfc = isGenericIdentity(rfc) ? null : String(rfc).trim().toLowerCase()
+  const validCurp = isGenericIdentity(curp) ? null : String(curp).trim().toLowerCase()
 
-  let match = null;
+  let matches: any[] = [];
 
-  if (normCurp || normRfc) {
-    match = signia.find(e => 
-      (normCurp && e.curp && String(e.curp).toLowerCase() === normCurp) || 
-      (normRfc && e.rfc && String(e.rfc).toLowerCase() === normRfc)
+  if (validCurp || validRfc) {
+    matches = signia.filter(e => 
+      (validCurp && e.curp && String(e.curp).toLowerCase() === validCurp) || 
+      (validRfc && e.rfc && String(e.rfc).toLowerCase() === validRfc)
     )
   }
 
+  let match = null;
+
+  if (matches.length === 1) {
+    match = matches[0];
+  } else if (matches.length > 1) {
+    // Duplicate CURP/RFC found! Fallback to name similarity to pick the right one.
+    match = matches.find(e => {
+      const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
+      return sName === normName || sName.includes(normName) || normName.includes(sName)
+    })
+    
+    // If still no clear match among duplicates, reject ambiguous identity to avoid showing another person's photo
+    if (!match) {
+       match = null; 
+    }
+  }
+
+  // Fallback to strict name match if no CURP/RFC match or if ambiguity rejected
   if (!match) {
     match = signia.find(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)

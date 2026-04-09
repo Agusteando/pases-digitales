@@ -6,11 +6,19 @@ export default defineEventHandler(async (event) => {
   const id = query.id as string
   const name = query.name as string
 
-  if (!id && !name) return {}
+  const hasId = id && id !== 'undefined' && id !== 'null';
+  const hasName = name && name !== 'undefined' && name !== 'null';
+
+  if (!hasId && !hasName) return {}
 
   // 1. Get identity baseline from SOAP to reliably retrieve RFC/CURP for matching
   const dataset = await getFastSoapEmployees()
-  const empMatch = dataset.find(e => e.id === id || e.name === name)
+  
+  // Find the exact match safely, avoiding "undefined" string coercions
+  const empMatch = dataset.find(e => 
+    (hasId && String(e.id) === String(id)) || 
+    (hasName && e.name === name)
+  )
 
   const localRfc: string | undefined = empMatch?.rfc
   const localCurp: string | undefined = empMatch?.curp
