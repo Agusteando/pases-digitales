@@ -9,7 +9,7 @@
         <p class="text-slate-500 mt-1 text-sm font-medium">Registro y justificación de incidencias.</p>
       </header>
 
-      <div class="flex-1 overflow-y-auto px-6 py-8 md:px-8 custom-scrollbar relative flex flex-col gap-8 min-h-0">
+      <div class="flex-1 overflow-y-auto px-6 py-8 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0">
         
         <!-- Step 1: Seleccionar Colaborador -->
         <div class="relative">
@@ -232,8 +232,8 @@
       </div>
     </section>
 
-    <!-- Right Column: Operational Context (Strictly Bounded with Optimized Density) -->
-    <section class="w-full xl:flex-1 flex flex-col p-6 lg:p-8 relative bg-transparent z-10 xl:h-screen min-w-0 overflow-x-hidden overflow-y-auto xl:overflow-hidden custom-scrollbar">
+    <!-- Right Column: Operational Context (Strictly Bounded with Internal Scroll Flow) -->
+    <section class="w-full xl:flex-1 flex flex-col p-6 lg:p-8 relative bg-transparent z-10 xl:h-full min-w-0 overflow-hidden">
       <div class="w-full max-w-3xl mx-auto flex flex-col gap-6 flex-1 min-h-0">
         <template v-if="selectedEmployees.length > 0">
           <div class="flex items-center justify-between pb-4 border-b border-white/40 shrink-0">

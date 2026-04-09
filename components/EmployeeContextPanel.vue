@@ -60,7 +60,7 @@
       </div>
 
       <!-- Scrolling container with Visual Cue -->
-      <div class="flex-1 overflow-y-auto p-4 custom-scrollbar min-h-0 pb-16" style="mask-image: linear-gradient(to bottom, black 80%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
+      <div class="flex-1 overflow-y-auto p-4 custom-scrollbar min-h-0 pb-12 relative" style="mask-image: linear-gradient(to bottom, black 85%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);">
         
         <div v-if="pendingHistory" class="py-10 flex justify-center">
           <Loader2 class="w-6 h-6 animate-spin text-brand-400" />
@@ -74,20 +74,29 @@
           <p class="text-xs font-medium text-slate-500 mt-1">No hay pases registrados en el ciclo actual.</p>
         </div>
 
-        <div v-else class="space-y-6 pl-2">
-          <div v-for="group in groupedHistory" :key="group.month">
-            <div class="sticky top-0 bg-white/80 backdrop-blur-md py-2 z-20 mb-4 -mx-2 px-2 rounded-lg border border-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-              <span class="text-[9px] font-black uppercase tracking-widest text-slate-500">{{ group.month }}</span>
+        <div v-else class="relative">
+          <!-- Continuous Timeline Line -->
+          <div class="absolute top-2 bottom-0 left-[23px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
+          <div class="absolute top-2 bottom-0 left-[23px] w-[2px] rounded-full z-0 timeline-line opacity-40"></div>
+
+          <div v-for="group in groupedHistory" :key="group.month" class="mb-6">
+            
+            <!-- Month Header as a Timeline Knot -->
+            <div class="relative pl-14 mb-4 flex items-center">
+               <div class="absolute left-[19px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-slate-300 ring-4 ring-slate-50/80 z-10 shadow-sm"></div>
+               <span class="sticky top-0 z-20 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-500 border border-white shadow-sm">
+                 {{ group.month }}
+               </span>
             </div>
             
-            <div class="relative pl-[26px] space-y-4 before:absolute before:inset-0 before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:rounded-full before:timeline-line">
-              <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative group timeline-item" :style="{ animationDelay: `${index * 0.08}s` }">
+            <div class="space-y-0">
+              <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-14 pb-5 group timeline-item" :style="{ animationDelay: `${index * 0.08}s` }">
                 
-                <div class="absolute -left-[30px] w-6 h-6 rounded-full bg-white shadow-sm z-10 top-1 flex items-center justify-center border border-white/60">
-                  <div class="w-2.5 h-2.5 rounded-full" :class="getCategoryColor(pass.category_id)"></div>
-                </div>
+                <!-- Entry Knot -->
+                <div class="absolute left-[17px] top-5 w-3.5 h-3.5 rounded-full z-10 ring-[4px] ring-slate-50/80 transition-transform duration-300 group-hover:scale-125 shadow-sm" :class="getCategoryColor(pass.category_id)"></div>
                 
-                <div class="block bg-white/70 p-4 rounded-[1.25rem] border border-white shadow-sm hover:shadow-md hover:bg-white transition-all outline-none">
+                <!-- Entry Card -->
+                <div class="block bg-white/80 p-4 rounded-[1.25rem] border border-white shadow-sm hover:shadow-md hover:bg-white transition-all outline-none">
                   <div class="flex items-start justify-between mb-3 gap-3">
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center gap-2">
@@ -101,7 +110,7 @@
                       </div>
                       <h4 class="text-[13px] font-bold text-slate-700">{{ getCategoryName(pass.category_id) }}</h4>
                     </div>
-                    <span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-sm shrink-0">{{ formatDateOnly(pass.date) }}</span>
+                    <span class="text-[10px] font-black text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-100 shadow-sm shrink-0">{{ formatDateOnly(pass.date) }}</span>
                   </div>
                   
                   <p v-if="pass.comentarios" class="text-[11px] font-medium text-slate-600 italic bg-white/50 p-2.5 rounded-xl border border-white shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)] line-clamp-2">"{{ pass.comentarios }}"</p>
@@ -188,7 +197,7 @@ const groupedHistory = computed(() => {
   if (!historyData.value?.history) return []
   const groups = {}
   historyData.value.history.forEach(p => {
-    const month = dayjs(p.date).format('MMMM YYYY')
+    const month = dayjs(p.date).format('MMM YYYY')
     if (!groups[month]) groups[month] = []
     groups[month].push(p)
   })
