@@ -7,10 +7,10 @@ export const useDB = () => {
   if (!pool) {
     const config = useRuntimeConfig()
     
-    // Architectural fix for PROTOCOL_CONNECTION_LOST:
-    // Native connection lifecycle management. By using idleTimeout, the Node.js pool 
-    // proactively reaps idle connections BEFORE the MySQL server or firewall aggressively 
-    // drops them, ensuring we never fetch a dead connection from the pool.
+    // Architectural fix for PROTOCOL_CONNECTION_LOST and Timezone shifts:
+    // 1. Connection lifecycle management ensures stability.
+    // 2. dateStrings: true prevents the Vercel UTC runtime from converting
+    //    naive local database dates into shifted Javascript Date objects.
     pool = mysql.createPool({
       host: config.mysqlHost || 'localhost',
       user: config.mysqlUser || 'root',
@@ -23,6 +23,8 @@ export const useDB = () => {
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
+      dateStrings: true, // SOLUCIÓN: Devuelve cadenas exactas para evitar desfases horarios en Vercel (UTC)
+      timezone: '-06:00' // ALINEACIÓN: Sincroniza la zona horaria base de operaciones nativas
     })
 
     // Catch and log any stray errors to prevent unhandled process rejections

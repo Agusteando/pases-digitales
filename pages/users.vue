@@ -39,7 +39,7 @@
         <div class="flex flex-col gap-4 mt-2 pt-5 border-t border-white/60">
           <div class="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
             <span>Último Acceso</span>
-            <span class="text-slate-600">{{ new Date(sysUser.last_login).toLocaleDateString() }}</span>
+            <span class="text-slate-600">{{ sysUser.last_login ? dayjs(sysUser.last_login).format('DD/MM/YYYY') : 'N/A' }}</span>
           </div>
           <div class="flex items-center justify-between bg-white/70 p-4 rounded-2xl border border-white shadow-sm">
             <div class="flex items-center gap-2">
@@ -65,6 +65,7 @@
 import { ref } from 'vue'
 import { Loader2, Shield } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
+import dayjs from 'dayjs'
 
 const { data: users, pending } = useFetch('/api/users/stats')
 const isToggling = ref(null)

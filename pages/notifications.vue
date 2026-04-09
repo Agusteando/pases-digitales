@@ -50,7 +50,7 @@
                 </span>
                 <p v-if="log.status !== 'sent'" class="text-xs text-casita-red-dark mt-2 max-w-[250px] truncate font-medium bg-casita-red/10 p-2 rounded-xl border border-casita-red/20 shadow-sm" :title="getDeliveryError(log)">{{ getDeliveryError(log) }}</p>
               </td>
-              <td class="px-6 py-5 text-xs font-bold text-slate-500">{{ new Date(log.created_at).toLocaleString() }}</td>
+              <td class="px-6 py-5 text-xs font-bold text-slate-500">{{ log.created_at ? dayjs(log.created_at).format('DD/MM/YYYY, HH:mm') : 'N/A' }}</td>
               <td class="px-6 py-5 text-right">
                 <button v-if="log.status !== 'sent' && !isSystemLog(log.error_text)" @click="retryNotification(log.id)" class="text-brand-600 hover:text-white bg-white hover:bg-brand-600 text-xs font-black px-4 py-2 rounded-xl transition-all shadow-sm outline-none border border-brand-200 hover:border-transparent">
                   Reintentar
@@ -67,8 +67,9 @@
 <script setup>
 import { ref } from 'vue'
 import { RefreshCcw, Loader2, MessageCircle, Mail, Server, Bell } from 'lucide-vue-next'
+import dayjs from 'dayjs'
 
-const { data: logs, pending: pendingLogs, refresh: refreshLogs } = useFetch('/api/notifications', { default: () => [] })
+const { data: logs, pending: pendingLogs, refresh: refreshLogs } = useFetch('/api/notifications', { default: () =>[] })
 
 const isSystemLog = (text) => {
   return text && text.includes('Auditoría Global')
