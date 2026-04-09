@@ -179,24 +179,6 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   const validIngressio = ingressioId ? String(ingressioId).trim() : null
   const validRfc = isGenericIdentity(rfc) ? null : String(rfc).trim().toLowerCase()
 
-  /*
-   * EXPLICACIÓN DE ORIGEN DEL CURP Y SOLUCIÓN DE RESOLUCIÓN DE IDENTIDAD:
-   * El CURP proviene originalmente de la base de datos maestra (SOAP/HR). 
-   * Anteriormente, si se proporcionaba un CURP, RFC o IngressioID pero no 
-   * encontraba coincidencia exacta en Signia (sistema externo), el motor 
-   * hacía un 'fallback' a buscar por nombre ('name').
-   * ESTO ERA INCORRECTO Y PELIGROSO:
-   * Empleados con nombres iguales o similares causaban que el sistema 
-   * "robara" y retornara la fotografía y cargo de una persona completamente distinta.
-   * 
-   * CORRECCIÓN: 
-   * Ahora aplicamos el CURP como autoridad dura (Hard Authority). Si un 
-   * identificador oficial está presente (CURP, IngressioID o RFC),
-   * obligamos a que la coincidencia sea estricta usando ese orden de prioridad, 
-   * y bajo ningún motivo permitimos el fallback a nombre. Si no hay match, "Fallamos Cerrados" 
-   * (Fail Closed) devolviendo un objeto vacío garantizando la seguridad de datos.
-   */
-
   const findBestInList = (list: any[]) => {
     if (!list || list.length === 0) return null;
     if (list.length === 1) return list[0];
@@ -213,20 +195,29 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
 
   // Prioridad 1: Match Exacto y Seguro por CURP
   if (validCurp) {
-    hasAuthority = true;
-    match = findBestInList(signia.filter(e => e.curp && String(e.curp).toLowerCase() === validCurp));
+    const matchedCurp = findBestInList(signia.filter(e => e.curp && String(e.curp).toLowerCase() === validCurp));
+    if (matchedCurp) {
+      match = matchedCurp;
+      hasAuthority = true;
+    }
   }
   
   // Prioridad 2: ClaveNomina de Ingressio
   if (!match && validIngressio) {
-    hasAuthority = true;
-    match = findBestInList(signia.filter(e => e.ingressioId && String(e.ingressioId).trim() === validIngressio));
+    const matchedIngressio = findBestInList(signia.filter(e => e.ingressioId && String(e.ingressioId).trim() === validIngressio));
+    if (matchedIngressio) {
+      match = matchedIngressio;
+      hasAuthority = true;
+    }
   }
   
   // Prioridad 3: RFC
   if (!match && validRfc) {
-    hasAuthority = true;
-    match = findBestInList(signia.filter(e => e.rfc && String(e.rfc).toLowerCase() === validRfc));
+    const matchedRfc = findBestInList(signia.filter(e => e.rfc && String(e.rfc).toLowerCase() === validRfc));
+    if (matchedRfc) {
+      match = matchedRfc;
+      hasAuthority = true;
+    }
   }
 
   // Prioridad 4 (Fallback Seguro): Solo busca por nombre si NO teníamos NINGÚN identificador autoritativo válido.
@@ -238,6 +229,30 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   }
 
   if (match) {
+    // ---------------------------------------------------------------------------------
+    // LÓGICA DE SINCRONIZACIÓN Y PARCHEO (AUTO-HEALING):
+    // Si la coincidencia es altamente confiable (hasAuthority = true) vía CURP o RFC,
+    // pero el registro en Signia carece del IngressioID (o difiere de la ClaveNomina oficial),
+    // disparamos un PATCH en segundo plano para mantener los sistemas unificados.
+    // Esta escritura está blindada porque los CURPs genéricos fueron filtrados arriba.
+    // ---------------------------------------------------------------------------------
+    if (hasAuthority && validIngressio && String(match.ingressioId).trim() !== validIngressio) {
+      try {
+        // Disparo en background (Fire and Forget) para no penalizar el tiempo de respuesta
+        $fetch(`https://signia.casitaapps.com/api/employees/${match.id}`, {
+          method: 'PATCH',
+          body: { ingressioId: validIngressio }
+        }).catch(err => {
+          console.warn(`[Auto-Healing] Fallo al parchear ingressioId para el empleado ${match.id} en Signia.`, err);
+        });
+        
+        // Aplicamos el cambio optimista a la respuesta en memoria de este ciclo
+        match.ingressioId = validIngressio;
+      } catch (e) {
+        // Ignoramos errores sincrónicos de red para no interrumpir el flujo principal
+      }
+    }
+
     let pictureUrl = match.picture
     if (pictureUrl && !pictureUrl.startsWith('http')) {
       pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`
