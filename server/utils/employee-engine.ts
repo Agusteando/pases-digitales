@@ -18,14 +18,15 @@ export function cleanPlantelName(raw: any): string | null {
 }
 
 /**
- * Prevents cross-employee leakage by filtering out invalid, short, or generic public identities.
+ * Prevents cross-employee leakage by filtering out truly invalid or generic public identities.
+ * Relaxed to ensure genuine CURP formats provided by SOAP are always evaluated.
  */
 function isGenericIdentity(val: any): boolean {
   if (!val) return true;
   const clean = String(val).trim().toUpperCase();
-  if (clean.length < 10) return true;
-  if (/^0+$/.test(clean) || /^1+$/.test(clean) || /^X+$/.test(clean)) return true;
-  if (clean === 'XAXX010101000' || clean === 'XEXX010101000') return true;
+  if (clean.length < 10) return true; // Too short to be a valid RFC or CURP
+  if (/^[0]+$/.test(clean) || /^[1]+$/.test(clean) || /^[X]+$/.test(clean)) return true;
+  if (clean.startsWith('XAXX010101') || clean.startsWith('XEXX010101')) return true;
   return false;
 }
 
@@ -47,7 +48,8 @@ function parseSoapXML(xmlString: string) {
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
       plantel: getTag('ClaveArea'), // Base SOAP value that drives truth downstream
-      email: getTag('Correo')
+      email: getTag('Correo'),
+      ingressioId: getTag('ClaveNomina') // Extracted to use as a strong fallback
     })
   }
   return employees
@@ -94,7 +96,7 @@ export async function getFastSoapEmployees() {
   const signiaData = await getSigniaData()
 
   // Build a fast lookup map from the authoritative Signia API
-  // We use arrays per key to handle duplicates without overwriting, preventing typeahead leakage
+  // We use arrays per key to handle duplicates securely.
   const signiaMap = new Map<string, any[]>()
   
   const addToMap = (key: string, emp: any) => {
@@ -107,46 +109,37 @@ export async function getFastSoapEmployees() {
   for (const s of signiaData) {
     const sName = normalizeName(s.name || `${s.nombres || ''} ${s.apellidoPaterno || ''} ${s.apellidoMaterno || ''}`)
     
-    const curpValid = !isGenericIdentity(s.curp);
-    const rfcValid = !isGenericIdentity(s.rfc);
-
-    if (curpValid) addToMap(String(s.curp).toLowerCase(), s)
-    if (rfcValid) addToMap(String(s.rfc).toLowerCase(), s)
+    if (!isGenericIdentity(s.curp)) addToMap(String(s.curp).toLowerCase(), s)
+    if (s.ingressioId) addToMap(String(s.ingressioId).trim(), s)
+    if (!isGenericIdentity(s.rfc)) addToMap(String(s.rfc).toLowerCase(), s)
     
     addToMap(sName, s)
   }
 
-  // Cross-reference fast SOAP typeahead results with real PlantelNames to completely kill indexed regressions
+  // Cross-reference fast SOAP typeahead results with real PlantelNames and logic priorities
   let finalData = (soapData || []).map(emp => {
      const normName = normalizeName(emp.name);
-     const cKey = emp.curp && !isGenericIdentity(emp.curp) ? String(emp.curp).toLowerCase() : null;
-     const rKey = emp.rfc && !isGenericIdentity(emp.rfc) ? String(emp.rfc).toLowerCase() : null;
+     const cKey = !isGenericIdentity(emp.curp) ? String(emp.curp).toLowerCase() : null;
+     const iKey = emp.ingressioId ? String(emp.ingressioId).trim() : null;
+     const rKey = !isGenericIdentity(emp.rfc) ? String(emp.rfc).toLowerCase() : null;
 
      let bestMatch = null;
 
-     // 1. Strict CURP Match Priority
-     if (cKey && signiaMap.has(cKey)) {
-         const list = signiaMap.get(cKey)!;
-         bestMatch = list.length === 1 ? list[0] : (list.find(e => normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`) === normName) || list[0]);
+     const findBestInList = (list: any[]) => {
+       if (!list || list.length === 0) return null;
+       if (list.length === 1) return list[0];
+       const active = list.filter(e => e.isActive !== false);
+       const targetList = active.length > 0 ? active : list;
+       const nameMatch = targetList.find(e => normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`) === normName);
+       if (nameMatch) return nameMatch;
+       targetList.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+       return targetList[0];
      }
-     // 2. Strict RFC Match Priority (Only if CURP didn't exist)
-     else if (rKey && signiaMap.has(rKey)) {
-         const list = signiaMap.get(rKey)!;
-         bestMatch = list.length === 1 ? list[0] : (list.find(e => normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`) === normName) || list[0]);
-     }
-     // 3. Exact Name Match (ONLY if no valid CURP/RFC was provided by the source dataset)
-     else if (!cKey && !rKey && signiaMap.has(normName)) {
-         const list = [...signiaMap.get(normName)!];
-         if (list.length === 1) {
-             bestMatch = list[0];
-         } else {
-             // Duplicate records in Signia (e.g., ID 784 and 787). Resolve securely:
-             // Order by ID descending (newest first) and prefer active records to avoid old contracts.
-             list.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
-             const active = list.filter(e => e.isActive !== false);
-             bestMatch = active.length > 0 ? active[0] : list[0];
-         }
-     }
+
+     if (cKey && signiaMap.has(cKey)) bestMatch = findBestInList(signiaMap.get(cKey)!);
+     if (!bestMatch && iKey && signiaMap.has(iKey)) bestMatch = findBestInList(signiaMap.get(iKey)!);
+     if (!bestMatch && rKey && signiaMap.has(rKey)) bestMatch = findBestInList(signiaMap.get(rKey)!);
+     if (!bestMatch && signiaMap.has(normName)) bestMatch = findBestInList(signiaMap.get(normName)!);
 
      return {
         ...emp,
@@ -165,6 +158,7 @@ export async function getFastSoapEmployees() {
       name: e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`.trim(),
       rfc: e.rfc,
       curp: e.curp,
+      ingressioId: e.ingressioId || null,
       plantel: cleanPlantelName(e.plantel?.name),
       email: e.email,
       puesto: e.puesto || null,
@@ -178,63 +172,70 @@ export async function getFastSoapEmployees() {
   return finalData || []
 }
 
-export async function getSigniaEnrichment(name: string, rfc?: string, curp?: string) {
+export async function getSigniaEnrichment(name: string, rfc?: string, curp?: string, ingressioId?: string) {
   const signia = await getSigniaData()
   if (!signia || signia.length === 0) return {}
 
   const normName = normalizeName(name)
-  const validRfc = isGenericIdentity(rfc) ? null : String(rfc).trim().toLowerCase()
   const validCurp = isGenericIdentity(curp) ? null : String(curp).trim().toLowerCase()
+  const validIngressio = ingressioId ? String(ingressioId).trim() : null
+  const validRfc = isGenericIdentity(rfc) ? null : String(rfc).trim().toLowerCase()
+
+  const findBestInList = (list: any[]) => {
+    if (!list || list.length === 0) return null;
+    if (list.length === 1) return list[0];
+    const active = list.filter(e => e.isActive !== false);
+    const targetList = active.length > 0 ? active : list;
+    const nameMatch = targetList.find(e => normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`) === normName);
+    if (nameMatch) return nameMatch;
+    targetList.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+    return targetList[0];
+  }
 
   let match = null;
 
-  // RULE 1: Prioritize CURP/RFC strictly
-  if (validCurp || validRfc) {
-    const matches = signia.filter(e =>
-      (validCurp && e.curp && String(e.curp).toLowerCase() === validCurp) ||
-      (validRfc && e.rfc && String(e.rfc).toLowerCase() === validRfc)
-    )
-
-    if (matches.length === 1) {
-      match = matches[0];
-    } else if (matches.length > 1) {
-      // Tie-break identical CURPs by exact name match
-      match = matches.find(e => {
-        const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`);
-        return sName === normName;
-      }) || matches[0];
-    }
-    
-    // CRITICAL: If a valid CURP was provided, but 'match' is null (Signia doesn't have it),
-    // NEVER fall back to name-based matching. This intentionally returns empty to prevent data leakage.
-  } 
-  // RULE 2: Fallback to exact name matching ONLY if no valid CURP/RFC was provided initially
-  else {
-    const matches = signia.filter(e => {
+  // 1. Strict CURP Priority
+  if (validCurp && !match) {
+    match = findBestInList(signia.filter(e => e.curp && String(e.curp).toLowerCase() === validCurp));
+  }
+  // 2. ingressioId (ClaveNomina) Priority
+  if (validIngressio && !match) {
+    match = findBestInList(signia.filter(e => e.ingressioId && String(e.ingressioId).trim() === validIngressio));
+  }
+  // 3. RFC Priority
+  if (validRfc && !match) {
+    match = findBestInList(signia.filter(e => e.rfc && String(e.rfc).toLowerCase() === validRfc));
+  }
+  // 4. Exact Name Match Fallback
+  if (!match) {
+    match = findBestInList(signia.filter(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
       return sName === normName && sName !== ''
-    })
-
-    if (matches.length === 1) {
-      match = matches[0];
-    } else if (matches.length > 1) {
-      // Duplicate exact names found without CURP (e.g. Employee ID 784 vs 787).
-      // Safely resolve by prioritizing the newest record (ID Descending) that remains active.
-      matches.sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
-      const activeMatches = matches.filter(e => e.isActive !== false);
-      match = activeMatches.length > 0 ? activeMatches[0] : matches[0];
-    }
+    }));
   }
 
   if (match) {
+    // Background Auto-Sync Mechanism: 
+    // If we confidently matched by CURP, and the local SOAP ingressioId (ClaveNomina) differs from the one in Signia,
+    // we fire a background request to the external API to patch the missing/wrong data.
+    if (validCurp && validIngressio && match.curp && String(match.curp).toLowerCase() === validCurp) {
+       const signiaIngressio = match.ingressioId ? String(match.ingressioId).trim() : null;
+       if (signiaIngressio !== validIngressio) {
+         $fetch('https://signia.casitaapps.com/api/export/employees/update', {
+           method: 'PATCH',
+           body: { match: { curp: match.curp }, ingressioId: validIngressio }
+         }).catch(err => console.error('[Signia Sync] Fallo al actualizar ingressioId:', err));
+       }
+    }
+
     let pictureUrl = match.picture
     if (pictureUrl && !pictureUrl.startsWith('http')) {
       pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`
     }
-    return {
-      ...match,
-      picture: pictureUrl,
-      plantelName: cleanPlantelName(match.plantel?.name)
+    return { 
+      ...match, 
+      picture: pictureUrl, 
+      plantelName: cleanPlantelName(match.plantel?.name) 
     }
   }
 

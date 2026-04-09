@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
   if (!hasId && !hasName) return {}
 
-  // 1. Get identity baseline from SOAP to reliably retrieve RFC/CURP for matching
+  // 1. Get identity baseline from SOAP to reliably retrieve RFC/CURP/ClaveNomina for matching
   const dataset = await getFastSoapEmployees()
   
   // Find the exact match safely, avoiding "undefined" string coercions
@@ -22,9 +22,10 @@ export default defineEventHandler(async (event) => {
 
   const localRfc: string | undefined = empMatch?.rfc
   const localCurp: string | undefined = empMatch?.curp
+  const localIngressio: string | undefined = empMatch?.ingressioId
 
   // 2. Query Signia exclusively to fetch the real picture and correct operational status
-  const enriched = await getSigniaEnrichment(name, localRfc, localCurp)
+  const enriched = await getSigniaEnrichment(name, localRfc, localCurp, localIngressio)
 
   // Explicit priority given to SOAP-resolved plantel for all routing purposes
   const soapPlantel = cleanPlantelName(empMatch?.plantel)
