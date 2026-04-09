@@ -134,6 +134,22 @@
                 "{{ pass.comentarios }}"
               </p>
             </div>
+
+            <div v-if="pass.evidence" class="bg-white/60 p-6 rounded-[1.5rem] border border-white shadow-sm mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm">
+                  <Paperclip class="w-5 h-5 text-brand-600" />
+                </div>
+                <div>
+                  <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Evidencia Adjunta</span>
+                  <p class="text-sm font-black text-slate-800">Justificante o documento</p>
+                </div>
+              </div>
+              <a :href="pass.evidence" target="_blank" rel="noopener noreferrer" class="shrink-0 w-full sm:w-auto px-5 py-3 bg-white hover:bg-brand-50 text-brand-600 text-xs font-black rounded-xl border border-slate-200/60 shadow-sm transition-all flex items-center justify-center gap-2 outline-none">
+                <ExternalLink class="w-4 h-4" /> Abrir archivo
+              </a>
+            </div>
+
           </div>
         </div>
 
@@ -281,7 +297,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase, CheckCircle2, X, Check } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'

@@ -194,6 +194,33 @@
               </div>
             </div>
 
+            <!-- Evidence / File Upload -->
+            <div class="space-y-2 col-span-2">
+              <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Paperclip class="w-3.5 h-3.5" /> Evidencia / Justificante (Opcional)
+              </label>
+              <div class="relative border-2 border-dashed border-white/80 hover:border-brand-400 bg-white/40 rounded-2xl p-6 transition-all text-center group" :class="{'border-brand-500 bg-brand-50/50': evidenceFile}">
+                <input type="file" @change="onFileChange" accept="image/*,application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <div v-if="!evidenceFile" class="flex flex-col items-center gap-2">
+                  <UploadCloud class="w-6 h-6 text-slate-400 group-hover:text-brand-500 transition-colors" />
+                  <span class="text-sm font-bold text-slate-600">Haz clic o arrastra un archivo aquí</span>
+                  <span class="text-[10px] font-medium text-slate-400">PDF, JPG o PNG (Max. 5MB)</span>
+                </div>
+                <div v-else class="flex items-center justify-between z-20 relative">
+                  <div class="flex items-center gap-3">
+                     <FileText class="w-6 h-6 text-brand-600" />
+                     <div class="text-left">
+                        <p class="text-sm font-black text-slate-800 truncate max-w-[200px] sm:max-w-xs">{{ evidenceFile.name }}</p>
+                        <p class="text-[10px] font-bold text-slate-500">{{ (evidenceFile.size / 1024 / 1024).toFixed(2) }} MB</p>
+                     </div>
+                  </div>
+                  <button type="button" @click.stop.prevent="clearEvidence" class="p-2 text-slate-400 hover:text-casita-red bg-white rounded-full shadow-sm relative z-20 transition-colors border border-transparent hover:border-casita-red/20 outline-none">
+                    <XIcon class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Destino Option -->
             <div class="space-y-3 pt-2">
               <div v-if="!showDestino" class="flex">
@@ -243,11 +270,15 @@
                 </p>
               </div>
               <div class="flex flex-col sm:flex-row gap-3">
-                <button type="button" @click="submitPass(false)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-xl transition-all border border-slate-200/60 flex items-center justify-center gap-2 outline-none shadow-sm">
-                  <Send class="w-4 h-4 text-slate-400" /> Solicitar autorización
+                <button type="button" @click="submitPass(false)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-xl transition-all border border-slate-200/60 flex items-center justify-center gap-2 outline-none shadow-sm disabled:opacity-50">
+                  <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+                  <Send v-else class="w-4 h-4 text-slate-400" /> 
+                  <span>Solicitar autorización</span>
                 </button>
-                <button type="button" @click="submitPass(true)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-gradient-to-r from-casita-green to-casita-green-light hover:from-casita-green-dark hover:to-casita-green text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 outline-none">
-                  <CheckCircle class="w-4 h-4" /> Autorizar directamente
+                <button type="button" @click="submitPass(true)" :disabled="isSubmitting" class="flex-1 py-3.5 bg-gradient-to-r from-casita-green to-casita-green-light hover:from-casita-green-dark hover:to-casita-green text-white font-black text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 outline-none disabled:opacity-50">
+                  <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin" />
+                  <CheckCircle v-else class="w-4 h-4" /> 
+                  <span>Autorizar directamente</span>
                 </button>
               </div>
               <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 text-center px-4">
@@ -297,7 +328,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, Clock, Bell, CheckCircle } from 'lucide-vue-next'
+import { Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, Clock, Bell, CheckCircle, UploadCloud, Paperclip, FileText } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -322,6 +353,7 @@ const selectedEmployees = ref([])
 const activeScenario = ref(null)
 const isSubmitting = ref(false)
 const showDestino = ref(false)
+const evidenceFile = ref(null)
 
 const checkingCoverage = ref(false)
 const coverageQueue = ref([])
@@ -338,6 +370,37 @@ const isAuthorizerForCurrent = computed(() => {
 const hasSelfPass = computed(() => {
   return myProfile.value && selectedEmployees.value.some(e => e.name === myProfile.value.name)
 })
+
+function onFileChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    alert('El archivo supera el tamaño máximo permitido (5MB).')
+    e.target.value = ''
+    return
+  }
+  evidenceFile.value = file
+}
+
+function clearEvidence() {
+  evidenceFile.value = null
+}
+
+async function uploadFileToServer(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('folder', `pases-evidencia/${dayjs().format('YYYY-MM')}`)
+  formData.append('includeUrl', '1')
+
+  const res = await fetch('https://expediente.casitaapps.com/upload.ashx', {
+    method: 'POST',
+    body: formData
+  })
+  if (!res.ok) throw new Error('Fallo al comunicarse con el servidor de expedientes.')
+  const data = await res.json()
+  if (!data.success) throw new Error('El servidor rechazó el archivo.')
+  return data.url
+}
 
 async function checkCoverageQueue(emp) {
   const plantel = emp.plantelActual || emp.plantelBase
@@ -485,6 +548,7 @@ const predefinedScenarios = [
 function selectScenario(scenario) {
   activeScenario.value = scenario
   showDestino.value = false
+  clearEvidence()
   Object.assign(form, { 
     date: todayDate, endDate: todayDate, time: '', 
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
@@ -567,8 +631,20 @@ async function submitPass(autoAuthorize = false) {
     alert('Por favor, completa los campos requeridos.')
     return
   }
+  
   isSubmitting.value = true
   
+  let evidenceUrl = null
+  if (evidenceFile.value) {
+    try {
+      evidenceUrl = await uploadFileToServer(evidenceFile.value)
+    } catch (err) {
+      alert('No se pudo subir la evidencia adjunta. ' + err.message)
+      isSubmitting.value = false
+      return
+    }
+  }
+
   try {
     if (form.optInAuthorizer && selectedEmployees.value.length > 0) {
       const targetPlantel = selectedEmployees.value[0].plantelActual || selectedEmployees.value[0].plantelBase;
@@ -604,6 +680,7 @@ async function submitPass(autoAuthorize = false) {
           imss: form.imss,
           tipoIncapacidad: form.tipoIncapacidad,
           tipoPermiso: form.tipoPermiso,
+          evidence: evidenceUrl,
           autoAuthorize
         }
       })
@@ -614,6 +691,7 @@ async function submitPass(autoAuthorize = false) {
     coverageQueue.value = []
     form.optInAuthorizer = false;
     form.authorizerPhone = '';
+    clearEvidence();
     
     refreshNuxtData() 
   } catch(e) {

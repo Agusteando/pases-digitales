@@ -99,6 +99,46 @@
           </div>
 
           <div class="space-y-2">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+              <Paperclip class="w-3.5 h-3.5" /> Evidencia / Justificante
+            </label>
+            
+            <div v-if="form.evidenceUrl && !evidenceFile" class="flex items-center justify-between p-5 bg-white/60 border border-white rounded-2xl shadow-sm">
+              <div class="flex items-center gap-3">
+                <ExternalLink class="w-5 h-5 text-brand-600" />
+                <div>
+                  <p class="text-sm font-black text-slate-800">Archivo adjunto actual</p>
+                  <a :href="form.evidenceUrl" target="_blank" class="text-[10px] font-bold text-brand-600 hover:underline">Ver documento</a>
+                </div>
+              </div>
+              <button v-if="isEditable" type="button" @click="form.evidenceUrl = null" class="text-xs font-bold text-casita-red hover:text-casita-red-dark bg-casita-red/10 px-3 py-1.5 rounded-lg transition-colors border border-casita-red/20 outline-none shadow-sm">
+                Remover
+              </button>
+            </div>
+
+            <div v-if="isEditable && !form.evidenceUrl" class="relative border-2 border-dashed border-white/80 hover:border-iedis-teal/50 bg-white/40 rounded-2xl p-6 transition-all text-center group" :class="{'border-iedis-teal bg-iedis-teal/5': evidenceFile}">
+              <input type="file" @change="onFileChange" accept="image/*,application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+              <div v-if="!evidenceFile" class="flex flex-col items-center gap-2">
+                <UploadCloud class="w-6 h-6 text-slate-400 group-hover:text-iedis-teal transition-colors" />
+                <span class="text-sm font-bold text-slate-600">Reemplazar o adjuntar archivo nuevo</span>
+                <span class="text-[10px] font-medium text-slate-400">PDF, JPG o PNG (Max. 5MB)</span>
+              </div>
+              <div v-else class="flex items-center justify-between z-20 relative">
+                <div class="flex items-center gap-3">
+                   <FileText class="w-6 h-6 text-iedis-teal" />
+                   <div class="text-left">
+                      <p class="text-sm font-black text-slate-800 truncate max-w-[200px]">{{ evidenceFile.name }}</p>
+                      <p class="text-[10px] font-bold text-slate-500">{{ (evidenceFile.size / 1024 / 1024).toFixed(2) }} MB</p>
+                   </div>
+                </div>
+                <button type="button" @click.stop.prevent="evidenceFile = null" class="p-2 text-slate-400 hover:text-casita-red bg-white rounded-full shadow-sm relative z-20 transition-colors border border-transparent hover:border-casita-red/20 outline-none">
+                  <X class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Justificación</label>
             <textarea v-model="form.comentarios" rows="3" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-medium transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500 resize-none"></textarea>
           </div>
@@ -122,7 +162,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { X, Lock, Loader2, Trash2 } from 'lucide-vue-next'
+import { X, Lock, Loader2, Trash2, Paperclip, UploadCloud, FileText, ExternalLink } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const props = defineProps({
@@ -158,8 +198,38 @@ const form = ref({
   comentarios: '',
   imss: '',
   tipoIncapacidad: '',
-  tipoPermiso: ''
+  tipoPermiso: '',
+  evidenceUrl: null
 })
+
+const evidenceFile = ref(null)
+
+function onFileChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    alert('El archivo supera el tamaño máximo permitido (5MB).')
+    e.target.value = ''
+    return
+  }
+  evidenceFile.value = file
+}
+
+async function uploadFileToServer(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('folder', `pases-evidencia/${dayjs().format('YYYY-MM')}`)
+  formData.append('includeUrl', '1')
+
+  const res = await fetch('https://expediente.casitaapps.com/upload.ashx', {
+    method: 'POST',
+    body: formData
+  })
+  if (!res.ok) throw new Error('Fallo al comunicarse con el servidor de expedientes.')
+  const data = await res.json()
+  if (!data.success) throw new Error('El servidor rechazó el archivo.')
+  return data.url
+}
 
 const formatToDateInput = (val) => {
   if (!val) return ''
@@ -184,7 +254,8 @@ onMounted(() => {
       comentarios: props.pass.comentarios || '',
       imss: props.pass.IMSS || '',
       tipoIncapacidad: props.pass.tipo_incapacidad || '',
-      tipoPermiso: props.pass.tipo_permiso || ''
+      tipoPermiso: props.pass.tipo_permiso || '',
+      evidenceUrl: props.pass.evidence || null
     }
   }
 })
@@ -195,10 +266,25 @@ const handleSave = async () => {
   if (!isEditable.value || isSaving.value) return
   isSaving.value = true
 
+  let finalEvidenceUrl = form.value.evidenceUrl
+
+  if (evidenceFile.value) {
+    try {
+      finalEvidenceUrl = await uploadFileToServer(evidenceFile.value)
+    } catch (err) {
+      alert('No se pudo subir la nueva evidencia adjunta. ' + err.message)
+      isSaving.value = false
+      return
+    }
+  }
+
   try {
     await $fetch(`/api/passes/${props.pass.id}`, {
       method: 'PUT',
-      body: form.value
+      body: {
+        ...form.value,
+        evidence: finalEvidenceUrl
+      }
     })
     
     emit('updated')

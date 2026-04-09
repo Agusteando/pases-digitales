@@ -56,9 +56,24 @@
              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Permiso</span>
              <span class="text-sm font-bold text-slate-800">{{ pass.tipo_permiso }}</span>
           </div>
-          <div v-if="pass.comentarios">
+          <div v-if="pass.comentarios" :class="{'pb-6 border-b border-slate-100': pass.evidence}">
             <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Justificación</span>
             <span class="text-sm font-medium text-slate-700 italic block bg-white/60 p-5 rounded-2xl border border-white shadow-sm">"{{ pass.comentarios }}"</span>
+          </div>
+          
+          <div v-if="pass.evidence" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center border border-brand-100 shadow-sm">
+                <Paperclip class="w-5 h-5 text-brand-600" />
+              </div>
+              <div>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Evidencia Adjunta</span>
+                <p class="text-sm font-black text-slate-800">Justificante o documento</p>
+              </div>
+            </div>
+            <a :href="pass.evidence" target="_blank" rel="noopener noreferrer" class="shrink-0 w-full sm:w-auto px-5 py-3 bg-white hover:bg-brand-50 text-brand-600 text-xs font-black rounded-xl border border-slate-200/60 shadow-sm transition-all flex items-center justify-center gap-2 outline-none">
+              <ExternalLink class="w-4 h-4" /> Abrir archivo
+            </a>
           </div>
         </div>
 
@@ -102,7 +117,7 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope } from 'lucide-vue-next'
+import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope, Paperclip, ExternalLink } from 'lucide-vue-next'
 
 definePageMeta({ layout: false })
 
