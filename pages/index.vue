@@ -358,7 +358,8 @@ async function addEmployee(emp) {
     const tempEmp = { ...emp, _enriching: true, _editingActual: false }
     selectedEmployees.value.push(tempEmp)
 
-    const enriched = await $fetch('/api/employees/enrich', { query: { name: emp.name, id: emp.id } }).catch(() => ({}))
+    const queryParams = emp.id ? { id: emp.id } : { name: emp.name }
+    const enriched = await $fetch('/api/employees/enrich', { query: queryParams }).catch(() => ({}))
     
     const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
     if (actualEmp) {

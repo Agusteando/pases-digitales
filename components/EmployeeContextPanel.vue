@@ -162,7 +162,10 @@ const getCategoryColor = (id) => {
 }
 
 const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/enrich', {
-  query: { id: props.employee.id, name: props.employee.name }
+  query: { 
+    id: props.employee.id || undefined, 
+    name: props.employee.id ? undefined : props.employee.name 
+  }
 })
 
 const { data: historyData, pending: pendingHistory, error: historyError } = useFetch('/api/passes/employee', {

@@ -9,14 +9,15 @@ export default defineCachedEventHandler(async (event) => {
   const name = query.name as string
 
   const hasId = id && id !== 'undefined' && id !== 'null';
-  const hasName = name && name !== 'undefined' && name !== 'null';
+  // FIX: If we have an ID, we completely ignore the name for lookup to avoid ambiguity
+  const hasName = !hasId && name && name !== 'undefined' && name !== 'null';
 
   if (!hasId && !hasName) return {}
 
   // 1. Get identity baseline from SOAP to reliably retrieve RFC/CURP/ClaveNomina for matching
   const dataset = await getFastSoapEmployees()
   
-  // Find the exact match safely, avoiding "undefined" string coercions
+  // Find the exact match safely
   const empMatch = dataset.find(e => 
     (hasId && String(e.id) === String(id)) || 
     (hasName && e.name === name)
@@ -27,7 +28,8 @@ export default defineCachedEventHandler(async (event) => {
   const localIngressio: string | undefined = empMatch?.ingressioId
 
   // 2. Query Signia exclusively to fetch the real picture and correct operational status
-  const enriched = await getSigniaEnrichment(name, localRfc, localCurp, localIngressio)
+  const searchName = empMatch ? empMatch.name : (hasName ? name : '');
+  const enriched = await getSigniaEnrichment(searchName, localRfc, localCurp, localIngressio)
 
   // Explicit priority given to SOAP-resolved plantel for all routing purposes
   const soapPlantel = cleanPlantelName(empMatch?.plantel)
@@ -47,6 +49,8 @@ export default defineCachedEventHandler(async (event) => {
   name: 'enrichment-cache',
   getKey: (event) => {
     const q = getQuery(event)
-    return `${q.id || 'noid'}-${q.name || 'noname'}`
+    const hasId = q.id && q.id !== 'undefined' && q.id !== 'null';
+    if (hasId) return `enrichment-id-${q.id}`
+    return `enrichment-name-${q.name || 'noname'}`
   }
 })

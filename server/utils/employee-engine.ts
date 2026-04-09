@@ -135,7 +135,9 @@ export async function getFastSoapEmployees() {
      if (!bestMatch && iKey && signiaMap.has(iKey)) bestMatch = findBestInList(signiaMap.get(iKey)!);
      if (!bestMatch && rKey && signiaMap.has(rKey)) bestMatch = findBestInList(signiaMap.get(rKey)!);
      
-     if (!bestMatch && !cKey && signiaMap.has(normName)) {
+     // FIX: Block name-based matching if ANY authoritative key is present but failed
+     const hasAuthKey = cKey || iKey || rKey;
+     if (!bestMatch && !hasAuthKey && signiaMap.has(normName)) {
        bestMatch = findBestInList(signiaMap.get(normName)!);
      }
 
@@ -177,6 +179,24 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   const validIngressio = ingressioId ? String(ingressioId).trim() : null
   const validRfc = isGenericIdentity(rfc) ? null : String(rfc).trim().toLowerCase()
 
+  /*
+   * EXPLICACIÓN DE ORIGEN DEL CURP Y SOLUCIÓN DE RESOLUCIÓN DE IDENTIDAD:
+   * El CURP proviene originalmente de la base de datos maestra (SOAP/HR). 
+   * Anteriormente, si se proporcionaba un CURP, RFC o IngressioID pero no 
+   * encontraba coincidencia exacta en Signia (sistema externo), el motor 
+   * hacía un 'fallback' a buscar por nombre ('name').
+   * ESTO ERA INCORRECTO Y PELIGROSO:
+   * Empleados con nombres iguales o similares causaban que el sistema 
+   * "robara" y retornara la fotografía y cargo de una persona completamente distinta.
+   * 
+   * CORRECCIÓN: 
+   * Ahora aplicamos el CURP como autoridad dura (Hard Authority). Si un 
+   * identificador oficial está presente (CURP, IngressioID o RFC),
+   * obligamos a que la coincidencia sea estricta usando ese orden de prioridad, 
+   * y bajo ningún motivo permitimos el fallback a nombre. Si no hay match, "Fallamos Cerrados" 
+   * (Fail Closed) devolviendo un objeto vacío garantizando la seguridad de datos.
+   */
+
   const findBestInList = (list: any[]) => {
     if (!list || list.length === 0) return null;
     if (list.length === 1) return list[0];
@@ -189,23 +209,28 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
   }
 
   let match = null;
+  let hasAuthority = false;
 
   // Prioridad 1: Match Exacto y Seguro por CURP
-  if (validCurp && !match) {
+  if (validCurp) {
+    hasAuthority = true;
     match = findBestInList(signia.filter(e => e.curp && String(e.curp).toLowerCase() === validCurp));
   }
+  
   // Prioridad 2: ClaveNomina de Ingressio
-  if (validIngressio && !match) {
+  if (!match && validIngressio) {
+    hasAuthority = true;
     match = findBestInList(signia.filter(e => e.ingressioId && String(e.ingressioId).trim() === validIngressio));
   }
+  
   // Prioridad 3: RFC
-  if (validRfc && !match) {
+  if (!match && validRfc) {
+    hasAuthority = true;
     match = findBestInList(signia.filter(e => e.rfc && String(e.rfc).toLowerCase() === validRfc));
   }
-  // Prioridad 4 (Fallback): Solo busca por nombre si NO teníamos un CURP válido.
-  // Esto previene que una identidad ambigua "robe" los datos (como la fotografía) de otra persona
-  // simplemente porque compartan nombre pero difieran en documentos oficiales.
-  if (!match && !validCurp) {
+
+  // Prioridad 4 (Fallback Seguro): Solo busca por nombre si NO teníamos NINGÚN identificador autoritativo válido.
+  if (!match && !hasAuthority) {
     match = findBestInList(signia.filter(e => {
       const sName = normalizeName(e.name || `${e.nombres || ''} ${e.apellidoPaterno || ''} ${e.apellidoMaterno || ''}`)
       return sName === normName && sName !== ''
