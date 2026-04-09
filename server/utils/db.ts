@@ -8,15 +8,12 @@ export const useDB = () => {
     const config = useRuntimeConfig()
     
     // RESOLUCIÓN ESTRUCTURAL PARA ENTORNO SERVERLESS (VERCEL):
-    // La directiva 'maxIdle: 0' provocaba fallos 'connect ETIMEDOUT' al forzar a mysql2 
-    // a destruir y crear un nuevo socket TCP por *cada consulta*, agotando rápidamente 
-    // los puertos del NAT Gateway en peticiones con múltiples queries.
+    // El fallo subyacente ETIMEDOUT ocurre porque los NAT Gateways cierran silenciosamente
+    // las conexiones TCP inactivas sin notificar (sin paquete RST). Al descongelarse la Lambda,
+    // mysql2 cree que la conexión sirve, y se cuelga (ETIMEDOUT) intentando retransmitir al vacío.
     //
-    // La solución determinista es el uso de 'idleTimeout'. Durante una petición activa, 
-    // la conexión se reutiliza al máximo. Al terminar, Vercel congela el contenedor. 
-    // Al descongelarse en el futuro, si han transcurrido > 8 segundos, mysql2 detecta 
-    // la expiración mediante el reloj del sistema y descarta la conexión "zombie" 
-    // de manera segura, abriendo una nueva sin saturar la red.
+    // Implementamos 'enableKeepAlive' para enviar latidos TCP que mantengan la tabla NAT viva 
+    // y permitan detectar enlaces caídos en capa de red instantáneamente en vez de colgar la aplicación.
     pool = mysql.createPool({
       host: config.mysqlHost || 'localhost',
       user: config.mysqlUser || 'root',
@@ -25,9 +22,12 @@ export const useDB = () => {
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
-      idleTimeout: 8000, // Cierra conexiones inactivas tras 8s, limpiando zombies tras el thaw
-      dateStrings: true, // Previene desfases horarios convirtiendo las fechas nativas a texto
-      timezone: '-06:00' // Alineación de zona horaria de base de datos
+      idleTimeout: 8000,           // Cierra conexiones inactivas tras 8s, limpiando zombies tras el thaw
+      enableKeepAlive: true,       // Activa latidos TCP para evitar desconexiones silenciosas del Firewall
+      keepAliveInitialDelay: 10000,// Envía el primer latido después de 10s de inactividad
+      connectTimeout: 10000,       // Previene que la aplicación se cuelgue si el servidor está bloqueado
+      dateStrings: true,           // Previene desfases horarios convirtiendo las fechas nativas a texto
+      timezone: '-06:00'           // Alineación de zona horaria de base de datos
     })
 
     // Intercepción de eventos de error en los sockets para prevenir cierres abruptos 

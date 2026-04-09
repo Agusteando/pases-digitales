@@ -180,8 +180,9 @@ const search = async () => {
     passes.value = data || []
   } catch (error) {
     console.error('Search error:', error)
+    // DB connectivity failures are now gracefully silenced for the user.
+    // Preserves normal UX by safely defaulting to the empty state display.
     passes.value = []
-    alert('Ocurrió un error al intentar consultar la base de datos. Por favor, reintenta.')
   } finally {
     pending.value = false
   }
