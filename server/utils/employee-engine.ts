@@ -233,23 +233,22 @@ export async function getSigniaEnrichment(name: string, rfc?: string, curp?: str
     // LÓGICA DE SINCRONIZACIÓN Y PARCHEO (AUTO-HEALING):
     // Si la coincidencia es altamente confiable (hasAuthority = true) vía CURP o RFC,
     // pero el registro en Signia carece del IngressioID (o difiere de la ClaveNomina oficial),
-    // disparamos un PATCH en segundo plano para mantener los sistemas unificados.
-    // Esta escritura está blindada porque los CURPs genéricos fueron filtrados arriba.
+    // disparamos un PATCH para mantener los sistemas unificados.
     // ---------------------------------------------------------------------------------
     if (hasAuthority && validIngressio && String(match.ingressioId).trim() !== validIngressio) {
       try {
-        // Disparo en background (Fire and Forget) para no penalizar el tiempo de respuesta
-        $fetch(`https://signia.casitaapps.com/api/employees/${match.id}`, {
+        // En un entorno Serverless (Vercel/AWS Lambda), ES OBLIGATORIO usar 'await'.
+        // Si usamos fire-and-forget sin await, el contenedor se congelará al momento 
+        // de devolver la respuesta HTTP y la petición externa a Signia morirá a la mitad.
+        await $fetch(`https://signia.casitaapps.com/api/employees/${match.id}`, {
           method: 'PATCH',
           body: { ingressioId: validIngressio }
-        }).catch(err => {
-          console.warn(`[Auto-Healing] Fallo al parchear ingressioId para el empleado ${match.id} en Signia.`, err);
         });
         
         // Aplicamos el cambio optimista a la respuesta en memoria de este ciclo
         match.ingressioId = validIngressio;
       } catch (e) {
-        // Ignoramos errores sincrónicos de red para no interrumpir el flujo principal
+        console.warn(`[Auto-Healing] Fallo al parchear ingressioId para el empleado ${match.id} en Signia.`, e);
       }
     }
 
