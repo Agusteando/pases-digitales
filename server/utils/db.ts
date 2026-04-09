@@ -8,12 +8,15 @@ export const useDB = () => {
     const config = useRuntimeConfig()
     
     // RESOLUCIÓN ESTRUCTURAL PARA ENTORNO SERVERLESS (VERCEL):
-    // Vercel congela el contenedor en reposo, provocando que los sockets TCP de MySQL 
-    // mueran en el servidor sin que el proceso Node se entere. Al descongelarse, 
-    // el pool intenta reutilizar un socket muerto generando un ETIMEDOUT irremediable.
-    // Configurar 'maxIdle: 0' fuerza al pool a cerrar el socket TCP inmediatamente 
-    // después de liberar la conexión, garantizando que cada consulta levante un socket 
-    // fresco y eliminando por completo los fallos por estado latente corrupto.
+    // La directiva 'maxIdle: 0' provocaba fallos 'connect ETIMEDOUT' al forzar a mysql2 
+    // a destruir y crear un nuevo socket TCP por *cada consulta*, agotando rápidamente 
+    // los puertos del NAT Gateway en peticiones con múltiples queries.
+    //
+    // La solución determinista es el uso de 'idleTimeout'. Durante una petición activa, 
+    // la conexión se reutiliza al máximo. Al terminar, Vercel congela el contenedor. 
+    // Al descongelarse en el futuro, si han transcurrido > 8 segundos, mysql2 detecta 
+    // la expiración mediante el reloj del sistema y descarta la conexión "zombie" 
+    // de manera segura, abriendo una nueva sin saturar la red.
     pool = mysql.createPool({
       host: config.mysqlHost || 'localhost',
       user: config.mysqlUser || 'root',
@@ -21,17 +24,22 @@ export const useDB = () => {
       database: config.mysqlDatabase || 'Sistemas',
       waitForConnections: true,
       connectionLimit: 10,
-      maxIdle: 0, // <--- Directiva clave: Cierra las conexiones inmediatamente tras su uso.
       queueLimit: 0,
-      dateStrings: true, // Previene desfases horarios convirtiendo las fechas nativas a texto.
-      timezone: '-06:00' // Alineación de zona horaria de base de datos.
+      idleTimeout: 8000, // Cierra conexiones inactivas tras 8s, limpiando zombies tras el thaw
+      dateStrings: true, // Previene desfases horarios convirtiendo las fechas nativas a texto
+      timezone: '-06:00' // Alineación de zona horaria de base de datos
     })
 
-    // Intercepción de eventos de error en los sockets para prevenir cierres abruptos del proceso.
+    // Intercepción de eventos de error en los sockets para prevenir cierres abruptos 
+    // del proceso Node debido a desconexiones en segundo plano no controladas.
     pool.on('connection', (connection) => {
       connection.on('error', (err: any) => {
-        console.error('MySQL Pool Connection Error:', err.code, err.message)
+        console.error('MySQL Pool Connection Error (Interceptado):', err.code, err.message)
       })
+    })
+
+    pool.on('error', (err: any) => {
+      console.error('MySQL Pool Error (Interceptado):', err.code, err.message)
     })
   }
   
