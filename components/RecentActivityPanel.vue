@@ -45,7 +45,7 @@
             </div>
 
             <!-- Card Content -->
-            <div class="flex flex-col p-4 rounded-[1.25rem] bg-white/60 hover:bg-white border border-transparent hover:border-slate-200/80 transition-all duration-300 cursor-default relative overflow-hidden group/card shadow-sm hover:shadow-md">
+            <div class="flex flex-col py-2 transition-all duration-300 cursor-default relative overflow-hidden group/card">
               
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">

@@ -1,3 +1,4 @@
+pages/index.vue
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     
@@ -29,100 +30,104 @@
           </div>
         </div>
 
-        <!-- Selected Employees List (Scrollable Middle - High Density) -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-8 relative z-10 min-h-0 pb-10">
-          <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 pb-6">
-            
-            <div class="flex items-center justify-between pb-2 border-b border-white/60 px-1 mt-2">
-              <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest">Lista seleccionada ({{ selectedEmployees.length }})</h3>
-              <button v-if="selectedEmployees.length > 1" @click="resetFlow" class="text-[10px] font-bold text-casita-red hover:text-casita-red-dark uppercase tracking-widest transition-colors outline-none bg-white hover:bg-red-50 px-2.5 py-1 rounded-md border border-white shadow-sm">Remover todos</button>
-            </div>
-            
-            <div class="flex flex-col gap-2.5">
-              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white shadow-sm group hover:shadow-md transition-all">
-                <div class="flex items-center justify-between gap-3">
-                  <div class="flex items-center gap-3 min-w-0 flex-1">
-                    <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="w-10 h-10 ring-2 ring-white shadow-sm shrink-0" />
-                    <div class="flex flex-col min-w-0 flex-1">
-                      <div class="flex items-center gap-2">
-                        <span class="text-sm font-black text-slate-900 truncate">{{ emp.name }}</span>
-                        <span v-if="myProfile && emp.name === myProfile.name" class="shrink-0 text-[8px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded uppercase tracking-widest border border-brand-100/50 shadow-sm">Yo</span>
-                      </div>
-                      
-                      <!-- Loading State -->
-                      <div v-if="emp._enriching" class="flex gap-2 mt-1.5">
-                        <div class="h-3 w-16 bg-slate-200/50 animate-pulse rounded"></div>
-                        <div class="h-3 w-24 bg-slate-200/50 animate-pulse rounded"></div>
-                      </div>
-                      
-                      <!-- Enriched Info -->
-                      <div v-else class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] font-bold text-slate-500">
-                        <span v-if="emp.puesto" class="truncate max-w-[120px]">{{ emp.puesto }}</span>
-                        <span v-if="emp.puesto && emp.plantelBase" class="text-slate-300">•</span>
+        <!-- Scrollable Content Area: Selected Employees + Motivo -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-8 pb-10 relative z-10 flex flex-col">
+          
+          <!-- Selected Employees List -->
+          <div>
+            <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3">
+              
+              <div class="flex items-center justify-between pb-2 border-b border-white/60 px-1 mt-2">
+                <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest">Lista seleccionada ({{ selectedEmployees.length }})</h3>
+                <button v-if="selectedEmployees.length > 1" @click="resetFlow" class="text-[10px] font-bold text-casita-red hover:text-casita-red-dark uppercase tracking-widest transition-colors outline-none bg-white hover:bg-red-50 px-2.5 py-1 rounded-md border border-white shadow-sm">Remover todos</button>
+              </div>
+              
+              <div class="flex flex-col gap-2.5">
+                <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white shadow-sm group hover:shadow-md transition-all">
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                      <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="w-10 h-10 ring-2 ring-white shadow-sm shrink-0" />
+                      <div class="flex flex-col min-w-0 flex-1">
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm font-black text-slate-900 truncate">{{ emp.name }}</span>
+                          <span v-if="myProfile && emp.name === myProfile.name" class="shrink-0 text-[8px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded uppercase tracking-widest border border-brand-100/50 shadow-sm">Yo</span>
+                        </div>
                         
-                        <span v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase" class="text-[#007F92] flex items-center gap-1 bg-[#007F92]/10 px-1.5 py-0.5 rounded border border-[#007F92]/20">
-                          <MapPin class="w-3 h-3" /> {{ emp.plantelActual }}
-                          <button @click.stop="resetPlantelActual(emp)" class="ml-0.5 hover:text-[#006575]"><XIcon class="w-3 h-3"/></button>
-                        </span>
-                        <span v-else-if="emp.plantelBase" class="flex items-center gap-1">
-                          <Building2 class="w-3 h-3 text-slate-400" /> {{ emp.plantelBase }}
-                        </span>
+                        <!-- Loading State -->
+                        <div v-if="emp._enriching" class="flex gap-2 mt-1.5">
+                          <div class="h-3 w-16 bg-slate-200/50 animate-pulse rounded"></div>
+                          <div class="h-3 w-24 bg-slate-200/50 animate-pulse rounded"></div>
+                        </div>
                         
-                        <button v-if="!emp._editingActual" @click.stop="emp._editingActual = true" class="text-slate-400 hover:text-[#007F92] transition-colors uppercase tracking-widest ml-1 text-[9px] bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">Cambiar</button>
+                        <!-- Enriched Info -->
+                        <div v-else class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] font-bold text-slate-500">
+                          <span v-if="emp.puesto" class="truncate max-w-[120px]">{{ emp.puesto }}</span>
+                          <span v-if="emp.puesto && emp.plantelBase" class="text-slate-300">•</span>
+                          
+                          <span v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase" class="text-[#007F92] flex items-center gap-1 bg-[#007F92]/10 px-1.5 py-0.5 rounded border border-[#007F92]/20">
+                            <MapPin class="w-3 h-3" /> {{ emp.plantelActual }}
+                            <button @click.stop="resetPlantelActual(emp)" class="ml-0.5 hover:text-[#006575]"><XIcon class="w-3 h-3"/></button>
+                          </span>
+                          <span v-else-if="emp.plantelBase" class="flex items-center gap-1">
+                            <Building2 class="w-3 h-3 text-slate-400" /> {{ emp.plantelBase }}
+                          </span>
+                          
+                          <button v-if="!emp._editingActual" @click.stop="emp._editingActual = true" class="text-slate-400 hover:text-[#007F92] transition-colors uppercase tracking-widest ml-1 text-[9px] bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">Cambiar</button>
+                        </div>
                       </div>
                     </div>
+                    <button @click="removeEmployee(emp.id)" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm border border-slate-100 transition-colors shrink-0 outline-none">
+                      <XIcon class="w-4 h-4" />
+                    </button>
                   </div>
-                  <button @click="removeEmployee(emp.id)" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm border border-slate-100 transition-colors shrink-0 outline-none">
-                    <XIcon class="w-4 h-4" />
-                  </button>
-                </div>
 
-                <!-- Edit Plantel Actual inline -->
-                <div v-if="emp._editingActual" class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
-                  <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#007F92]/20 focus:border-[#007F92] outline-none cursor-pointer shadow-sm">
-                    <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
-                  </select>
-                  <button @click="emp._editingActual = false" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-white rounded-xl shadow-sm border border-slate-200 outline-none shrink-0">
-                    <XIcon class="w-4 h-4" />
-                  </button>
+                  <!-- Edit Plantel Actual inline -->
+                  <div v-if="emp._editingActual" class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+                    <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#007F92]/20 focus:border-[#007F92] outline-none cursor-pointer shadow-sm">
+                      <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+                    </select>
+                    <button @click="emp._editingActual = false" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-white rounded-xl shadow-sm border border-slate-200 outline-none shrink-0">
+                      <XIcon class="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+            
+            <div v-else class="flex flex-col items-center justify-center py-10 opacity-60">
+              <Users class="w-12 h-12 text-slate-300 mb-3" />
+              <p class="text-sm font-black text-slate-600">Ningún colaborador</p>
+              <p class="text-xs font-bold text-slate-400 mt-1 max-w-[200px] text-center">Busca y selecciona a una o más personas para crear su pase.</p>
+            </div>
+          </div>
+
+          <!-- Motivo Section -->
+          <div v-if="checkingCoverage" class="mt-8 pt-8 border-t border-white/60 flex flex-col items-center justify-center">
+             <Loader2 class="w-8 h-8 animate-spin text-[#007F92] mb-3 shrink-0" />
+             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
           </div>
           
-          <div v-else class="flex flex-col items-center justify-center h-full text-center py-10 opacity-60">
-            <Users class="w-12 h-12 text-slate-300 mb-3" />
-            <p class="text-sm font-black text-slate-600">Ningún colaborador</p>
-            <p class="text-xs font-bold text-slate-400 mt-1 max-w-[200px]">Busca y selecciona a una o más personas para crear su pase.</p>
-          </div>
-        </div>
-
-        <!-- Motivo Section (Fixed Bottom) -->
-        <div v-if="checkingCoverage" class="shrink-0 p-6 md:p-8 border-t border-white/60 bg-white/60 backdrop-blur-xl z-20 flex flex-col items-center justify-center shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
-           <Loader2 class="w-8 h-8 animate-spin text-[#007F92] mb-3 shrink-0" />
-           <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
-        </div>
-        
-        <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="shrink-0 p-6 md:p-8 border-t border-white/60 bg-white/70 backdrop-blur-xl z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] pb-10 xl:pb-8">
-          <div class="flex items-center gap-4 mb-5">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
-              2
+          <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="mt-6 pt-6 border-t border-white/60 flex flex-col">
+            <div class="flex items-center gap-4 mb-5">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
+                2
+              </div>
+              <div>
+                <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Motivo</h2>
+                <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Selecciona la razón de incidencia</p>
+              </div>
             </div>
-            <div>
-              <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Motivo</h2>
-              <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Selecciona la razón de incidencia</p>
-            </div>
-          </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-[35vh] overflow-y-auto custom-scrollbar p-1 -mx-1">
-            <ScenarioCard 
-              v-for="scenario in predefinedScenarios" 
-              :key="scenario.id" 
-              :title="scenario.title" 
-              :iconName="scenario.icon" 
-              :active="activeScenario?.id === scenario.id" 
-              @click="selectScenario(scenario)"
-            />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-1 -mx-1">
+              <ScenarioCard 
+                v-for="scenario in predefinedScenarios" 
+                :key="scenario.id" 
+                :title="scenario.title" 
+                :iconName="scenario.icon" 
+                :active="activeScenario?.id === scenario.id" 
+                @click="selectScenario(scenario)"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -440,7 +445,7 @@
     >
       <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0 relative p-5 md:p-8 pb-20">
         <template v-if="selectedEmployees.length > 0">
-          <div v-for="(emp, idx) in selectedEmployees" :key="emp.id" class="flex-1 min-h-[450px] max-h-[700px] shrink-0 bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-5 sm:p-8 shadow-sm border border-white animate-in fade-in slide-in-from-right-8 duration-500 relative overflow-hidden flex flex-col" :style="{ animationDelay: `${idx * 0.1}s` }">
+          <div v-for="(emp, idx) in selectedEmployees" :key="emp.id" class="flex-1 min-h-[450px] max-h-[700px] shrink-0 animate-in fade-in slide-in-from-right-8 duration-500 relative flex flex-col" :style="{ animationDelay: `${idx * 0.1}s` }">
              <EmployeeContextPanel :employee="emp" class="flex-1 h-full" />
           </div>
         </template>

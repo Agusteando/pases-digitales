@@ -26,7 +26,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/login', { replace: true })
   }
 
-  const adminRoutes = ['/analytics', '/routing', '/users', '/notifications']
+  const adminRoutes = ['/analytics', '/routing', '/users', '/notifications', '/kardex']
   if (adminRoutes.some(r => to.path.startsWith(r)) && !user.value.is_admin) {
     return navigateTo('/', { replace: true })
   }

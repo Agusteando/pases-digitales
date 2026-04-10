@@ -1,4 +1,3 @@
-
 <template>
   <div class="min-h-[100dvh] flex flex-col md:flex-row bg-transparent relative">
     
@@ -29,6 +28,7 @@
           <History class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
+          v-if="user?.is_admin"
           to="/kardex" 
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
@@ -94,7 +94,7 @@
         <History class="w-5 h-5" />
         <span class="text-[10px] font-bold">Historial</span>
       </NuxtLink>
-      <NuxtLink to="/kardex" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/kardex' ? '' : 'text-slate-400'">
+      <NuxtLink v-if="user?.is_admin" to="/kardex" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/kardex' ? '' : 'text-slate-400'">
         <CalendarDays class="w-5 h-5" />
         <span class="text-[10px] font-bold">Kardex</span>
       </NuxtLink>

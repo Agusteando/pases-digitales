@@ -1,9 +1,8 @@
-components/EmployeeContextPanel.vue
 <template>
   <div class="flex flex-col h-full min-h-0 relative w-full bg-transparent">
     
-    <!-- Top Information Card -->
-    <div class="flex flex-col relative z-20 shrink-0 mb-4 p-4 sm:p-5 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-sm rounded-[1.5rem]">
+    <!-- Top Information Header (No background) -->
+    <div class="flex flex-col relative z-20 shrink-0 mb-6">
       <div class="flex items-center gap-4">
         <PremiumAvatar :src="displayPic" :name="employee.name" size="md" class="shrink-0 shadow-sm border border-white" />
         
@@ -21,11 +20,11 @@ components/EmployeeContextPanel.vue
             <span v-if="horarioEmpleado" class="text-[10px] font-black text-[#00497B] bg-[#00497B]/10 px-2 py-0.5 rounded-md border border-[#00497B]/20 flex items-center gap-1">
               <Clock class="w-3 h-3 opacity-80" /> {{ horarioEmpleado }}
             </span>
-            <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white">
+            <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white shadow-sm">
               <Building2 class="w-3 h-3 opacity-70" /> {{ displayPlantel }}
             </span>
             <span v-if="displayPlantel && displayRole" class="text-[#86888C]/30 hidden sm:inline">•</span>
-            <span v-if="displayRole" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white">
+            <span v-if="displayRole" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white shadow-sm">
               <Briefcase class="w-3 h-3 opacity-70" /> {{ displayRole }}
             </span>
           </div>
@@ -33,7 +32,7 @@ components/EmployeeContextPanel.vue
       </div>
 
       <!-- KPI Summary -->
-      <div class="flex flex-col mt-4 pt-3 border-t border-[#86888C]/10 relative gap-3">
+      <div class="flex flex-col mt-5 pt-4 border-t border-[#86888C]/15 relative gap-3">
         
         <div class="flex flex-wrap gap-x-6 gap-y-3">
           <div v-if="Object.keys(statCounters).length === 0" class="text-[10px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-1.5">
@@ -148,9 +147,10 @@ components/EmployeeContextPanel.vue
 
                   <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
 
-                  <div class="flex-1 pl-4 relative z-10">
-                    <div class="bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] group-hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.25rem] p-4 sm:p-5 group-hover:bg-white/90 group-hover:-translate-y-0.5">
+                  <div class="flex-1 pl-4 sm:pl-5 relative z-10">
+                    <div class="py-2 transition-all duration-300 group-hover:-translate-y-0.5">
                       
+                      <!-- Header -->
                       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
                         <div>
                           <h5 class="text-sm font-black text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
@@ -211,8 +211,8 @@ components/EmployeeContextPanel.vue
 
               <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10" :class="getKardexColor(rec.incidencia).bg"></div>
 
-              <div class="flex-1 pl-4 relative z-10">
-                <div class="bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.25rem] p-4 sm:p-5">
+              <div class="flex-1 pl-4 sm:pl-5 relative z-10">
+                <div class="py-2 transition-all duration-300">
                   <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
                     <div>
                       <h5 class="text-sm font-black text-[#50535A] leading-tight flex items-center gap-2">

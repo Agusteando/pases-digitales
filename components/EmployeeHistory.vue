@@ -64,9 +64,9 @@
               <!-- Node Center Column -->
               <div class="absolute left-[3.5rem] sm:left-[4.5rem] top-[1.35rem] w-3 h-3 rounded-full border-[2.5px] border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
 
-              <!-- Floating Card Content -->
+              <!-- Floating Content -->
               <div class="flex-1 pl-4 sm:pl-6 relative z-10">
-                <div class="bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.5rem] p-5 sm:p-6 group-hover:bg-white/90 group-hover:-translate-y-0.5">
+                <div class="py-2 transition-all duration-300 group-hover:-translate-y-0.5">
                   
                   <!-- Header -->
                   <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">

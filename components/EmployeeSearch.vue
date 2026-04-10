@@ -26,9 +26,9 @@
       </div>
     </div>
 
-    <!-- Search Results Popover -->
+    <!-- Search Results Dedicated Block -->
     <transition name="fade">
-      <div v-if="showResults" class="absolute top-full left-0 right-0 mt-3 w-full bg-white/95 backdrop-blur-2xl rounded-[1.5rem] shadow-2xl border border-white overflow-hidden z-[100]">
+      <div v-if="showResults" class="mt-3 w-full bg-white/90 backdrop-blur-xl rounded-[1.5rem] shadow-sm border border-white/60 overflow-hidden relative">
         <div v-if="results.length > 0" class="max-h-[320px] overflow-y-auto py-2 custom-scrollbar">
           <div v-for="(emp, idx) in results" :key="emp.id" 
                @mousedown.prevent="selectEmployee(emp)" 
