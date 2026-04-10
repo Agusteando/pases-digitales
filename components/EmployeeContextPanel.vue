@@ -3,12 +3,12 @@
   <div class="flex flex-col h-full min-h-0 relative w-full">
     
     <!-- Header: Employee Context -->
-    <div class="flex flex-col gap-4 relative z-10 shrink-0 mb-6 pb-6 border-b border-slate-100">
-      <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-        <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 shadow-sm" />
+    <div class="flex flex-col relative z-10 shrink-0 mb-6 pb-6 border-b border-slate-200/60">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
+        <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 shadow-sm border border-slate-100" />
         
         <div class="flex flex-col min-w-0 flex-1">
-          <h2 class="text-xl font-semibold text-slate-900 tracking-tight line-clamp-2 break-words" :title="employee.name">
+          <h2 class="text-2xl font-black text-slate-900 tracking-tight line-clamp-2 break-words" :title="employee.name">
             {{ employee.name }}
           </h2>
           
@@ -17,28 +17,27 @@
             <div class="h-2 bg-slate-100 rounded animate-pulse w-2/3"></div>
           </div>
           
-          <div v-else class="mt-1 flex flex-wrap gap-2 items-center">
-            <span v-if="displayPlantel" class="text-slate-500 text-xs flex items-center gap-1">
-              <Building2 class="w-3.5 h-3.5" /> {{ displayPlantel }}
+          <div v-else class="mt-1.5 flex flex-wrap gap-2.5 items-center">
+            <span v-if="displayPlantel" class="text-slate-600 font-bold text-xs flex items-center gap-1.5">
+              <Building2 class="w-3.5 h-3.5 text-slate-400" /> {{ displayPlantel }}
             </span>
             <span v-if="displayPlantel && displayRole" class="text-slate-300">•</span>
-            <span v-if="displayRole" class="text-slate-500 text-xs flex items-center gap-1">
-              <Briefcase class="w-3.5 h-3.5" /> {{ displayRole }}
+            <span v-if="displayRole" class="text-slate-600 font-bold text-xs flex items-center gap-1.5">
+              <Briefcase class="w-3.5 h-3.5 text-slate-400" /> {{ displayRole }}
             </span>
           </div>
         </div>
       </div>
 
-      <!-- KPI Summary Line -->
-      <div class="flex flex-wrap items-center gap-2 mt-2">
-        <div v-if="Object.keys(statCounters).length === 0" class="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded-md">
-          <CheckCircle2 class="w-3.5 h-3.5 text-slate-400" /> Sin incidencias en el ciclo
+      <!-- KPI Summary -->
+      <div class="flex flex-wrap gap-x-6 gap-y-3 mt-5 pt-5 border-t border-slate-100">
+        <div v-if="Object.keys(statCounters).length === 0" class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+          <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Sin incidencias registradas en el ciclo actual.
         </div>
         <template v-else>
-          <div v-for="(count, cat) in statCounters" :key="cat" class="flex items-center gap-1.5 px-2. py-1 rounded-md bg-slate-50 transition-all cursor-default">
-            <div class="w-1.5 h-1.5 rounded-full" :class="getCategoryColor(Number(cat))"></div>
-            <span class="text-[11px] font-medium text-slate-600">{{ getCategoryName(Number(cat)) }}</span>
-            <span class="text-[11px] font-bold text-slate-700 ml-0.5">{{ count }}</span>
+          <div v-for="(count, cat) in statCounters" :key="cat" class="flex flex-col">
+            <span class="text-xl font-black text-slate-800 leading-none tracking-tight">{{ count }}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{{ getCategoryName(Number(cat)) }}</span>
           </div>
         </template>
       </div>
@@ -46,17 +45,17 @@
 
     <!-- Active Open Pass Warning -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="shrink-0 bg-amber-50 rounded-xl p-4 flex flex-col sm:flex-row gap-4 border border-amber-100 relative z-10 items-start sm:items-center justify-between group transition-all mb-6">
+      <div v-if="todayPasses.length > 0" class="shrink-0 bg-[#F49A6D]/10 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 border border-[#F49A6D]/20 relative z-10 items-start sm:items-center justify-between group transition-all mb-6">
         <div class="flex gap-3 items-center min-w-0">
-          <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 text-amber-600">
-            <AlertCircle class="w-4 h-4" />
+          <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 border border-[#F49A6D]/20 shadow-sm text-[#F49A6D]">
+            <AlertCircle class="w-5 h-5" />
           </div>
           <div class="min-w-0">
-            <h4 class="text-sm font-semibold text-amber-900 truncate">Pase abierto hoy</h4>
-            <p class="text-xs text-amber-700 mt-0.5 truncate">El colaborador ya cuenta con un registro hoy.</p>
+            <h4 class="text-sm font-black text-slate-800 truncate">Pase abierto hoy</h4>
+            <p class="text-[11px] font-bold text-slate-600 mt-0.5 truncate">El colaborador ya cuenta con un registro hoy.</p>
           </div>
         </div>
-        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-3 py-2 bg-white text-amber-700 hover:text-amber-800 border border-amber-200 text-xs font-medium rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 outline-none">
+        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-4 py-2.5 bg-white text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-black rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 outline-none uppercase tracking-widest">
           <span>Abrir</span>
           <ArrowRight class="w-3.5 h-3.5" />
         </NuxtLink>
@@ -67,82 +66,90 @@
     <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 pb-12 relative z-10" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
       
       <!-- Sticky History Header -->
-      <div class="sticky top-0 bg-white/95 backdrop-blur-xl z-30 pt-3 pb-3 mb-4 flex items-center justify-between border-b border-slate-100">
-        <div>
-          <h3 class="text-sm font-semibold text-slate-800">Historial de pases</h3>
-          <p class="text-xs text-slate-500" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</p>
+      <div class="sticky top-0 bg-white/95 backdrop-blur-xl z-30 pt-3 pb-3 mb-6 flex items-center justify-between border-b border-slate-200/60">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200/60 flex items-center justify-center shadow-sm shrink-0">
+            <History class="w-4 h-4 text-slate-500" />
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-slate-900 tracking-tight">Historial</h3>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</p>
+          </div>
         </div>
-        <!-- Subtly integrated search affordance -->
+        <!-- Search Affordance -->
         <div class="relative flex items-center justify-end">
-          <div class="flex items-center bg-white border border-slate-200 rounded-lg px-2 py-1.5 transition-all duration-300 w-8 hover:w-48 focus-within:w-48 overflow-hidden group cursor-text">
-            <Search class="w-4 h-4 text-slate-400 shrink-0 ml-0.5 group-hover:text-brand-500 focus-within:text-brand-500 transition-colors" />
-            <input type="text" v-model="searchQuery" placeholder="Buscar..." class="ml-2 bg-transparent text-xs font-medium text-slate-700 outline-none w-full opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity placeholder:text-slate-400" />
+          <div class="flex items-center bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-full px-2 py-1.5 transition-all duration-300 w-8 hover:w-56 focus-within:w-56 focus-within:bg-white focus-within:border-[#007F92]/40 focus-within:shadow-sm overflow-hidden group cursor-text">
+            <Search class="w-4 h-4 text-slate-400 shrink-0 ml-0.5 group-focus-within:text-[#007F92] transition-colors" />
+            <input type="text" v-model="searchQuery" placeholder="Buscar..." class="ml-2 bg-transparent text-xs font-bold text-slate-700 outline-none w-full opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity placeholder:text-slate-400" />
           </div>
         </div>
       </div>
 
-      <div v-if="pendingHistory" class="py-12 flex justify-center"><Loader2 class="w-6 h-6 animate-spin text-brand-400" /></div>
+      <div v-if="pendingHistory" class="py-16 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
       
-      <div v-else-if="historyError" class="py-12 flex flex-col items-center justify-center text-center bg-slate-50 rounded-2xl border border-slate-100">
-        <AlertTriangle class="w-6 h-6 text-slate-400 mb-2" />
-        <p class="text-sm font-medium text-slate-600">Error de conexión</p>
+      <div v-else-if="historyError" class="py-16 flex flex-col items-center justify-center text-center bg-slate-50 rounded-[2rem] border border-slate-100">
+        <AlertTriangle class="w-8 h-8 text-slate-300 mb-3" />
+        <p class="text-sm font-black text-slate-600">Error de conexión</p>
+        <p class="text-xs font-medium text-slate-500 mt-1">No se pudo cargar la información.</p>
       </div>
 
-      <div v-else-if="!filteredGroupedHistory.length" class="py-12 flex flex-col items-center justify-center text-center bg-slate-50 rounded-2xl border border-slate-100">
-        <FileText class="w-6 h-6 text-slate-300 mb-2" />
-        <p class="text-sm font-medium text-slate-600">Sin incidencias previas</p>
+      <div v-else-if="!filteredGroupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center bg-slate-50 rounded-[2rem] border border-slate-100">
+        <FileText class="w-8 h-8 text-slate-300 mb-3" />
+        <p class="text-sm font-black text-slate-600">Sin incidencias previas</p>
+        <p class="text-xs font-medium text-slate-500 mt-1">No hay registros que mostrar.</p>
       </div>
 
       <div v-else class="relative mt-2">
-        <div class="absolute top-2 bottom-0 left-[15px] w-px bg-slate-200 z-0"></div>
+        <div class="absolute top-2 bottom-0 left-[19px] w-px bg-slate-200 z-0"></div>
 
-        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-6">
+        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-8">
           
-          <div class="relative pl-10 mb-4 flex items-center">
-             <div class="absolute left-[13px] top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-slate-300 ring-4 ring-white z-10"></div>
-             <span class="text-xs font-semibold text-slate-500">
+          <div class="relative pl-12 mb-5 flex items-center">
+             <div class="absolute left-[16px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-white z-10"></div>
+             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                {{ group.month }}
              </span>
           </div>
           
           <div class="space-y-0">
-            <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-10 pb-4 group/timeline timeline-item" :style="{ animationDelay: `${index * 0.04}s` }">
+            <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-12 pb-5 group/timeline timeline-item" :style="{ animationDelay: `${index * 0.04}s` }">
               
-              <div class="absolute left-[12px] top-4 w-2 h-2 rounded-full z-10 ring-4 ring-white transition-transform duration-300 group-hover/timeline:scale-125" :class="getCategoryColor(pass.category_id)"></div>
+              <div class="absolute left-[15px] top-5 w-2.5 h-2.5 rounded-full z-10 ring-4 ring-white transition-transform duration-300 group-hover/timeline:scale-125" :class="getCategoryColor(pass.category_id)"></div>
               
-              <div class="block bg-transparent py-2 group/card relative">
-                <div class="flex items-baseline justify-between mb-1">
+              <div class="block bg-white/60 backdrop-blur-sm p-4 sm:p-5 rounded-[1.25rem] border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow relative group/card">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-2 relative z-10">
                   <div class="flex items-center gap-2">
-                    <h4 class="text-sm font-medium text-slate-800">
-                      {{ getCategoryName(pass.category_id) }}
-                    </h4>
-                    <span class="text-xs text-slate-400">#{{ String(pass.id).padStart(5, '0') }}</span>
+                    <span class="font-mono text-xs font-black text-slate-400 group-hover/card:text-slate-600 transition-colors">#{{ String(pass.id).padStart(5, '0') }}</span>
+                    <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded border"
+                          :class="{'bg-amber-50 text-amber-700 border-amber-200/60': pass.status === 'pendiente',
+                                   'bg-emerald-50 text-emerald-700 border-emerald-200/60': pass.status === 'autorizado',
+                                   'bg-rose-50 text-rose-700 border-rose-200/60': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                      {{ pass.status }}
+                    </span>
                   </div>
-                  <span class="text-xs text-slate-500">{{ formatDateOnly(pass.date) }}</span>
+                  <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 shrink-0 w-max">{{ formatDateOnly(pass.date) }}</span>
                 </div>
+                
+                <h4 class="text-sm font-black text-slate-800 flex flex-wrap items-center gap-2 mb-1 relative z-10 tracking-tight">
+                  {{ getCategoryName(pass.category_id) }}
+                </h4>
 
-                <div v-if="pass.tipo_permiso" class="mb-1">
-                  <span class="text-xs text-slate-500">{{ pass.tipo_permiso }}</span>
+                <div v-if="pass.tipo_permiso" class="mb-2 relative z-10">
+                  <span class="inline-flex items-center text-[10px] font-bold bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100">{{ pass.tipo_permiso }}</span>
                 </div>
                 
-                <p v-if="pass.comentarios" class="text-sm text-slate-600 leading-relaxed line-clamp-2 mt-1">
-                  {{ pass.comentarios }}
-                </p>
+                <p v-if="pass.comentarios" class="text-xs font-medium text-slate-600 leading-relaxed mt-2 relative z-10">"{{ pass.comentarios }}"</p>
                 
-                <div class="mt-2 flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-medium px-2 py-0.5 rounded-md"
-                          :class="{'bg-amber-50 text-amber-700': pass.status === 'pendiente',
-                                   'bg-emerald-50 text-emerald-700': pass.status === 'autorizado',
-                                   'bg-red-50 text-red-700': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                      {{ pass.status.charAt(0).toUpperCase() + pass.status.slice(1) }}
-                    </span>
-                    <span v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="text-[10px] text-slate-500">
-                      por {{ pass.authorized_by ? pass.authorized_by.split(' ')[0] : 'Sistema' }}
+                <div class="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between relative z-10">
+                  <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-1.5">
+                    <ShieldCheck class="w-3.5 h-3.5" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-rose-500'" />
+                    <span class="text-[9px] font-bold uppercase tracking-widest" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-rose-700'">
+                      Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by.split(' ')[0] : '' }}
                     </span>
                   </div>
+                  <div v-else></div>
                   
-                  <NuxtLink :to="`/pass/${pass.id}`" class="text-brand-600 hover:text-brand-700 flex items-center gap-1 text-[11px] font-medium opacity-0 group-hover/card:opacity-100 transition-opacity outline-none">
+                  <NuxtLink :to="`/pass/${pass.id}`" class="text-[#007F92] flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity hover:text-[#006575] outline-none text-[10px] font-black uppercase tracking-widest">
                     <span>Ver detalle</span>
                     <ArrowRight class="w-3 h-3" />
                   </NuxtLink>
@@ -174,7 +181,7 @@ const getCategoryName = (id) => {
 }
 
 const getCategoryColor = (id) => {
-  const map = { 1: 'bg-orange-400', 2: 'bg-blue-400', 3: 'bg-rose-400', 4: 'bg-amber-400', 5: 'bg-teal-400' }
+  const map = { 1: 'bg-[#F49A6D]', 2: 'bg-[#66A8D8]', 3: 'bg-[#E83F4B]', 4: 'bg-[#FCBF2C]', 5: 'bg-[#007F92]' }
   return map[id] || 'bg-slate-300'
 }
 

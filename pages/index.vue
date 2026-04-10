@@ -4,40 +4,40 @@
     
     <!-- LEFT COLUMN (Dynamic Layout Switcher) -->
     <section 
-      class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-slate-200 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white overflow-hidden"
+      class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-slate-200/80 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white overflow-hidden"
       :class="activeScenario ? 'xl:w-[280px] 2xl:w-[320px] xl:border-r' : 'xl:w-[460px] 2xl:w-[500px] xl:border-r'"
     >
       <!-- STATE 1: NORMAL EXPANDED MODE -->
       <div class="absolute top-0 left-0 h-full flex flex-col transition-all duration-500 w-full xl:w-[460px] 2xl:w-[500px] z-10"
            :class="activeScenario ? 'opacity-0 translate-x-[-20px] pointer-events-none' : 'opacity-100 translate-x-0 delay-200'">
         <header class="px-6 md:px-8 py-6 md:py-8 border-b border-slate-100 bg-white shrink-0">
-          <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Nuevo pase</h1>
-          <p class="text-slate-500 mt-1 text-sm">Registro y justificación de incidencias</p>
+          <h1 class="text-3xl font-black text-slate-900 tracking-tight">Nuevo pase</h1>
+          <p class="text-slate-500 mt-1 text-sm font-bold">Registro y justificación de incidencias</p>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-8 min-h-0">
+        <div class="flex-1 overflow-y-auto px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0">
           
           <div class="relative">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors"
-                   :class="selectedEmployees.length > 0 ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-500'">
-                <span>1</span>
+            <div class="flex items-center gap-4 mb-5">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm shrink-0 bg-[#618B2F] text-white">
+                1
               </div>
               <div>
-                <h2 class="text-sm font-semibold text-slate-800 tracking-tight">Seleccionar colaborador</h2>
+                <h2 class="text-lg font-black text-slate-900 tracking-tight leading-none">Seleccionar colaborador</h2>
+                <p class="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Identifica a la persona</p>
               </div>
             </div>
             
             <EmployeeSearch @select="addEmployee" />
             
-            <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-4">
-              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white p-4 rounded-xl border border-slate-200 shadow-sm group transition-all relative overflow-hidden hover:border-brand-200">
+            <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
+              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white p-4 rounded-[1.25rem] border border-slate-200 shadow-sm group transition-all relative overflow-hidden hover:border-slate-300">
                 <div class="flex items-start justify-between mb-2 relative z-10">
                   <div class="flex items-center gap-3 min-w-0 pr-2">
-                     <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="md" class="shrink-0" />
+                     <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="md" class="shrink-0 border border-slate-100" />
                      <div class="flex flex-col min-w-0">
-                       <span class="text-sm font-semibold text-slate-900 truncate" :title="emp.name">{{ emp.name }}</span>
-                       <span v-if="myProfile && emp.name === myProfile.name" class="text-[10px] font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded mt-1 w-max">Registro propio</span>
+                       <span class="text-sm font-black text-slate-900 truncate" :title="emp.name">{{ emp.name }}</span>
+                       <span v-if="myProfile && emp.name === myProfile.name" class="text-[9px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded uppercase tracking-widest mt-1.5 w-max border border-brand-100/50">Registro propio</span>
                      </div>
                   </div>
                   <button type="button" @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-red-500 bg-transparent w-7 h-7 flex items-center justify-center rounded-full transition-colors focus:outline-none shrink-0 outline-none">
@@ -51,35 +51,35 @@
                 </div>
                 <div v-else class="flex flex-col gap-2 w-full mt-1 relative z-10 pt-3 border-t border-slate-50">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span v-if="emp.puesto" class="text-slate-500 text-xs flex items-center gap-1">
-                      <Briefcase class="w-3.5 h-3.5" /> {{ emp.puesto }}
+                    <span v-if="emp.puesto" class="text-slate-600 font-bold text-[11px] flex items-center gap-1.5">
+                      <Briefcase class="w-3.5 h-3.5 text-slate-400" /> {{ emp.puesto }}
                     </span>
                     <span v-if="emp.puesto && emp.plantelBase" class="text-slate-300">•</span>
-                    <span v-if="emp.plantelBase" class="text-slate-500 text-xs flex items-center gap-1" :class="{'opacity-60': emp.plantelActual && emp.plantelActual !== emp.plantelBase}">
-                      <Building2 class="w-3.5 h-3.5" />
+                    <span v-if="emp.plantelBase" class="text-slate-600 font-bold text-[11px] flex items-center gap-1.5" :class="{'opacity-60': emp.plantelActual && emp.plantelActual !== emp.plantelBase}">
+                      <Building2 class="w-3.5 h-3.5 text-slate-400" />
                       {{ emp.plantelBase }}
                     </span>
                     
                     <template v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase">
-                      <span class="text-brand-600 text-xs font-medium flex items-center gap-1 animate-in fade-in duration-300 ml-2 bg-brand-50 px-2 py-0.5 rounded-md">
+                      <span class="text-[#007F92] text-[11px] font-black flex items-center gap-1.5 animate-in fade-in duration-300 ml-2 bg-[#007F92]/10 px-2.5 py-1 rounded-lg border border-[#007F92]/20">
                         <MapPin class="w-3.5 h-3.5" />
                         {{ emp.plantelActual }}
-                        <button type="button" @click.stop="resetPlantelActual(emp)" class="ml-1 hover:text-brand-800 transition-colors outline-none flex items-center justify-center"><XIcon class="w-3 h-3 shrink-0"/></button>
+                        <button type="button" @click.stop="resetPlantelActual(emp)" class="ml-1.5 hover:text-[#006575] transition-colors outline-none flex items-center justify-center"><XIcon class="w-3 h-3 shrink-0"/></button>
                       </span>
                     </template>
-                    <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-medium text-slate-400 hover:text-brand-600 ml-2 transition-colors flex items-center gap-1 outline-none">
+                    <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-black text-slate-400 hover:text-[#007F92] ml-2 transition-colors flex items-center gap-1 outline-none uppercase tracking-widest">
                       <MapPin class="w-3 h-3 shrink-0" /> Cambiar
                     </button>
                   </div>
 
-                  <div v-if="emp._editingActual" class="p-2 bg-slate-50 rounded-lg flex items-center gap-2 animate-in fade-in duration-200 mt-2">
+                  <div v-if="emp._editingActual" class="p-2 bg-slate-50 rounded-xl flex items-center gap-2 animate-in fade-in duration-200 mt-2 border border-slate-100">
                      <div class="flex-1">
-                        <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="w-full px-2 py-1.5 rounded-md border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:ring-1 focus:ring-brand-400 focus:border-brand-400 outline-none cursor-pointer transition-all">
+                        <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="w-full px-2 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#007F92]/20 focus:border-[#007F92] outline-none cursor-pointer transition-all shadow-sm">
                            <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
                         </select>
                      </div>
-                     <button type="button" @click="emp._editingActual = false" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-transparent rounded-md transition-colors outline-none shrink-0">
-                        <XIcon class="w-3.5 h-3.5 shrink-0" />
+                     <button type="button" @click="emp._editingActual = false" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-white rounded-lg shadow-sm transition-colors border border-slate-200 outline-none shrink-0">
+                        <XIcon class="w-4 h-4 shrink-0" />
                      </button>
                   </div>
                 </div>
@@ -87,19 +87,19 @@
             </div>
           </div>
 
-          <div v-if="checkingCoverage" class="py-8 flex flex-col items-center justify-center bg-slate-50 rounded-xl">
-             <Loader2 class="w-6 h-6 animate-spin text-brand-500 mb-2 shrink-0" />
-             <p class="text-xs font-medium text-slate-500">Verificando responsables...</p>
+          <div v-if="checkingCoverage" class="py-10 flex flex-col items-center justify-center bg-slate-50 rounded-[1.5rem] border border-slate-100">
+             <Loader2 class="w-8 h-8 animate-spin text-[#007F92] mb-3 shrink-0" />
+             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
           </div>
           
           <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500 pb-8">
-            <div class="flex items-center gap-3 mb-4 transition-opacity duration-300" :class="selectedEmployees.length === 0 ? 'opacity-50' : 'opacity-100'">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors"
-                   :class="activeScenario ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-500'">
-                <span>2</span>
+            <div class="flex items-center gap-4 mb-5 transition-opacity duration-300" :class="selectedEmployees.length === 0 ? 'opacity-50' : 'opacity-100'">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm shrink-0 bg-[#007F92] text-white">
+                2
               </div>
               <div>
-                <h2 class="text-sm font-semibold text-slate-800 tracking-tight">Motivo de la incidencia</h2>
+                <h2 class="text-lg font-black text-slate-900 tracking-tight leading-none">Motivo de la incidencia</h2>
+                <p class="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Selecciona la razón</p>
               </div>
             </div>
 
@@ -123,48 +123,48 @@
         
         <div class="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar flex flex-col gap-6">
           
-          <div class="flex items-center justify-between mb-1 border-b border-slate-100 pb-2">
-            <h2 class="text-xs font-semibold text-slate-800">Colaboradores</h2>
-            <button @click="resetFlow" class="text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors outline-none flex items-center gap-1">
-              <RotateCcw class="w-3.5 h-3.5" /> Reiniciar
+          <div class="flex items-center justify-between mb-1 border-b border-slate-100 pb-3">
+            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaboradores</h2>
+            <button @click="resetFlow" class="text-[10px] font-black text-[#007F92] hover:text-[#006575] transition-colors outline-none flex items-center gap-1.5 uppercase tracking-widest bg-[#007F92]/5 hover:bg-[#007F92]/10 px-2 py-1 rounded-md">
+              <RotateCcw class="w-3 h-3" /> Reiniciar
             </button>
           </div>
 
-          <div class="flex flex-col gap-2">
-            <div v-for="emp in selectedEmployees" :key="emp.id" class="bg-white p-2.5 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between group relative overflow-hidden">
+          <div class="flex flex-col gap-2.5">
+            <div v-for="emp in selectedEmployees" :key="emp.id" class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center justify-between group relative overflow-hidden">
               <div class="flex items-center gap-3 w-full min-w-0 pr-2">
-                <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0" />
+                <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 border border-slate-200" />
                 <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-medium text-slate-900 truncate" :title="emp.name">{{ emp.name.split(' ')[0] }} {{ emp.name.split(' ')[1] || '' }}</span>
-                  <span class="text-xs text-slate-500 truncate">{{ emp.plantelActual || emp.plantelBase }}</span>
+                  <span class="text-sm font-black text-slate-900 truncate tracking-tight" :title="emp.name">{{ emp.name.split(' ')[0] }} {{ emp.name.split(' ')[1] || '' }}</span>
+                  <span class="text-[10px] font-bold text-slate-500 truncate mt-[1px]">{{ emp.plantelActual || emp.plantelBase }}</span>
                 </div>
               </div>
-              <button @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-red-500 w-6 h-6 flex items-center justify-center rounded-full transition-colors shrink-0 outline-none">
+              <button @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-red-500 w-6 h-6 flex items-center justify-center rounded-full transition-colors shrink-0 outline-none hover:bg-red-50">
                 <XIcon class="w-4 h-4" />
               </button>
             </div>
             
-            <button @click="activeScenario = null" class="mt-2 text-xs font-medium text-brand-600 hover:text-brand-700 flex items-center justify-center gap-1.5 py-2 rounded-lg transition-colors outline-none border border-transparent hover:bg-brand-50">
+            <button @click="activeScenario = null" class="mt-2 text-[10px] font-black text-[#007F92] hover:text-[#006575] flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-colors outline-none border border-dashed border-[#007F92]/30 hover:bg-[#007F92]/5 uppercase tracking-widest">
               <Plus class="w-3.5 h-3.5" /> Añadir otro
             </button>
           </div>
 
-          <div class="flex flex-col gap-2 relative mt-4">
-            <h3 class="text-xs font-semibold text-slate-800 mb-2 border-b border-slate-100 pb-2">Motivo</h3>
+          <div class="flex flex-col gap-2 relative mt-6">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-3">Motivo</h3>
             <button 
               v-for="scenario in predefinedScenarios" 
               :key="scenario.id"
               @click="selectScenario(scenario)"
               class="flex items-center gap-3 w-full p-2.5 rounded-xl transition-all outline-none text-left group"
               :class="activeScenario?.id === scenario.id 
-                ? 'bg-brand-50 ring-1 ring-brand-200' 
-                : 'bg-white hover:bg-slate-50 border border-transparent hover:border-slate-200'"
+                ? 'bg-[#007F92] text-white shadow-md' 
+                : 'bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200'"
             >
               <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0"
-                   :class="activeScenario?.id === scenario.id ? 'bg-brand-100 text-brand-600' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-500'">
+                   :class="activeScenario?.id === scenario.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-[#007F92]'">
                 <component :is="getScenarioIcon(scenario.icon)" class="w-4 h-4 shrink-0" />
               </div>
-              <span class="text-sm font-medium tracking-tight" :class="activeScenario?.id === scenario.id ? 'text-brand-900 font-semibold' : 'text-slate-700'">{{ scenario.title }}</span>
+              <span class="text-xs font-black tracking-tight" :class="activeScenario?.id === scenario.id ? 'text-white' : 'text-slate-700'">{{ scenario.title }}</span>
             </button>
           </div>
         </div>
@@ -173,115 +173,116 @@
 
     <!-- MIDDLE COLUMN (Form Details) -->
     <section 
-      class="transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-hidden shrink-0 flex flex-col bg-white z-20 relative"
+      class="transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-hidden shrink-0 flex flex-col bg-slate-50 z-20 relative"
       :class="activeScenario ? 'max-h-[3000px] xl:max-h-none xl:w-[480px] 2xl:w-[560px] opacity-100 border-b xl:border-b-0 xl:border-r border-slate-200' : 'max-h-0 xl:max-h-none xl:w-0 opacity-0 border-transparent'"
     >
       <div class="w-full xl:w-[480px] 2xl:w-[560px] shrink-0 h-full flex flex-col relative transition-opacity duration-500 delay-300"
            :class="activeScenario ? 'opacity-100' : 'opacity-0'">
         <template v-if="activeScenario">
-          <header class="hidden xl:flex px-6 py-6 border-b border-slate-100 bg-white shrink-0 items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center shrink-0">
-                <component :is="getScenarioIcon(activeScenario.icon)" class="w-4 h-4 text-brand-600" />
+          <header class="hidden xl:flex px-6 py-6 border-b border-slate-200/60 bg-white shrink-0 items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-[1rem] bg-[#F49A6D] text-white flex items-center justify-center shadow-sm shrink-0 font-black text-base">
+                3
               </div>
               <div>
-                <h2 class="text-base font-semibold text-slate-900">{{ activeScenario.title }}</h2>
+                <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Detalles de la solicitud</h2>
+                <p class="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">Completa la información</p>
               </div>
             </div>
           </header>
 
-          <div class="flex-1 overflow-y-auto px-5 py-6 md:px-6 custom-scrollbar relative flex flex-col min-h-0 bg-white">
+          <div class="flex-1 overflow-y-auto px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent">
             
-            <div class="xl:hidden flex items-center gap-3 mb-5">
-              <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors"
-                   :class="isFormComplete ? 'bg-brand-50 text-brand-600' : 'bg-slate-100 text-slate-500'">
-                <span>3</span>
+            <div class="xl:hidden flex items-center gap-4 mb-6">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm shrink-0 bg-[#F49A6D] text-white">
+                3
               </div>
               <div>
-                <h2 class="text-sm font-semibold text-slate-800">Completar información</h2>
+                <h2 class="text-lg font-black text-slate-900 tracking-tight leading-none">Detalles de la solicitud</h2>
+                <p class="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Completa la información</p>
               </div>
             </div>
 
-            <form @submit.prevent class="relative flex flex-col gap-6 py-2">
+            <form @submit.prevent class="relative flex flex-col gap-8 py-2">
               
               <!-- Quick Presets -->
-              <div v-if="activeScenario.categoryId === 2" class="flex flex-wrap items-center gap-2 pb-5 border-b border-slate-100">
-                <button type="button" @click="applyPreset('now')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 outline-none">
+              <div v-if="activeScenario.categoryId === 2" class="flex flex-wrap items-center gap-2.5 pb-6 border-b border-slate-200/60">
+                <button type="button" @click="applyPreset('now')" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 transition-colors flex items-center gap-1.5 outline-none shadow-sm">
                   <Clock class="w-3.5 h-3.5" /> Hora actual
                 </button>
-                <button type="button" @click="applyPreset('transfer')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 outline-none">
+                <button type="button" @click="applyPreset('transfer')" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 transition-colors flex items-center gap-1.5 outline-none shadow-sm">
                   <MapPin class="w-3.5 h-3.5" /> Traslado plantel
                 </button>
-                <button v-if="hasBirthday()" type="button" @click="applyPreset('birthday')" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 outline-none">
+                <button v-if="hasBirthday()" type="button" @click="applyPreset('birthday')" class="px-3.5 py-2 bg-[#F49A6D]/10 hover:bg-[#F49A6D]/20 text-[#D97746] text-[10px] font-black uppercase tracking-widest rounded-xl border border-[#F49A6D]/30 transition-colors flex items-center gap-1.5 outline-none shadow-sm">
                   <Cake class="w-3.5 h-3.5" /> Cumpleaños
                 </button>
               </div>
 
               <!-- SECTION: Fechas y horarios -->
               <div class="relative group">
-                <h3 class="text-[11px] font-semibold text-slate-800 mb-3 block w-full">Fechas y horarios</h3>
+                <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest mb-4 block w-full">Fechas y horarios</h3>
                 
-                <div v-if="activeScenario.categoryId === 4" class="space-y-4 mb-4 pb-4 border-b border-slate-100">
+                <div v-if="activeScenario.categoryId === 4" class="space-y-4 mb-5 pb-5 border-b border-slate-200/60">
                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-medium text-slate-600">Fecha a cubrir</label>
-                      <input type="date" v-model="form.shiftDate" :min="todayDate" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fecha a cubrir</label>
+                      <input type="date" v-model="form.shiftDate" :min="todayDate" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                     </div>
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-medium text-slate-600">Inicio</label>
-                      <input type="time" v-model="form.shiftStart" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Inicio</label>
+                      <input type="time" v-model="form.shiftStart" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                     </div>
                     <div class="space-y-1.5">
-                      <label class="block text-xs font-medium text-slate-600">Fin</label>
-                      <input type="time" v-model="form.shiftEnd" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fin</label>
+                      <input type="time" v-model="form.shiftEnd" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                     </div>
                   </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5 col-span-2 sm:col-span-1">
-                    <label class="block text-xs font-medium text-slate-600">Fecha de inicio</label>
-                    <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fecha de inicio</label>
+                    <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                   </div>
                   
                   <div v-if="activeScenario.needsEndDate" class="space-y-1.5 col-span-2 sm:col-span-1">
-                    <label class="block text-xs font-medium text-slate-600">Fecha de término</label>
-                    <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fecha de término</label>
+                    <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                   </div>
 
                   <div v-if="activeScenario.needsTime" class="space-y-1.5 col-span-2 sm:col-span-1">
-                    <label class="block text-xs font-medium text-slate-600">Hora</label>
-                    <input type="time" v-model="form.time" required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Hora</label>
+                    <input type="time" v-model="form.time" required class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                   </div>
                 </div>
 
-                <div v-if="activeScenario.canReturn" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
-                  <div class="flex items-center gap-2">
-                    <input type="checkbox" id="regreso" v-model="form.regreso" class="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300 transition-colors cursor-pointer" />
-                    <label for="regreso" class="text-sm font-medium text-slate-700 cursor-pointer select-none">Retorna en la misma jornada</label>
+                <div v-if="activeScenario.canReturn" class="mt-5 pt-5 border-t border-slate-200/60 space-y-4">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" id="regreso" v-model="form.regreso" class="w-5 h-5 rounded text-[#007F92] focus:ring-[#007F92] border-slate-300 transition-colors cursor-pointer" />
+                    <label for="regreso" class="text-sm font-black text-slate-700 cursor-pointer select-none">Retorna en la misma jornada</label>
                   </div>
 
-                  <div v-if="form.regreso" class="space-y-1.5 animate-in fade-in bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <label class="block text-xs font-medium text-slate-600">Hora de retorno estimada</label>
-                    <input type="time" v-model="form.horaRegreso" required class="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 outline-none text-sm text-slate-800 transition-all bg-white" />
+                  <div v-if="form.regreso" class="space-y-2 animate-in fade-in bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <label class="block text-[10px] font-black text-[#007F92] uppercase tracking-widest px-1">Hora de retorno estimada</label>
+                    <input type="time" v-model="form.horaRegreso" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-slate-50 shadow-inner" />
                   </div>
                 </div>
               </div>
 
               <!-- SECTION: Especificaciones (Conditional) -->
-              <div v-if="activeScenario.categoryId === 3 || activeScenario.categoryId === 4 || activeScenario.isMedical || activeScenario.categoryId === 2" class="relative group pt-5 border-t border-slate-100">
-                <h3 class="text-[11px] font-semibold text-slate-800 mb-3 block w-full">Clasificación y opciones</h3>
+              <div v-if="activeScenario.categoryId === 3 || activeScenario.categoryId === 4 || activeScenario.isMedical || activeScenario.categoryId === 2" class="relative group pt-6 border-t border-slate-200/60">
+                <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest mb-4 block w-full">Clasificación y opciones</h3>
                 
-                <div v-if="activeScenario.categoryId === 3" class="space-y-2">
-                  <label class="block text-xs font-medium text-slate-600">Clasificación de ausencia</label>
-                  <div class="flex flex-wrap gap-2">
+                <div v-if="activeScenario.categoryId === 3" class="space-y-3">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Clasificación de ausencia</label>
+                  <div class="flex flex-wrap gap-2.5">
                     <button 
                       v-for="sub in subcategories" :key="sub"
                       type="button"
                       @click="form.tipoPermiso = form.tipoPermiso === sub ? '' : sub"
-                      class="px-3 py-2 text-xs font-medium rounded-lg transition-all border outline-none text-center"
+                      class="px-4 py-2.5 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border outline-none text-center shadow-sm"
                       :class="form.tipoPermiso === sub 
-                        ? 'bg-brand-50 text-brand-700 border-brand-200' 
+                        ? 'bg-[#E83F4B]/10 text-[#C62833] border-[#E83F4B]/30 ring-1 ring-[#E83F4B]/20' 
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'"
                     >
                       {{ sub }}
@@ -289,16 +290,16 @@
                   </div>
                 </div>
 
-                <div v-if="activeScenario.categoryId === 4" class="space-y-2">
-                  <label class="block text-xs font-medium text-slate-600">Tipo de permiso</label>
-                  <div class="flex flex-col sm:flex-row gap-2">
+                <div v-if="activeScenario.categoryId === 4" class="space-y-3">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Tipo de permiso</label>
+                  <div class="flex flex-col sm:flex-row gap-3">
                     <button 
                       v-for="opt in ['Permiso para salir temprano', 'Permiso para llegar tarde']" :key="opt"
                       type="button"
                       @click="form.tipoPermiso = form.tipoPermiso === opt ? '' : opt"
-                      class="px-3 py-2 text-xs font-medium rounded-lg transition-all border outline-none flex-1 text-center"
+                      class="px-4 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all border outline-none flex-1 text-center shadow-sm"
                       :class="form.tipoPermiso === opt 
-                        ? 'bg-brand-50 text-brand-700 border-brand-200' 
+                        ? 'bg-[#FCBF2C]/10 text-[#B7881C] border-[#FCBF2C]/30 ring-1 ring-[#FCBF2C]/20' 
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'"
                     >
                       {{ opt }}
@@ -306,21 +307,21 @@
                   </div>
                 </div>
 
-                <div v-if="activeScenario.isMedical" class="space-y-4">
+                <div v-if="activeScenario.isMedical" class="space-y-5">
                   <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-600">Folio IMSS</label>
-                    <input type="text" v-model="form.imss" placeholder="Ej. 12345678" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-800 transition-all bg-white" />
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Folio IMSS</label>
+                    <input type="text" v-model="form.imss" placeholder="Ej. 12345678" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 transition-all bg-white shadow-sm" />
                   </div>
-                  <div class="space-y-2">
-                    <label class="block text-xs font-medium text-slate-600">Clasificación Médica</label>
-                    <div class="flex flex-col sm:flex-row gap-2">
+                  <div class="space-y-3">
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Clasificación Médica</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
                       <button 
                         v-for="tipo in ['Enfermedad general', 'Riesgo de trabajo', 'Maternidad']" :key="tipo"
                         type="button"
                         @click="form.tipoIncapacidad = tipo"
-                        class="px-3 py-2 text-xs font-medium rounded-lg transition-all border outline-none flex-1 text-center"
+                        class="px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border outline-none flex-1 text-center shadow-sm"
                         :class="form.tipoIncapacidad === tipo 
-                          ? 'bg-brand-50 text-brand-700 border-brand-200' 
+                          ? 'bg-[#007F92]/10 text-[#007F92] border-[#007F92]/30 ring-1 ring-[#007F92]/20' 
                           : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'"
                       >
                         {{ tipo }}
@@ -330,18 +331,18 @@
                 </div>
 
                 <!-- Traslado a otro plantel -->
-                <div v-if="activeScenario.categoryId === 2" class="mt-4">
+                <div v-if="activeScenario.categoryId === 2" class="mt-5">
                   <div v-if="!showDestino" class="flex">
-                    <button type="button" @click="showDestino = true" class="text-xs font-medium text-slate-500 hover:text-brand-600 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors border border-transparent outline-none">
+                    <button type="button" @click="showDestino = true" class="text-[10px] font-black text-slate-500 hover:text-[#007F92] flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 transition-colors shadow-sm outline-none uppercase tracking-widest">
                       <Plus class="w-3.5 h-3.5" /> Destino alterno
                     </button>
                   </div>
-                  <div v-else class="p-3 bg-slate-50 rounded-lg border border-slate-100 relative animate-in fade-in duration-200">
-                    <button type="button" @click="showDestino = false" class="absolute top-2 right-2 text-slate-400 hover:text-slate-600 p-1 outline-none">
+                  <div v-else class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm relative animate-in fade-in duration-200">
+                    <button type="button" @click="showDestino = false" class="absolute top-3 right-3 text-slate-400 hover:text-slate-600 p-1.5 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors outline-none">
                        <XIcon class="w-4 h-4" />
                     </button>
-                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Plantel de destino</label>
-                    <select v-model="form.destino" class="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-brand-400 focus:ring-1 focus:ring-brand-400 outline-none text-sm text-slate-800 bg-white cursor-pointer transition-all pr-8">
+                    <label class="block text-[10px] font-black text-[#007F92] uppercase tracking-widest mb-2 px-1">Plantel de destino</label>
+                    <select v-model="form.destino" class="w-full px-3.5 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-bold text-slate-800 bg-slate-50 cursor-pointer transition-all pr-8 shadow-inner">
                       <option value="">Seleccione un plantel...</option>
                       <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
                     </select>
@@ -350,35 +351,35 @@
               </div>
 
               <!-- SECTION: Justificación -->
-              <div class="relative group pt-5 border-t border-slate-100">
-                <h3 class="text-[11px] font-semibold text-slate-800 mb-3 block w-full">Justificación y respaldo</h3>
+              <div class="relative group pt-6 border-t border-slate-200/60">
+                <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest mb-4 block w-full">Justificación y respaldo</h3>
                 
-                <div class="space-y-1.5 mb-4">
-                  <label class="block text-xs font-medium text-slate-600">Motivo detallado</label>
-                  <textarea v-model="form.comentarios" rows="3" placeholder="Describe brevemente la razón..." required class="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-sm text-slate-900 resize-none transition-all bg-white"></textarea>
+                <div class="space-y-1.5 mb-5">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Motivo detallado</label>
+                  <textarea v-model="form.comentarios" rows="3" placeholder="Describe brevemente la razón..." required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-sm font-medium text-slate-900 resize-none transition-all bg-white shadow-sm"></textarea>
                 </div>
 
-                <div v-if="activeScenario.categoryId === 3" class="space-y-1.5 pt-2">
-                  <label class="block text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                <div v-if="activeScenario.categoryId === 3" class="space-y-2 pt-2">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1.5">
                     <Paperclip class="w-3.5 h-3.5" /> Evidencia Adjunta (Opcional)
                   </label>
-                  <div class="relative border border-dashed border-slate-300 hover:border-brand-400 bg-white rounded-lg p-4 transition-all text-center group cursor-pointer" :class="{'border-brand-500 border-solid bg-brand-50': evidenceFile}">
+                  <div class="relative border border-dashed border-slate-300 hover:border-[#007F92]/50 bg-white rounded-2xl p-6 transition-all text-center group cursor-pointer" :class="{'border-[#007F92] border-solid bg-[#007F92]/5': evidenceFile}">
                     <input type="file" @change="onFileChange" accept="image/*,application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                    <div v-if="!evidenceFile" class="flex flex-col items-center gap-1">
-                      <UploadCloud class="w-5 h-5 text-slate-400 group-hover:text-brand-500 transition-colors shrink-0" />
-                      <span class="text-sm font-medium text-slate-600 mt-1">Haz clic o arrastra un archivo</span>
-                      <span class="text-xs text-slate-400">PDF, JPG o PNG (Max. 5MB)</span>
+                    <div v-if="!evidenceFile" class="flex flex-col items-center gap-1.5">
+                      <UploadCloud class="w-6 h-6 text-slate-400 group-hover:text-[#007F92] transition-colors shrink-0" />
+                      <span class="text-sm font-black text-slate-700 mt-1">Haz clic o arrastra un archivo</span>
+                      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PDF, JPG o PNG (Max. 5MB)</span>
                     </div>
                     <div v-else class="flex items-center justify-between z-20 relative px-1">
                       <div class="flex items-center gap-3 min-w-0">
-                         <FileText class="w-5 h-5 text-brand-600 shrink-0" />
+                         <FileText class="w-6 h-6 text-[#007F92] shrink-0" />
                          <div class="text-left min-w-0">
-                            <p class="text-sm font-medium text-slate-800 truncate" :title="evidenceFile.name">{{ evidenceFile.name }}</p>
-                            <p class="text-xs text-slate-500">{{ (evidenceFile.size / 1024 / 1024).toFixed(2) }} MB</p>
+                            <p class="text-sm font-black text-slate-800 truncate" :title="evidenceFile.name">{{ evidenceFile.name }}</p>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ (evidenceFile.size / 1024 / 1024).toFixed(2) }} MB</p>
                          </div>
                       </div>
-                      <button type="button" @click.stop.prevent="clearEvidence" class="p-1 text-slate-400 hover:text-red-500 transition-colors outline-none shrink-0">
-                        <XIcon class="w-4 h-4" />
+                      <button type="button" @click.stop.prevent="clearEvidence" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors outline-none shrink-0">
+                        <XIcon class="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -386,40 +387,40 @@
               </div>
 
               <!-- Opt-In Authorizer -->
-              <div v-if="!isAuthorizerForCurrent && selectedEmployees.length > 0" class="p-4 bg-slate-50 rounded-xl border border-slate-100 transition-all animate-in fade-in">
+              <div v-if="!isAuthorizerForCurrent && selectedEmployees.length > 0" class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm transition-all animate-in fade-in">
                 <div class="flex items-start gap-3">
-                  <input type="checkbox" id="optInAuth" v-model="form.optInAuthorizer" class="mt-[3px] w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer" />
+                  <input type="checkbox" id="optInAuth" v-model="form.optInAuthorizer" class="mt-[3px] w-5 h-5 rounded text-[#007F92] focus:ring-[#007F92] border-slate-300 cursor-pointer" />
                   <label for="optInAuth" class="cursor-pointer select-none">
-                    <p class="text-sm font-medium text-slate-800">Recibir avisos de este plantel</p>
-                    <p class="text-xs text-slate-500 mt-0.5">Asignarme como responsable para autorizar futuros pases.</p>
+                    <p class="text-sm font-black text-slate-800">Recibir avisos de este plantel</p>
+                    <p class="text-[11px] font-bold text-slate-500 mt-0.5">Asignarme como responsable para autorizar futuros pases.</p>
                   </label>
                 </div>
-                <div v-if="form.optInAuthorizer && !myProfile?.phone" class="mt-4 pt-4 border-t border-slate-200 animate-in fade-in">
-                  <label class="block text-xs font-medium text-slate-600 mb-1.5">Número de celular (Obligatorio)</label>
-                  <div class="flex items-center rounded-lg border border-slate-200 overflow-hidden bg-white focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
-                     <div class="bg-slate-50 border-r border-slate-200 px-3 py-2 text-slate-500 font-medium text-sm">+52 1</div>
-                     <input v-model="form.authorizerPhone" type="tel" maxlength="10" placeholder="10 dígitos" @input="form.authorizerPhone = form.authorizerPhone.replace(/\D/g, '').substring(0, 10)" class="flex-1 px-3 py-2 outline-none text-sm text-slate-800 bg-transparent" />
+                <div v-if="form.optInAuthorizer && !myProfile?.phone" class="mt-4 pt-4 border-t border-slate-100 animate-in fade-in">
+                  <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 px-1">Número de celular (Obligatorio)</label>
+                  <div class="flex items-center rounded-xl border border-slate-200 overflow-hidden bg-slate-50 focus-within:border-[#007F92] focus-within:ring-2 focus-within:ring-[#007F92]/20 shadow-inner">
+                     <div class="bg-slate-100 border-r border-slate-200 px-4 py-3 text-slate-500 font-black text-sm">+52 1</div>
+                     <input v-model="form.authorizerPhone" type="tel" maxlength="10" placeholder="10 dígitos" @input="form.authorizerPhone = form.authorizerPhone.replace(/\D/g, '').substring(0, 10)" class="flex-1 px-4 py-3 outline-none text-sm font-bold text-slate-800 bg-transparent" />
                   </div>
                 </div>
               </div>
 
               <!-- Actions -->
-              <div class="pt-4 flex flex-col gap-4">
+              <div class="pt-5 flex flex-col gap-4">
                 <transition name="fade">
-                  <div v-if="missingFieldsText" class="flex items-start gap-2 px-3 py-2 bg-amber-50 rounded-lg border border-amber-100">
-                    <Info class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <span class="text-xs font-medium text-amber-800">{{ missingFieldsText }}</span>
+                  <div v-if="missingFieldsText" class="flex items-start gap-2.5 px-4 py-3 bg-[#F49A6D]/10 rounded-xl border border-[#F49A6D]/20">
+                    <Info class="w-4 h-4 text-[#D97746] shrink-0 mt-0.5" />
+                    <span class="text-xs font-bold text-[#B3582A]">{{ missingFieldsText }}</span>
                   </div>
                 </transition>
 
-                <div class="flex flex-col sm:flex-row gap-3 items-stretch">
+                <div class="flex flex-col sm:flex-row gap-4 items-stretch">
                   <button 
                     type="button" 
                     @click="submitPass(false)" 
                     :disabled="isSubmitting || !isFormComplete" 
-                    class="flex-1 relative bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition-all border border-slate-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed h-12 outline-none"
+                    class="flex-1 relative bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-2xl transition-all border border-slate-200 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none"
                   >
-                    <div class="absolute inset-0 flex items-center justify-center gap-2 transition-transform duration-300">
+                    <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
                       <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-slate-400" />
                       <Send v-else class="w-4 h-4 text-slate-400" /> 
                       <span>Solicitar autorización</span>
@@ -430,9 +431,9 @@
                     type="button" 
                     @click="submitPass(true)" 
                     :disabled="isSubmitting || !isFormComplete" 
-                    class="flex-1 relative bg-brand-600 hover:bg-brand-700 text-white font-medium text-sm rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed h-12 outline-none border border-transparent"
+                    class="flex-1 relative bg-gradient-to-r from-[#618B2F] to-[#4e7025] hover:from-[#4e7025] hover:to-[#3b551c] text-white font-black text-sm rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-transparent"
                   >
-                    <div class="absolute inset-0 flex items-center justify-center gap-2 transition-transform duration-300">
+                    <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
                       <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-white/80" />
                       <CheckCircle v-else class="w-4 h-4 text-white/90" /> 
                       <span>Autorizar de inmediato</span>
@@ -440,7 +441,7 @@
                   </button>
                 </div>
                 
-                <p v-if="hasSelfPass" class="text-xs text-slate-500 text-center px-4">
+                <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">
                   <Info class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
                   Estás generando una solicitud a tu propio nombre.
                 </p>
