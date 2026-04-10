@@ -405,24 +405,18 @@
           </div>
           
           <!-- Sticky Actions Footer -->
-          <div class="shrink-0 px-6 py-5 bg-white border-t border-slate-200 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] flex flex-col gap-4 sticky bottom-[76px] xl:bottom-0">
-            <transition name="fade">
-              <div v-if="missingFieldsText" class="flex items-start gap-2.5 px-4 py-3 bg-[#F49A6D]/10 rounded-xl border border-[#F49A6D]/20">
-                <Info class="w-4 h-4 text-[#D97746] shrink-0 mt-0.5" />
-                <span class="text-xs font-bold text-[#B3582A]">{{ missingFieldsText }}</span>
-              </div>
-            </transition>
+          <div class="shrink-0 mt-4 mb-6 xl:mt-0 xl:mb-0 p-5 sm:p-6 bg-white xl:bg-white/95 xl:backdrop-blur-xl border border-slate-200/80 xl:border-0 xl:border-t xl:border-slate-200 z-30 rounded-[2rem] xl:rounded-none shadow-sm xl:shadow-[0_-10px_30px_rgba(0,0,0,0.03)] flex flex-col gap-4 relative xl:sticky xl:bottom-0">
 
             <div class="flex flex-col sm:flex-row gap-4 items-stretch">
               <button 
                 type="button" 
                 @click="submitPass(false)" 
                 :disabled="isSubmitting || !isFormComplete" 
-                class="flex-1 relative bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-2xl transition-all border border-slate-200 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none"
+                class="flex-1 relative group overflow-hidden bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-[1.25rem] transition-all border-2 border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none"
               >
-                <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
+                <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
                   <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-slate-400" />
-                  <Send v-else class="w-4 h-4 text-slate-400" /> 
+                  <Send v-else class="w-4 h-4 text-slate-400 group-hover:text-brand-500 transition-colors" /> 
                   <span>Solicitar autorización</span>
                 </div>
               </button>
@@ -431,12 +425,13 @@
                 type="button" 
                 @click="submitPass(true)" 
                 :disabled="isSubmitting || !isFormComplete" 
-                class="flex-1 relative bg-gradient-to-r from-[#8EC152] to-[#618B2F] hover:from-[#7DB041] hover:to-[#507525] text-white font-black text-sm rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-transparent"
+                class="flex-1 relative group overflow-hidden bg-gradient-to-b from-brand-600 to-brand-800 text-white font-black text-sm rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(0,127,146,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(0,127,146,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-brand-900/50"
               >
-                <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
+                <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
+                <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
                   <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-white/80" />
-                  <CheckCircle v-else class="w-4 h-4 text-white/90" /> 
-                  <span>Autorizar de inmediato</span>
+                  <CheckCircle v-else class="w-4 h-4 text-brand-200 group-hover:text-white transition-colors" /> 
+                  <span class="tracking-wide">Autorizar directamente</span>
                 </div>
               </button>
             </div>
@@ -538,20 +533,6 @@ const isFormComplete = computed(() => {
      if (!form.shiftDate || !form.shiftStart || !form.shiftEnd) return false;
   }
   return true;
-})
-
-const missingFieldsText = computed(() => {
-  if (!activeScenario.value) return '';
-  const missing = [];
-  if (!form.date) missing.push('Fecha de inicio');
-  if (activeScenario.value.needsEndDate && !form.endDate) missing.push('Fecha de término');
-  if (activeScenario.value.needsTime && !form.time) missing.push('Hora operativa');
-  if (activeScenario.value.canReturn && form.regreso && !form.horaRegreso) missing.push('Hora de retorno');
-  if (activeScenario.value.categoryId !== 1 && !form.comentarios) missing.push('Motivo detallado');
-  if (activeScenario.value.categoryId === 4 && (!form.shiftDate || !form.shiftStart || !form.shiftEnd)) missing.push('Fechas y horas del cambio');
-  
-  if (missing.length === 0) return '';
-  return `Para continuar, completa: ${missing.join(', ')}`;
 })
 
 const getScenarioIcon = (iconName) => {

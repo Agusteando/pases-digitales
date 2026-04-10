@@ -1,37 +1,38 @@
 <template>
-  <div class="flex flex-col xl:h-full min-h-0 relative w-full">
+  <div class="flex flex-col xl:h-full min-h-0 relative w-full bg-transparent">
     
-    <!-- Header: Employee Context -->
-    <div class="flex flex-col relative z-10 shrink-0 mb-6 pb-6 border-b border-slate-200/60">
-      <div class="flex flex-col sm:flex-row sm:items-center gap-5">
-        <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 shadow-sm border border-slate-100" />
+    <!-- Top Information Card (Glassmorphism to let background flow through) -->
+    <div class="flex flex-col relative z-20 shrink-0 mb-6 p-6 sm:p-8 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.05)] rounded-[2rem]">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-6">
+        <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 shadow-md border-2 border-white" />
         
         <div class="flex flex-col min-w-0 flex-1">
-          <h2 class="text-2xl font-black text-slate-900 tracking-tight line-clamp-2 break-words" :title="employee.name">
+          <h2 class="text-2xl sm:text-3xl font-light text-[#50535A] tracking-tight line-clamp-2 break-words" :title="employee.name">
             {{ employee.name }}
           </h2>
           
-          <div v-if="pendingEnrich" class="mt-2 space-y-2 w-32">
-            <div class="h-2 bg-slate-100 rounded animate-pulse w-full"></div>
-            <div class="h-2 bg-slate-100 rounded animate-pulse w-2/3"></div>
+          <div v-if="pendingEnrich" class="mt-3 space-y-2 w-32">
+            <div class="h-2 bg-[#86888C]/10 rounded animate-pulse w-full"></div>
+            <div class="h-2 bg-[#86888C]/10 rounded animate-pulse w-2/3"></div>
           </div>
           
-          <div v-else class="mt-1.5 flex flex-wrap gap-2.5 items-center">
-            <span v-if="displayPlantel" class="text-slate-600 font-bold text-xs flex items-center gap-1.5">
-              <Building2 class="w-3.5 h-3.5 text-slate-400" /> {{ displayPlantel }}
+          <div v-else class="mt-2.5 flex flex-wrap gap-3 items-center">
+            <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[11px] uppercase tracking-widest flex items-center gap-1.5 bg-white/50 px-2.5 py-1 rounded-lg border border-white">
+              <Building2 class="w-3.5 h-3.5 opacity-70" /> {{ displayPlantel }}
             </span>
-            <span v-if="displayPlantel && displayRole" class="text-slate-300">•</span>
-            <span v-if="displayRole" class="text-slate-600 font-bold text-xs flex items-center gap-1.5">
-              <Briefcase class="w-3.5 h-3.5 text-slate-400" /> {{ displayRole }}
+            <span v-if="displayPlantel && displayRole" class="text-[#86888C]/30 hidden sm:inline">•</span>
+            <span v-if="displayRole" class="text-[#86888C] font-bold text-[11px] uppercase tracking-widest flex items-center gap-1.5 bg-white/50 px-2.5 py-1 rounded-lg border border-white">
+              <Briefcase class="w-3.5 h-3.5 opacity-70" /> {{ displayRole }}
             </span>
           </div>
         </div>
       </div>
 
       <!-- KPI Summary -->
-      <div class="flex flex-wrap gap-x-8 gap-y-4 mt-5 pt-5 border-t border-slate-200/60">
-        <div v-if="Object.keys(statCounters).length === 0" class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
-          <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Sin incidencias registradas en el ciclo actual.
+      <div class="flex flex-wrap gap-x-8 gap-y-4 mt-8 pt-6 border-t border-[#86888C]/15 relative">
+        <div class="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80"></div>
+        <div v-if="Object.keys(statCounters).length === 0" class="text-[11px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-2">
+          <CheckCircle2 class="w-4 h-4 text-[#8EC152]" /> Sin incidencias en el ciclo actual.
         </div>
         <template v-else>
           <KpiIndicator 
@@ -46,110 +47,131 @@
 
     <!-- Active Open Pass Warning -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="shrink-0 bg-[#F49A6D]/10 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 border border-[#F49A6D]/20 relative z-10 items-start sm:items-center justify-between group transition-all mb-6">
-        <div class="flex gap-3 items-center min-w-0">
-          <div class="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 border border-[#F49A6D]/20 shadow-sm text-[#F49A6D]">
-            <AlertCircle class="w-5 h-5" />
+      <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-[#F49A6D]/10 to-transparent p-5 sm:p-6 flex flex-col sm:flex-row gap-5 border border-[#F49A6D]/20 shadow-sm rounded-[2rem] relative z-10 items-start sm:items-center justify-between group transition-all mb-8 backdrop-blur-md">
+        <div class="flex gap-4 items-center min-w-0">
+          <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-[#F49A6D]/20">
+            <AlertCircle class="w-6 h-6 text-[#F49A6D]" />
           </div>
           <div class="min-w-0">
-            <h4 class="text-sm font-black text-slate-800 truncate">Pase abierto hoy</h4>
-            <p class="text-[11px] font-bold text-slate-600 mt-0.5 truncate">El colaborador ya cuenta con un registro hoy.</p>
+            <h4 class="text-base font-medium text-[#50535A] truncate">Registro abierto hoy</h4>
+            <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1 truncate">El colaborador ya cuenta con una incidencia en curso.</p>
           </div>
         </div>
-        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-4 py-2.5 bg-white text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-black rounded-xl transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 outline-none uppercase tracking-widest">
-          <span>Abrir</span>
-          <ArrowRight class="w-3.5 h-3.5" />
+        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-6 py-3 bg-white text-[#50535A] hover:text-[#007F92] border border-white shadow-sm hover:shadow-md rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 outline-none">
+          <span>Revisar</span>
+          <ArrowRight class="w-4 h-4" />
         </NuxtLink>
       </div>
     </transition>
 
-    <!-- History Panel -->
-    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar pr-2 sm:pr-4 pb-12 relative z-10 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
+    <!-- Flowing Timeline Panel -->
+    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar px-1 sm:px-2 pb-16 relative z-10 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
       
-      <!-- Refined Sticky History Header -->
-      <div class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md pt-2 pb-3 mb-5 border-b border-slate-200/60 flex items-end justify-between px-1">
-        <div class="flex flex-col">
-          <h3 class="text-sm font-black text-slate-800 tracking-tight">Historial operativo</h3>
-          <p class="text-[10px] font-bold text-slate-400 mt-0.5" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</p>
+      <!-- Sticky Header for Timeline -->
+      <div class="sticky top-0 z-30 pt-2 pb-4 mb-8 bg-white/60 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mx-1 px-1 rounded-b-2xl">
+        <div>
+          <h3 class="text-xl sm:text-2xl font-light text-[#50535A] tracking-tight">Historial</h3>
+          <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5" v-if="historyData?.cycle">
+            Ciclo Escolar {{ historyData.cycle }}
+          </p>
         </div>
-        <div class="relative">
-           <div class="flex items-center bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 transition-all shadow-sm w-32 focus-within:w-48 overflow-hidden group cursor-text">
-              <Search class="w-3.5 h-3.5 text-slate-400 shrink-0 group-focus-within:text-[#007F92] transition-colors" />
-              <input type="text" v-model="searchQuery" placeholder="Buscar..." class="ml-2 w-full bg-transparent text-[11px] font-bold text-slate-700 outline-none placeholder:text-slate-400 placeholder:font-medium" />
+        <div class="relative group w-full sm:w-auto">
+           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <Search class="w-4 h-4 text-[#86888C] group-focus-within:text-[#007F92] transition-colors" />
            </div>
+           <input type="text" v-model="searchQuery" placeholder="Buscar en historial..." class="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-white/70 backdrop-blur-md border border-white/80 focus:border-[#007F92] focus:ring-4 focus:ring-[#007F92]/10 rounded-xl text-sm text-[#50535A] outline-none transition-all placeholder:text-[#86888C]/60 shadow-sm" />
         </div>
       </div>
 
-      <div v-if="pendingHistory" class="py-16 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
+      <div v-if="pendingHistory" class="py-20 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
       
-      <div v-else-if="historyError" class="py-16 flex flex-col items-center justify-center text-center bg-slate-50 rounded-[2rem] border border-slate-100">
-        <AlertTriangle class="w-8 h-8 text-slate-300 mb-3" />
-        <p class="text-sm font-black text-slate-600">Error de conexión</p>
-        <p class="text-xs font-medium text-slate-500 mt-1">No se pudo cargar la información.</p>
+      <div v-else-if="historyError" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+        <div class="w-14 h-14 mb-4 rounded-full bg-white shadow-sm flex items-center justify-center">
+          <AlertTriangle class="w-6 h-6 text-[#E83F4B]" />
+        </div>
+        <p class="text-base font-medium text-[#50535A]">Error de conexión</p>
+        <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5">No se pudo cargar la información</p>
       </div>
 
-      <div v-else-if="!filteredGroupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center bg-slate-50 rounded-[2rem] border border-slate-100">
-        <FileText class="w-8 h-8 text-slate-300 mb-3" />
-        <p class="text-sm font-black text-slate-600">Sin incidencias previas</p>
-        <p class="text-xs font-medium text-slate-500 mt-1">No hay registros que mostrar.</p>
+      <div v-else-if="!filteredGroupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+        <div class="w-14 h-14 mb-4 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
+          <FileText class="w-6 h-6 text-[#86888C]/40" />
+        </div>
+        <p class="text-base font-medium text-[#50535A]">Sin registros</p>
+        <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5">No hay incidencias que mostrar</p>
       </div>
 
-      <div v-else class="relative mt-2">
-        <div class="absolute top-2 bottom-0 left-[19px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
-
-        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-8">
+      <div v-else class="relative mt-4">
+        <!-- Main timeline loop -->
+        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-14 relative">
           
-          <div class="relative pl-12 mb-5 flex items-center">
-             <div class="absolute left-[16px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-slate-50 z-10 shadow-sm"></div>
-             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+          <!-- Month Divider Header -->
+          <div class="flex items-center mb-10 pl-[3.5rem] sm:pl-[4.5rem]">
+             <span class="bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-[#86888C] uppercase tracking-widest shadow-sm border border-white">
                {{ group.month }}
              </span>
           </div>
           
-          <div class="space-y-0">
-            <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-12 pb-5 group/timeline timeline-item" :style="{ animationDelay: `${index * 0.04}s` }">
-              
-              <div class="absolute left-[15px] top-5 w-2.5 h-2.5 rounded-full z-10 ring-[4px] ring-slate-50 transition-transform duration-300 group-hover/timeline:scale-125 shadow-sm" :class="getCategoryColor(pass.category_id)"></div>
-              
-              <div class="block bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-[1.25rem] border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow relative group/card">
-                <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-2 relative z-10">
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono text-xs font-black text-slate-400 group-hover/card:text-slate-600 transition-colors">#{{ String(pass.id).padStart(5, '0') }}</span>
-                    <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded border"
-                          :class="{'bg-amber-50 text-amber-700 border-amber-200/60': pass.status === 'pendiente',
-                                   'bg-emerald-50 text-emerald-700 border-emerald-200/60': pass.status === 'autorizado',
-                                   'bg-rose-50 text-rose-700 border-rose-200/60': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                      {{ pass.status }}
-                    </span>
-                  </div>
-                  <span class="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 shrink-0 w-max">{{ formatDateOnly(pass.date) }}</span>
-                </div>
-                
-                <h4 class="text-sm font-black text-slate-800 flex flex-wrap items-center gap-2 mb-1 relative z-10 tracking-tight">
-                  {{ getCategoryName(pass.category_id) }}
-                </h4>
+          <div class="relative w-full">
+            <!-- Continuous Rail for the month -->
+            <div class="absolute inset-y-0 left-[3.5rem] sm:left-[4.5rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
 
-                <div v-if="pass.tipo_permiso" class="mb-2 relative z-10">
-                  <span class="inline-flex items-center text-[10px] font-bold bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100">{{ pass.tipo_permiso }}</span>
+            <div class="space-y-8 relative z-10">
+              <NuxtLink v-for="(pass, index) in group.passes" :key="pass.id" :to="`/pass/${pass.id}`" class="group flex items-start w-full relative outline-none cursor-pointer" :style="{ animationDelay: `${index * 0.05}s` }">
+                
+                <!-- Date Left Column -->
+                <div class="w-[3.5rem] sm:w-[4.5rem] shrink-0 pt-4 text-right pr-4 sm:pr-6 transition-transform group-hover:-translate-x-1 duration-300">
+                  <div class="text-2xl font-light text-[#50535A] leading-none">{{ formatDay(pass.date) }}</div>
+                  <div class="text-[10px] font-black text-[#86888C] uppercase tracking-widest mt-1.5">{{ formatMonth(pass.date) }}</div>
                 </div>
-                
-                <p v-if="pass.comentarios" class="text-xs font-medium text-slate-600 leading-relaxed mt-2 relative z-10">"{{ pass.comentarios }}"</p>
-                
-                <div class="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between relative z-10">
-                  <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-1.5">
-                    <ShieldCheck class="w-3.5 h-3.5" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-rose-500'" />
-                    <span class="text-[9px] font-bold uppercase tracking-widest" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-rose-700'">
-                      Autorizado{{ pass.authorized_by ? ' por ' + pass.authorized_by.split(' ')[0] : '' }}
-                    </span>
+
+                <!-- Node Center Column -->
+                <div class="absolute left-[3.5rem] sm:left-[4.5rem] top-[1.35rem] w-3 h-3 rounded-full border-[2.5px] border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
+
+                <!-- Floating Card Content -->
+                <div class="flex-1 pl-4 sm:pl-6 relative z-10">
+                  <div class="bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.5rem] p-5 sm:p-6 group-hover:bg-white/90 group-hover:-translate-y-0.5">
+                    
+                    <!-- Header -->
+                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h5 class="text-lg font-medium text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
+                          {{ getCategoryName(pass.category_id) }}
+                        </h5>
+                        <p v-if="pass.tipo_permiso" class="text-xs font-medium text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
+                      </div>
+                      
+                      <!-- Refined Status Pill -->
+                      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
+                        <div class="w-1.5 h-1.5 rounded-full" :class="getStatusConfig(pass.status).dot"></div>
+                        <span class="text-[9px] font-black uppercase tracking-widest">{{ pass.status }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Quoted Comment -->
+                    <div v-if="pass.comentarios" class="relative pl-3.5 border-l-2 py-0.5 my-4 transition-all duration-300 bg-white/40 rounded-r-xl p-3 border-white shadow-sm" :class="getCategoryConfig(pass.category_id).border">
+                      <p class="text-[13px] text-[#50535A] italic leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
+                        "{{ pass.comentarios }}"
+                      </p>
+                    </div>
+                    
+                    <!-- Footer Metadata -->
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 pt-4 border-t border-[#86888C]/10 text-[10px] font-black uppercase tracking-widest text-[#86888C]">
+                      <span class="group-hover:text-[#50535A] transition-colors bg-[#86888C]/5 px-2 py-1 rounded-md">ID: {{ String(pass.id).padStart(5, '0') }}</span>
+                      
+                      <span v-if="pass.authorized_by" class="flex items-center gap-1.5 group-hover:text-[#50535A] transition-colors">
+                        <span class="w-1 h-1 rounded-full bg-[#86888C]/40"></span>
+                        Por {{ pass.authorized_by.split(' ')[0] || 'Responsable' }}
+                      </span>
+
+                      <span class="ml-auto flex items-center gap-1.5 text-[#007F92] opacity-0 -translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-[#007F92]/5 px-3 py-1 rounded-lg">
+                        Ver detalle <ArrowRight class="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+
                   </div>
-                  <div v-else></div>
-                  
-                  <NuxtLink :to="`/pass/${pass.id}`" class="text-[#007F92] flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity hover:text-[#006575] outline-none text-[10px] font-black uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                    <span>Ver detalle</span>
-                    <ArrowRight class="w-3 h-3" />
-                  </NuxtLink>
                 </div>
-              </div>
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -160,7 +182,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { FileText, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight, AlertTriangle, AlertCircle, Search, CheckCircle2 } from 'lucide-vue-next'
+import { FileText, Loader2, Search, ArrowRight, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import KpiIndicator from '~/components/KpiIndicator.vue'
 import dayjs from 'dayjs'
@@ -176,10 +198,27 @@ const getCategoryName = (id) => {
   return map[id] || 'Otro'
 }
 
-const getCategoryColor = (id) => {
-  const map = { 1: 'bg-[#F49A6D]', 2: 'bg-[#66A8D8]', 3: 'bg-[#E83F4B]', 4: 'bg-[#FCBF2C]', 5: 'bg-[#007F92]' }
-  return map[id] || 'bg-slate-300'
+const getCategoryConfig = (id) => {
+  const map = {
+    1: { bg: 'bg-[#F49A6D]', border: 'border-[#F49A6D]/60' },
+    2: { bg: 'bg-[#007F92]', border: 'border-[#007F92]/60' },
+    3: { bg: 'bg-[#E83F4B]', border: 'border-[#E83F4B]/60' },
+    4: { bg: 'bg-[#FCBF2C]', border: 'border-[#FCBF2C]/60' },
+    5: { bg: 'bg-[#5FB4A9]', border: 'border-[#5FB4A9]/60' }
+  }
+  return map[id] || { bg: 'bg-[#86888C]', border: 'border-[#86888C]/60' }
 }
+
+const getStatusConfig = (status) => {
+  const s = status.toLowerCase()
+  if (s === 'autorizado') return { badge: 'border-[#8EC152]/30 bg-[#8EC152]/10 text-[#00692F]', dot: 'bg-[#8EC152]' }
+  if (s === 'rechazado') return { badge: 'border-[#E83F4B]/30 bg-[#E83F4B]/10 text-[#762728]', dot: 'bg-[#E83F4B]' }
+  if (s === 'pendiente') return { badge: 'border-[#FCBF2C]/30 bg-[#FCBF2C]/10 text-[#6D5F24]', dot: 'bg-[#FCBF2C]' }
+  return { badge: 'border-[#86888C]/20 bg-white/50 text-[#50535A]', dot: 'bg-[#86888C]' }
+}
+
+const formatDay = (dateStr) => dayjs(dateStr).format('DD')
+const formatMonth = (dateStr) => dayjs(dateStr).format('MMM').replace('.', '')
 
 const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/enrich', {
   query: { 
@@ -265,6 +304,4 @@ const filteredGroupedHistory = computed(() => {
     }
   }).filter(group => group.passes.length > 0)
 })
-
-const formatDateOnly = (dateStr) => dayjs(dateStr).format('DD MMM')
 </script>

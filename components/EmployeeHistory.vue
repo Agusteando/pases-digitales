@@ -1,105 +1,113 @@
-### components/EmployeeHistory.vue
 <template>
-  <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 pb-12 relative z-10" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
+  <div class="flex-1 overflow-y-auto custom-scrollbar px-1 sm:px-2 pb-16 relative z-10 bg-transparent" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
     
-    <!-- Sticky History Header -->
-    <div class="sticky top-0 bg-slate-50/95 backdrop-blur-xl z-30 pt-1 pb-3 mb-6 border-b border-slate-200/50 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <h3 class="text-sm font-black text-slate-800 tracking-tight flex items-center gap-2">
-          <History class="w-4 h-4 text-brand-500 shrink-0" /> Historial
-        </h3>
-        <span class="text-[9px] font-black text-brand-600 bg-brand-50 px-2 py-1 rounded-md uppercase tracking-widest border border-brand-100 shadow-sm" v-if="historyData?.cycle">
-          Ciclo {{ historyData.cycle }}
-        </span>
+    <!-- Sticky Header for Timeline -->
+    <div class="sticky top-0 z-30 pt-2 pb-4 mb-8 bg-white/60 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mx-1 px-1 rounded-b-2xl">
+      <div>
+        <h3 class="text-xl sm:text-2xl font-light text-[#50535A] tracking-tight">Historial</h3>
+        <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5" v-if="historyData?.cycle">
+          Ciclo Escolar {{ historyData.cycle }}
+        </p>
       </div>
-      
-      <!-- Subtle Search Affordance -->
-      <div class="relative flex items-center group">
-        <Search class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none group-hover:text-brand-500 group-focus-within:text-brand-500 transition-colors" />
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Buscar..." 
-          class="w-8 hover:w-48 focus:w-48 pl-8 pr-3 py-1.5 bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-200/80 focus:border-brand-200 rounded-full text-xs font-bold text-slate-700 outline-none transition-all duration-300 shadow-none hover:shadow-sm focus:shadow-sm placeholder:text-slate-400 cursor-pointer focus:cursor-text"
-        />
+      <div class="relative group w-full sm:w-auto">
+         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Search class="w-4 h-4 text-[#86888C] group-focus-within:text-[#007F92] transition-colors" />
+         </div>
+         <input type="text" v-model="searchQuery" placeholder="Buscar en historial..." class="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-white/70 backdrop-blur-md border border-white/80 focus:border-[#007F92] focus:ring-4 focus:ring-[#007F92]/10 rounded-xl text-sm text-[#50535A] outline-none transition-all placeholder:text-[#86888C]/60 shadow-sm" />
       </div>
     </div>
 
-    <div v-if="pending" class="py-12 flex justify-center">
-      <Loader2 class="w-8 h-8 animate-spin text-brand-400" />
+    <div v-if="pending" class="py-20 flex justify-center">
+      <Loader2 class="w-8 h-8 animate-spin text-[#007F92]" />
     </div>
     
-    <div v-else-if="error" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 rounded-[2rem] border border-white border-dashed">
-      <div class="w-16 h-16 bg-casita-red/10 rounded-full flex items-center justify-center mb-4 border border-casita-red/20">
-        <AlertTriangle class="w-6 h-6 text-casita-red" />
+    <div v-else-if="error" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+      <div class="w-14 h-14 mb-4 rounded-full bg-white shadow-sm flex items-center justify-center">
+        <AlertTriangle class="w-6 h-6 text-[#E83F4B]" />
       </div>
-      <p class="text-sm font-black text-casita-red-dark">Error de conexión</p>
-      <p class="text-xs font-medium text-casita-red-dark/80 mt-1">No se pudo recuperar el historial de la base de datos.</p>
+      <p class="text-base font-medium text-[#50535A]">Error de conexión</p>
+      <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5">No se pudo cargar la información</p>
     </div>
 
-    <div v-else-if="!filteredGroupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 rounded-[2rem] border border-white border-dashed">
-      <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm border border-slate-100">
-        <FileText class="w-6 h-6 text-slate-300" />
+    <div v-else-if="!filteredGroupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+      <div class="w-14 h-14 mb-4 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
+        <FileText class="w-6 h-6 text-[#86888C]/40" />
       </div>
-      <p class="text-base font-black text-slate-700">Sin coincidencias</p>
-      <p class="text-sm font-medium text-slate-500 mt-1">No hay pases que coincidan con la búsqueda actual.</p>
+      <p class="text-base font-medium text-[#50535A]">Sin registros</p>
+      <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5">No hay incidencias que mostrar</p>
     </div>
 
-    <div v-else class="relative mt-2">
-      <div class="absolute top-2 bottom-0 left-[19px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
-      <div class="absolute top-2 bottom-0 left-[19px] w-[2px] rounded-full z-0 timeline-line opacity-40"></div>
-
-      <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-8">
+    <div v-else class="relative mt-4">
+      <!-- Main timeline loop -->
+      <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-14 relative">
         
-        <div class="relative pl-12 mb-4 flex items-center">
-           <div class="absolute left-[15px] top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-slate-300 ring-4 ring-slate-50/90 z-10 shadow-sm"></div>
-           <span class="sticky top-[68px] sm:top-[60px] z-20 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest text-slate-500 border border-white shadow-[0_2px_10px_-2px_rgba(0,0,0,0.02)]">
+        <!-- Month Divider Header -->
+        <div class="flex items-center mb-10 pl-[3.5rem] sm:pl-[4.5rem]">
+           <span class="bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-[#86888C] uppercase tracking-widest shadow-sm border border-white">
              {{ group.month }}
            </span>
         </div>
         
-        <div class="space-y-0">
-          <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-12 pb-5 group/timeline timeline-item" :style="{ animationDelay: `${index * 0.04}s` }">
-            
-            <div class="absolute left-[13px] top-5 w-3.5 h-3.5 rounded-full z-10 ring-[4px] ring-slate-50/90 transition-transform duration-300 group-hover/timeline:scale-125 shadow-sm" :class="getCategoryColor(pass.category_id)"></div>
-            
-            <div class="block bg-white p-4 sm:p-5 rounded-[1.25rem] border border-slate-100/80 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.06)] transition-all outline-none relative overflow-hidden group/card">
-              <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2 relative z-10">
-                <div class="flex flex-col gap-1.5">
-                  <div class="flex items-center gap-2">
-                    <span class="font-mono text-sm font-black text-slate-500 group-hover/card:text-brand-600 transition-colors tracking-tight">#{{ String(pass.id).padStart(5, '0') }}</span>
-                    <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border"
-                          :class="{'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/20': pass.status === 'pendiente',
-                                   'bg-casita-green/10 text-casita-green-dark border-casita-green/20': pass.status === 'autorizado',
-                                   'bg-casita-red/10 text-casita-red-dark border-casita-red/20': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                      {{ pass.status }}
+        <div class="relative w-full">
+          <!-- Continuous Rail for the month -->
+          <div class="absolute inset-y-0 left-[3.5rem] sm:left-[4.5rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
+
+          <div class="space-y-8 relative z-10">
+            <NuxtLink v-for="(pass, index) in group.passes" :key="pass.id" :to="`/pass/${pass.id}`" class="group flex items-start w-full relative outline-none cursor-pointer" :style="{ animationDelay: `${index * 0.05}s` }">
+              
+              <!-- Date Left Column -->
+              <div class="w-[3.5rem] sm:w-[4.5rem] shrink-0 pt-4 text-right pr-4 sm:pr-6 transition-transform group-hover:-translate-x-1 duration-300">
+                <div class="text-2xl font-light text-[#50535A] leading-none">{{ formatDay(pass.date) }}</div>
+                <div class="text-[10px] font-black text-[#86888C] uppercase tracking-widest mt-1.5">{{ formatMonth(pass.date) }}</div>
+              </div>
+
+              <!-- Node Center Column -->
+              <div class="absolute left-[3.5rem] sm:left-[4.5rem] top-[1.35rem] w-3 h-3 rounded-full border-[2.5px] border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
+
+              <!-- Floating Card Content -->
+              <div class="flex-1 pl-4 sm:pl-6 relative z-10">
+                <div class="bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.5rem] p-5 sm:p-6 group-hover:bg-white/90 group-hover:-translate-y-0.5">
+                  
+                  <!-- Header -->
+                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                    <div>
+                      <h5 class="text-lg font-medium text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
+                        {{ getCategoryName(pass.category_id) }}
+                      </h5>
+                      <p v-if="pass.tipo_permiso" class="text-xs font-medium text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
+                    </div>
+                    
+                    <!-- Refined Status Pill -->
+                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
+                      <div class="w-1.5 h-1.5 rounded-full" :class="getStatusConfig(pass.status).dot"></div>
+                      <span class="text-[9px] font-black uppercase tracking-widest">{{ pass.status }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Quoted Comment -->
+                  <div v-if="pass.comentarios" class="relative pl-3.5 border-l-2 py-0.5 my-4 transition-all duration-300 bg-white/40 rounded-r-xl p-3 border-white shadow-sm" :class="getCategoryConfig(pass.category_id).border">
+                    <p class="text-[13px] text-[#50535A] italic leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
+                      "{{ pass.comentarios }}"
+                    </p>
+                  </div>
+                  
+                  <!-- Footer Metadata -->
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 pt-4 border-t border-[#86888C]/10 text-[10px] font-black uppercase tracking-widest text-[#86888C]">
+                    <span class="group-hover:text-[#50535A] transition-colors bg-[#86888C]/5 px-2 py-1 rounded-md">ID: {{ String(pass.id).padStart(5, '0') }}</span>
+                    
+                    <span v-if="pass.authorized_by" class="flex items-center gap-1.5 group-hover:text-[#50535A] transition-colors">
+                      <span class="w-1 h-1 rounded-full bg-[#86888C]/40"></span>
+                      Por {{ pass.authorized_by.split(' ')[0] || 'Responsable' }}
+                    </span>
+
+                    <span class="ml-auto flex items-center gap-1.5 text-[#007F92] opacity-0 -translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-[#007F92]/5 px-3 py-1 rounded-lg">
+                      Ver detalle <ArrowRight class="w-3.5 h-3.5" />
                     </span>
                   </div>
-                  <h4 class="text-sm font-bold text-slate-800 flex flex-wrap items-center gap-2">
-                    {{ getCategoryName(pass.category_id) }}
-                    <span v-if="pass.tipo_permiso" class="text-[9px] font-black bg-slate-50 text-slate-500 uppercase tracking-widest px-2 py-0.5 rounded-md border border-slate-200/50">{{ pass.tipo_permiso }}</span>
-                  </h4>
+
                 </div>
-                <span class="text-[10px] sm:text-[11px] font-black text-slate-400 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 shrink-0 w-max">{{ formatDateOnly(pass.date) }}</span>
               </div>
-              
-              <p v-if="pass.comentarios" class="text-[11px] font-medium text-slate-600 leading-relaxed italic bg-slate-50/50 p-3 rounded-xl border border-slate-100 line-clamp-2 relative z-10">"{{ pass.comentarios }}"</p>
-              
-              <div class="mt-3 pt-3 border-t border-slate-50 flex items-center justify-between relative z-10">
-                <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-1.5">
-                  <ShieldCheck class="w-3.5 h-3.5" :class="pass.status === 'autorizado' ? 'text-casita-green' : 'text-casita-red'" />
-                  <span class="text-[9px] font-bold uppercase tracking-widest" :class="pass.status === 'autorizado' ? 'text-casita-green-dark' : 'text-casita-red-dark'">
-                    Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by.split(' ')[0] : '' }}
-                  </span>
-                </div>
-                <div v-else></div>
-                
-                <NuxtLink :to="`/pass/${pass.id}`" class="text-brand-600 flex items-center justify-center gap-1.5 opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg border border-brand-100/50 outline-none text-[9px] font-black uppercase tracking-widest">
-                  <span class="leading-none mt-[1px]">Ver detalle</span>
-                  <ArrowRight class="w-3 h-3 shrink-0" />
-                </NuxtLink>
-              </div>
-            </div>
+            </NuxtLink>
           </div>
         </div>
       </div>
@@ -109,8 +117,10 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { History, Search, Loader2, AlertTriangle, FileText, ShieldCheck, ArrowRight } from 'lucide-vue-next'
+import { Search, Loader2, AlertTriangle, FileText, ArrowRight } from 'lucide-vue-next'
 import dayjs from 'dayjs'
+import 'dayjs/locale/es'
+dayjs.locale('es')
 
 const props = defineProps({
   historyData: { type: Object, default: () => null },
@@ -125,18 +135,33 @@ const getCategoryName = (id) => {
   return map[id] || 'Otro'
 }
 
-const getCategoryColor = (id) => {
-  const map = { 1: 'bg-casita-peach', 2: 'bg-iedis-blue', 3: 'bg-casita-red', 4: 'bg-casita-gold', 5: 'bg-iedis-teal' }
-  return map[id] || 'bg-slate-400'
+const getCategoryConfig = (id) => {
+  const map = {
+    1: { bg: 'bg-[#F49A6D]', border: 'border-[#F49A6D]/60' },
+    2: { bg: 'bg-[#007F92]', border: 'border-[#007F92]/60' },
+    3: { bg: 'bg-[#E83F4B]', border: 'border-[#E83F4B]/60' },
+    4: { bg: 'bg-[#FCBF2C]', border: 'border-[#FCBF2C]/60' },
+    5: { bg: 'bg-[#5FB4A9]', border: 'border-[#5FB4A9]/60' }
+  }
+  return map[id] || { bg: 'bg-[#86888C]', border: 'border-[#86888C]/60' }
 }
 
-const formatDateOnly = (dateStr) => dayjs(dateStr).format('DD MMM')
+const getStatusConfig = (status) => {
+  const s = status.toLowerCase()
+  if (s === 'autorizado') return { badge: 'border-[#8EC152]/30 bg-[#8EC152]/10 text-[#00692F]', dot: 'bg-[#8EC152]' }
+  if (s === 'rechazado') return { badge: 'border-[#E83F4B]/30 bg-[#E83F4B]/10 text-[#762728]', dot: 'bg-[#E83F4B]' }
+  if (s === 'pendiente') return { badge: 'border-[#FCBF2C]/30 bg-[#FCBF2C]/10 text-[#6D5F24]', dot: 'bg-[#FCBF2C]' }
+  return { badge: 'border-[#86888C]/20 bg-white/50 text-[#50535A]', dot: 'bg-[#86888C]' }
+}
+
+const formatDay = (dateStr) => dayjs(dateStr).format('DD')
+const formatMonth = (dateStr) => dayjs(dateStr).format('MMM').replace('.', '')
 
 const groupedHistory = computed(() => {
   if (!props.historyData?.history) return []
   const groups = {}
   props.historyData.history.forEach(p => {
-    const month = dayjs(p.date).format('MMM YYYY')
+    const month = dayjs(p.date).format('MMMM YYYY')
     if (!groups[month]) groups[month] = []
     groups[month].push(p)
   })

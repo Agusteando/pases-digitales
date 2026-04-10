@@ -98,11 +98,21 @@
       </div>
 
       <footer v-if="pass.status === 'pendiente'" class="flex flex-col sm:flex-row gap-4 relative z-10">
-        <button @click="doAction('reject')" :disabled="isProcessing" class="flex-1 py-4 bg-white/80 backdrop-blur-sm text-casita-red-dark font-black rounded-2xl hover:bg-white transition-all border border-white hover:border-casita-red/30 shadow-sm hover:shadow-md disabled:opacity-50 outline-none flex justify-center items-center gap-2">
-          <X class="w-5 h-5" /> Rechazar
+        <button @click="doAction('reject')" :disabled="isProcessing" class="flex-1 relative group overflow-hidden bg-white hover:bg-slate-50 text-casita-red-dark font-black text-sm rounded-[1.25rem] transition-all border-2 border-casita-red/20 hover:border-casita-red/40 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none">
+          <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
+            <Loader2 v-if="isProcessing" class="w-5 h-5 animate-spin text-casita-red/50" />
+            <X v-else class="w-5 h-5 text-casita-red/70 group-hover:text-casita-red transition-colors" /> 
+            <span>Rechazar</span>
+          </div>
         </button>
-        <button @click="doAction('authorize')" :disabled="isProcessing" class="flex-1 py-4 bg-gradient-to-r from-casita-green to-casita-green-light text-white font-black rounded-2xl hover:from-casita-green-dark hover:to-casita-green transition-all shadow-lg hover:shadow-xl disabled:opacity-50 outline-none flex justify-center items-center gap-2">
-          <Check class="w-5 h-5" /> Autorizar
+
+        <button @click="doAction('authorize')" :disabled="isProcessing" class="flex-1 relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white font-black text-sm rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
+          <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
+          <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
+            <Loader2 v-if="isProcessing" class="w-5 h-5 animate-spin text-white/80" />
+            <Check v-else class="w-5 h-5 text-white/90 group-hover:text-white transition-colors" /> 
+            <span class="tracking-wide">Autorizar</span>
+          </div>
         </button>
       </footer>
 
