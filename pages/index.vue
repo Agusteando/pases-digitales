@@ -102,15 +102,17 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <ScenarioCard 
-                v-for="scenario in predefinedScenarios" 
-                :key="scenario.id" 
-                :title="scenario.title" 
-                :iconName="scenario.icon" 
-                :active="activeScenario?.id === scenario.id" 
-                @click="selectScenario(scenario)"
-              />
+            <div class="bg-slate-100/80 backdrop-blur-md p-2.5 rounded-[1.5rem] shadow-inner">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <ScenarioCard 
+                  v-for="scenario in predefinedScenarios" 
+                  :key="scenario.id" 
+                  :title="scenario.title" 
+                  :iconName="scenario.icon" 
+                  :active="activeScenario?.id === scenario.id" 
+                  @click="selectScenario(scenario)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -148,23 +150,19 @@
             </button>
           </div>
 
-          <div class="flex flex-col gap-2 relative mt-6">
-            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-3">Motivo</h3>
-            <button 
-              v-for="scenario in predefinedScenarios" 
-              :key="scenario.id"
-              @click="selectScenario(scenario)"
-              class="flex items-center gap-3 w-full p-2.5 rounded-xl transition-all outline-none text-left group"
-              :class="activeScenario?.id === scenario.id 
-                ? 'bg-[#007F92] text-white shadow-md' 
-                : 'bg-white hover:bg-slate-50 border border-slate-100 hover:border-slate-200'"
-            >
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0"
-                   :class="activeScenario?.id === scenario.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-[#007F92]'">
-                <component :is="getScenarioIcon(scenario.icon)" class="w-4 h-4 shrink-0" />
-              </div>
-              <span class="text-xs font-black tracking-tight" :class="activeScenario?.id === scenario.id ? 'text-white' : 'text-slate-700'">{{ scenario.title }}</span>
-            </button>
+          <div class="flex flex-col relative mt-6">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-3">Motivo</h3>
+            
+            <div class="bg-slate-100/80 backdrop-blur-md p-2 rounded-[1.5rem] shadow-inner flex flex-col gap-1.5">
+              <ScenarioCard 
+                v-for="scenario in predefinedScenarios" 
+                :key="scenario.id"
+                :title="scenario.title"
+                :iconName="scenario.icon"
+                :active="activeScenario?.id === scenario.id"
+                @click="selectScenario(scenario)"
+              />
+            </div>
           </div>
         </div>
       </div>
