@@ -1,117 +1,128 @@
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     
-    <!-- LEFT COLUMN (Paso 1: Selección - Divulgación Progresiva) -->
+    <!-- LEFT COLUMN (Paso 1: Selección Múltiple Ininterrumpida) -->
     <section 
       class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-white/50 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white/50 backdrop-blur-2xl shadow-[4px_0_24px_rgba(0,0,0,0.02)] overflow-hidden"
       :class="activeScenario ? 'hidden xl:flex xl:w-0 xl:opacity-0 xl:border-none pointer-events-none' : 'flex xl:w-[460px] 2xl:w-[500px] xl:border-r opacity-100'"
     >
       <div class="w-full xl:w-[460px] 2xl:w-[500px] flex-col h-full flex shrink-0">
-        <header class="px-6 md:px-8 py-6 md:py-8 border-b border-white/60 bg-transparent shrink-0">
-          <h1 class="text-3xl font-black text-slate-900 tracking-tight">Nuevo pase</h1>
-          <p class="text-slate-500 mt-1 text-sm font-bold">Registro y justificación de incidencias</p>
-        </header>
+        
+        <!-- Header & Search (Fixed Top) -->
+        <div class="px-6 md:px-8 pt-6 md:pt-8 pb-4 shrink-0 bg-transparent flex flex-col gap-6 z-20">
+          <header>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Nuevo pase</h1>
+            <p class="text-slate-500 mt-1 text-sm font-bold">Registro y justificación de incidencias</p>
+          </header>
 
-        <div class="flex-1 overflow-y-auto overflow-visible px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0 xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)] pb-[120px] xl:pb-8">
-          
           <div class="relative">
-            <div class="flex items-center gap-4 mb-6">
+            <div class="flex items-center gap-4 mb-4">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#8EC152] to-[#618B2F] text-white border border-[#7DB041] shadow-[#8EC152]/20">
                 1
               </div>
               <div>
-                <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Colaborador</h2>
-                <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Identifica a la persona</p>
+                <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Colaboradores</h2>
+                <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Añade a los involucrados</p>
               </div>
             </div>
-            
             <EmployeeSearch @select="addEmployee" />
+          </div>
+        </div>
+
+        <!-- Selected Employees List (Scrollable Middle - High Density) -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-8 relative z-10 min-h-0 pb-10">
+          <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 pb-6">
             
-            <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3 mt-5">
-              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col w-full bg-white/70 backdrop-blur-md p-4 rounded-[1.5rem] border border-white shadow-sm group transition-all relative overflow-hidden hover:border-white/80 hover:shadow-md">
-                <div class="flex items-start justify-between mb-2 relative z-10">
-                  <div class="flex items-center gap-3 min-w-0 pr-2">
-                     <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="md" class="shrink-0 border border-white shadow-sm" />
-                     <div class="flex flex-col min-w-0">
-                       <span class="text-sm font-black text-slate-900 truncate" :title="emp.name">{{ emp.name }}</span>
-                       <span v-if="myProfile && emp.name === myProfile.name" class="text-[9px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded uppercase tracking-widest mt-1.5 w-max border border-brand-100/50">Registro propio</span>
-                     </div>
+            <div class="flex items-center justify-between pb-2 border-b border-white/60 px-1 mt-2">
+              <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest">Lista seleccionada ({{ selectedEmployees.length }})</h3>
+              <button v-if="selectedEmployees.length > 1" @click="resetFlow" class="text-[10px] font-bold text-casita-red hover:text-casita-red-dark uppercase tracking-widest transition-colors outline-none bg-white hover:bg-red-50 px-2.5 py-1 rounded-md border border-white shadow-sm">Remover todos</button>
+            </div>
+            
+            <div class="flex flex-col gap-2.5">
+              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white shadow-sm group hover:shadow-md transition-all">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="w-10 h-10 ring-2 ring-white shadow-sm shrink-0" />
+                    <div class="flex flex-col min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-black text-slate-900 truncate">{{ emp.name }}</span>
+                        <span v-if="myProfile && emp.name === myProfile.name" class="shrink-0 text-[8px] font-black text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded uppercase tracking-widest border border-brand-100/50 shadow-sm">Yo</span>
+                      </div>
+                      
+                      <!-- Loading State -->
+                      <div v-if="emp._enriching" class="flex gap-2 mt-1.5">
+                        <div class="h-3 w-16 bg-slate-200/50 animate-pulse rounded"></div>
+                        <div class="h-3 w-24 bg-slate-200/50 animate-pulse rounded"></div>
+                      </div>
+                      
+                      <!-- Enriched Info -->
+                      <div v-else class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] font-bold text-slate-500">
+                        <span v-if="emp.puesto" class="truncate max-w-[120px]">{{ emp.puesto }}</span>
+                        <span v-if="emp.puesto && emp.plantelBase" class="text-slate-300">•</span>
+                        
+                        <span v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase" class="text-[#007F92] flex items-center gap-1 bg-[#007F92]/10 px-1.5 py-0.5 rounded border border-[#007F92]/20">
+                          <MapPin class="w-3 h-3" /> {{ emp.plantelActual }}
+                          <button @click.stop="resetPlantelActual(emp)" class="ml-0.5 hover:text-[#006575]"><XIcon class="w-3 h-3"/></button>
+                        </span>
+                        <span v-else-if="emp.plantelBase" class="flex items-center gap-1">
+                          <Building2 class="w-3 h-3 text-slate-400" /> {{ emp.plantelBase }}
+                        </span>
+                        
+                        <button v-if="!emp._editingActual" @click.stop="emp._editingActual = true" class="text-slate-400 hover:text-[#007F92] transition-colors uppercase tracking-widest ml-1 text-[9px] bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">Cambiar</button>
+                      </div>
+                    </div>
                   </div>
-                  <button type="button" @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-red-500 bg-white shadow-sm w-8 h-8 flex items-center justify-center rounded-full transition-colors focus:outline-none shrink-0 outline-none border border-white/60">
-                    <XIcon class="w-4 h-4 shrink-0" />
+                  <button @click="removeEmployee(emp.id)" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm border border-slate-100 transition-colors shrink-0 outline-none">
+                    <XIcon class="w-4 h-4" />
                   </button>
                 </div>
-                
-                <div v-if="emp._enriching" class="flex gap-2 mt-1">
-                  <div class="h-4 w-20 bg-slate-100 animate-pulse rounded-md"></div>
-                  <div class="h-4 w-28 bg-slate-100 animate-pulse rounded-md"></div>
-                </div>
-                <div v-else class="flex flex-col gap-2 w-full mt-1 relative z-10 pt-3 border-t border-white/60">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span v-if="emp.puesto" class="text-slate-600 font-bold text-[11px] flex items-center gap-1.5">
-                      <Briefcase class="w-3.5 h-3.5 text-slate-400" /> {{ emp.puesto }}
-                    </span>
-                    <span v-if="emp.puesto && emp.plantelBase" class="text-slate-300">•</span>
-                    <span v-if="emp.plantelBase" class="text-slate-600 font-bold text-[11px] flex items-center gap-1.5" :class="{'opacity-60': emp.plantelActual && emp.plantelActual !== emp.plantelBase}">
-                      <Building2 class="w-3.5 h-3.5 text-slate-400" />
-                      {{ emp.plantelBase }}
-                    </span>
-                    
-                    <template v-if="emp.plantelActual && emp.plantelActual !== emp.plantelBase">
-                      <span class="text-[#007F92] text-[11px] font-black flex items-center gap-1.5 animate-in fade-in duration-300 ml-2 bg-[#007F92]/10 px-2.5 py-1 rounded-lg border border-[#007F92]/20">
-                        <MapPin class="w-3.5 h-3.5" />
-                        {{ emp.plantelActual }}
-                        <button type="button" @click.stop="resetPlantelActual(emp)" class="ml-1.5 hover:text-[#006575] transition-colors outline-none flex items-center justify-center"><XIcon class="w-3 h-3 shrink-0"/></button>
-                      </span>
-                    </template>
-                    <button v-else-if="!emp._editingActual" type="button" @click.stop="emp._editingActual = true" class="text-[10px] font-black text-slate-400 hover:text-[#007F92] ml-2 transition-colors flex items-center gap-1 outline-none uppercase tracking-widest bg-white/50 px-2 py-1 rounded-lg border border-white shadow-sm">
-                      <MapPin class="w-3 h-3 shrink-0" /> Cambiar
-                    </button>
-                  </div>
 
-                  <div v-if="emp._editingActual" class="p-2 bg-white/60 backdrop-blur-md rounded-xl flex items-center gap-2 animate-in fade-in duration-200 mt-2 border border-white shadow-sm">
-                     <div class="flex-1">
-                        <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="w-full px-3 py-2.5 rounded-lg border border-white/80 text-base sm:text-xs font-bold text-slate-700 bg-white/80 focus:ring-2 focus:ring-[#007F92]/20 focus:border-[#007F92] outline-none cursor-pointer transition-all shadow-sm">
-                           <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
-                        </select>
-                     </div>
-                     <button type="button" @click="emp._editingActual = false" class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-white rounded-lg shadow-sm transition-colors border border-white outline-none shrink-0">
-                        <XIcon class="w-4 h-4 shrink-0" />
-                     </button>
-                  </div>
+                <!-- Edit Plantel Actual inline -->
+                <div v-if="emp._editingActual" class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+                  <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#007F92]/20 focus:border-[#007F92] outline-none cursor-pointer shadow-sm">
+                    <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+                  </select>
+                  <button @click="emp._editingActual = false" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-white rounded-xl shadow-sm border border-slate-200 outline-none shrink-0">
+                    <XIcon class="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div v-if="checkingCoverage" class="py-10 flex flex-col items-center justify-center bg-white/60 backdrop-blur-md rounded-[1.5rem] border border-white shadow-sm mt-6">
-             <Loader2 class="w-8 h-8 animate-spin text-[#007F92] mb-3 shrink-0" />
-             <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
           </div>
           
-          <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500 pb-8 mt-4">
-            <div class="flex items-center gap-4 mb-6 transition-opacity duration-300" :class="selectedEmployees.length === 0 ? 'opacity-50' : 'opacity-100'">
-              <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
-                2
-              </div>
-              <div>
-                <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Motivo</h2>
-                <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Selecciona la razón</p>
-              </div>
-            </div>
+          <div v-else class="flex flex-col items-center justify-center h-full text-center py-10 opacity-60">
+            <Users class="w-12 h-12 text-slate-300 mb-3" />
+            <p class="text-sm font-black text-slate-600">Ningún colaborador</p>
+            <p class="text-xs font-bold text-slate-400 mt-1 max-w-[200px]">Busca y selecciona a una o más personas para crear su pase.</p>
+          </div>
+        </div>
 
-            <div class="bg-white/40 backdrop-blur-md p-3 sm:p-4 rounded-[2rem] shadow-sm border border-white/60">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <ScenarioCard 
-                  v-for="scenario in predefinedScenarios" 
-                  :key="scenario.id" 
-                  :title="scenario.title" 
-                  :iconName="scenario.icon" 
-                  :active="activeScenario?.id === scenario.id" 
-                  @click="selectScenario(scenario)"
-                />
-              </div>
+        <!-- Motivo Section (Fixed Bottom) -->
+        <div v-if="checkingCoverage" class="shrink-0 p-6 md:p-8 border-t border-white/60 bg-white/60 backdrop-blur-xl z-20 flex flex-col items-center justify-center shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+           <Loader2 class="w-8 h-8 animate-spin text-[#007F92] mb-3 shrink-0" />
+           <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
+        </div>
+        
+        <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="shrink-0 p-6 md:p-8 border-t border-white/60 bg-white/70 backdrop-blur-xl z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] pb-10 xl:pb-8">
+          <div class="flex items-center gap-4 mb-5">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
+              2
             </div>
+            <div>
+              <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Motivo</h2>
+              <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Selecciona la razón de incidencia</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-[35vh] overflow-y-auto custom-scrollbar p-1 -mx-1">
+            <ScenarioCard 
+              v-for="scenario in predefinedScenarios" 
+              :key="scenario.id" 
+              :title="scenario.title" 
+              :iconName="scenario.icon" 
+              :active="activeScenario?.id === scenario.id" 
+              @click="selectScenario(scenario)"
+            />
           </div>
         </div>
       </div>
@@ -137,12 +148,11 @@
                 </div>
                 <div>
                   <h2 class="text-base font-black text-slate-900 tracking-tight leading-none">{{ activeScenario.title }}</h2>
-                  <p class="text-[11px] font-bold text-slate-500 mt-1">{{ selectedEmployees.length }} colaborador(es) seleccionado(s)</p>
+                  <p class="text-[11px] font-bold text-slate-500 mt-1">
+                    {{ selectedEmployees.length > 1 ? `Solicitud Múltiple (${selectedEmployees.length} personas)` : 'Completar detalles de solicitud' }}
+                  </p>
                 </div>
               </div>
-            </div>
-            <div class="hidden sm:flex -space-x-3 overflow-hidden px-2">
-              <PremiumAvatar v-for="emp in selectedEmployees" :key="emp.id" :src="emp.picture" :name="emp.name" size="sm" class="inline-block ring-2 ring-white shadow-sm" />
             </div>
           </header>
 
@@ -157,6 +167,20 @@
                </div>
             </div>
           </header>
+
+          <!-- Horizontal Review Strip (Persistencia de Contexto) -->
+          <div class="bg-white/50 backdrop-blur-xl border-b border-white/80 p-4 sm:p-5 shrink-0 shadow-[inset_0_-2px_10px_rgba(0,0,0,0.02)] z-30 relative">
+            <h3 class="text-[10px] font-black text-[#007F92] uppercase tracking-widest mb-3 block w-full px-1">Colaboradores incluidos ({{ selectedEmployees.length }})</h3>
+            <div class="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-1">
+              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex items-center gap-3 bg-white/90 backdrop-blur-md p-2 pr-4 rounded-full border border-white shadow-sm shrink-0 transition-transform hover:-translate-y-0.5">
+                <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="w-8 h-8 ring-2 ring-white shadow-sm" />
+                <div class="flex flex-col">
+                  <span class="text-xs font-black text-slate-800 leading-none">{{ emp.name.split(' ')[0] }} {{ emp.name.split(' ')[1] || '' }}</span>
+                  <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{{ emp.plantelActual || emp.plantelBase || 'Sin Plantel' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div class="flex-1 overflow-y-auto px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
             
@@ -378,7 +402,7 @@
                 >
                   <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
                     <Loader2 v-if="isSubmitting" class="w-5 h-5 animate-spin text-slate-400" />
-                    <Send v-else class="w-5 h-5 text-brand-500 group-hover:text-brand-600 transition-colors" /> 
+                    <Send v-else class="w-5 h-5 text-[#007F92] group-hover:text-[#006575] transition-colors" /> 
                     <span>Solicitar autorización</span>
                   </div>
                 </button>
@@ -387,12 +411,12 @@
                   type="button" 
                   @click="submitPass(true)" 
                   :disabled="isSubmitting || !isFormComplete" 
-                  class="w-full relative group overflow-hidden bg-gradient-to-b from-brand-500 to-brand-700 text-white font-black text-base sm:text-sm rounded-[1.25rem] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-brand-800/50"
+                  class="w-full relative group overflow-hidden bg-gradient-to-b from-[#007F92] to-[#006575] text-white font-black text-base sm:text-sm rounded-[1.25rem] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-[#00497B]/50"
                 >
                   <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
                   <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
                     <Loader2 v-if="isSubmitting" class="w-5 h-5 animate-spin text-white/80" />
-                    <CheckCircle v-else class="w-5 h-5 text-brand-200 group-hover:text-white transition-colors" /> 
+                    <CheckCircle v-else class="w-5 h-5 text-[#b4e2e2] group-hover:text-white transition-colors" /> 
                     <span class="tracking-wide">Autorizar directamente</span>
                   </div>
                 </button>
@@ -400,7 +424,7 @@
 
               <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center mt-2">
                 <Info class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
-                Solicitud registrada a tu nombre.
+                Contiene un registro a tu propio nombre.
               </p>
             </div>
 
@@ -409,25 +433,22 @@
       </div>
     </section>
 
-    <!-- RIGHT COLUMN (Context History) -->
+    <!-- RIGHT COLUMN (Context History - Stackeable) -->
     <section 
-      class="w-full flex-1 flex flex-col p-5 md:p-8 relative bg-transparent z-10 xl:h-full min-w-0 overflow-visible xl:overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+      class="w-full flex-1 flex flex-col relative bg-transparent z-10 xl:h-full min-w-0 overflow-y-auto custom-scrollbar transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
       :class="activeScenario ? 'hidden xl:flex' : 'flex'"
     >
-      <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0 relative">
+      <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0 relative p-5 md:p-8 pb-20">
         <template v-if="selectedEmployees.length > 0">
-          <EmployeeContextPanel 
-            v-for="emp in selectedEmployees" 
-            :key="emp.id" 
-            :employee="emp" 
-            class="flex-1 min-h-[400px] animate-in fade-in slide-in-from-right-8 duration-500" 
-          />
+          <div v-for="(emp, idx) in selectedEmployees" :key="emp.id" class="flex-1 min-h-[450px] max-h-[700px] shrink-0 bg-white/40 backdrop-blur-xl rounded-[2.5rem] p-5 sm:p-8 shadow-sm border border-white animate-in fade-in slide-in-from-right-8 duration-500 relative overflow-hidden flex flex-col" :style="{ animationDelay: `${idx * 0.1}s` }">
+             <EmployeeContextPanel :employee="emp" class="flex-1 h-full" />
+          </div>
         </template>
         <template v-else>
           <RecentActivityPanel class="flex-1 min-h-0 animate-in fade-in duration-700" />
         </template>
         
-        <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-50/90 to-transparent pointer-events-none z-20 rounded-b-3xl"></div>
+        <div class="sticky bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-50/90 to-transparent pointer-events-none z-20 -mt-12 rounded-b-3xl"></div>
       </div>
     </section>
 
@@ -447,7 +468,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'

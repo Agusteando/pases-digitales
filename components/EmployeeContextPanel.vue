@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col xl:h-full min-h-0 relative w-full bg-transparent">
+  <div class="flex flex-col h-full relative w-full bg-transparent">
     
-    <!-- Top Information Card (Reimaginado: Muy compacto) -->
+    <!-- Top Information Card -->
     <div class="flex flex-col relative z-20 shrink-0 mb-4 p-4 sm:p-5 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-sm rounded-[1.5rem]">
       <div class="flex items-center gap-4">
         <PremiumAvatar :src="displayPic" :name="employee.name" size="md" class="shrink-0 shadow-sm border border-white" />
@@ -28,7 +28,7 @@
         </div>
       </div>
 
-      <!-- KPI Summary en línea -->
+      <!-- KPI Summary -->
       <div class="flex flex-wrap gap-x-6 gap-y-3 mt-4 pt-3 border-t border-[#86888C]/10 relative">
         <div v-if="Object.keys(statCounters).length === 0" class="text-[10px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-1.5">
           <CheckCircle2 class="w-3.5 h-3.5 text-[#8EC152]" /> Sin incidencias en el ciclo.
@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <!-- Active Open Pass Warning (Compacto) -->
+    <!-- Active Open Pass Warning -->
     <transition name="fade">
       <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-[#F49A6D]/10 to-transparent p-3 sm:p-4 flex items-center justify-between gap-4 border border-[#F49A6D]/20 shadow-sm rounded-2xl relative z-10 mb-4 backdrop-blur-md">
         <div class="flex items-center gap-3 min-w-0">
@@ -60,10 +60,10 @@
       </div>
     </transition>
 
-    <!-- Flowing Timeline Panel (Reestructurado) -->
-    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar px-1 sm:px-2 pb-12 relative z-10">
+    <!-- Flowing Timeline Panel (Desacoplado del scroll interno para permitir stack múltiple) -->
+    <div class="flex-1 px-1 sm:px-2 pb-6 relative z-10">
       
-      <!-- Sticky Header Compacto -->
+      <!-- Sticky Header -->
       <div class="sticky top-0 z-30 pt-3 pb-3 mb-5 bg-white/80 backdrop-blur-xl border-b border-[#86888C]/15 flex items-center justify-between gap-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-b-2xl shadow-sm">
         <div class="flex flex-col">
           <h3 class="text-lg font-black text-[#50535A] tracking-tight leading-none">Historial</h3>

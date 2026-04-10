@@ -1,26 +1,26 @@
 <template>
   <div class="relative w-full">
     <div class="relative flex items-center group">
-      <div class="absolute left-5 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-casita-green transition-colors pointer-events-none">
+      <div class="absolute left-5 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#007F92] transition-colors pointer-events-none">
         <Search class="w-full h-full" />
       </div>
       <input 
         ref="searchInput"
         v-model="query" 
         @input="onInput"
-        @focus="isFocused = true"
+        @focus="onFocus"
         @blur="onBlur"
         @keydown.down.prevent="navigateResults(1)"
         @keydown.up.prevent="navigateResults(-1)"
         @keydown.enter.prevent="selectHighlighted"
         placeholder="Buscar colaborador..."
-        class="w-full pl-14 pr-14 py-4 bg-white/80 backdrop-blur-sm border-2 border-white focus:border-casita-green/60 focus:bg-white rounded-[1.5rem] text-base sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-sm"
+        class="w-full pl-14 pr-14 py-4 bg-white/80 backdrop-blur-sm border-2 border-white focus:border-[#007F92]/60 focus:bg-white rounded-[1.5rem] text-base sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-sm"
         autocomplete="off"
         spellcheck="false"
       />
       <div class="absolute right-4 flex items-center">
-        <Loader2 v-if="isSearching" class="w-5 h-5 animate-spin text-casita-green" />
-        <button v-else-if="query" @click="clear" class="text-slate-400 hover:text-casita-red bg-white shadow-sm hover:shadow-md p-1.5 rounded-full transition-all focus:outline-none">
+        <Loader2 v-if="isSearching" class="w-5 h-5 animate-spin text-[#007F92]" />
+        <button v-else-if="query" @click="clear(true)" class="text-slate-400 hover:text-red-500 bg-white shadow-sm hover:shadow-md p-1.5 rounded-full transition-all focus:outline-none outline-none">
           <X class="w-4 h-4" />
         </button>
       </div>
@@ -34,14 +34,14 @@
                @mousedown.prevent="selectEmployee(emp)" 
                @mouseenter="highlightedIndex = idx"
                class="px-5 py-4 cursor-pointer flex items-center gap-4 transition-all relative"
-               :class="highlightedIndex === idx ? 'bg-casita-green-light/10' : 'hover:bg-white/80'">
+               :class="highlightedIndex === idx ? 'bg-[#007F92]/10' : 'hover:bg-white/80'">
             
-            <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full transition-colors" :class="highlightedIndex === idx ? 'bg-casita-green' : 'bg-transparent'"></div>
+            <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full transition-colors" :class="highlightedIndex === idx ? 'bg-[#007F92]' : 'bg-transparent'"></div>
 
-            <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-white" :class="highlightedIndex === idx ? 'ring-2 ring-casita-green ring-offset-1 ring-offset-transparent' : ''" />
+            <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-white" :class="highlightedIndex === idx ? 'ring-2 ring-[#007F92] ring-offset-1 ring-offset-transparent' : ''" />
             
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-black text-slate-900 truncate" :class="{'text-casita-green-dark': highlightedIndex === idx}">{{ emp.name }}</p>
+              <p class="text-sm font-black text-slate-900 truncate" :class="{'text-[#006575]': highlightedIndex === idx}">{{ emp.name }}</p>
               <div class="flex items-center gap-2 mt-1">
                 <span v-if="emp.plantel" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-white/60">{{ emp.plantel }}</span>
                 <span v-if="emp.puesto" class="text-[11px] text-slate-500 font-medium truncate">{{ emp.puesto }}</span>
@@ -70,6 +70,7 @@ import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
 const emit = defineEmits(['select'])
 
+const searchInput = ref(null)
 const query = ref('')
 const results = ref([])
 const isSearching = ref(false)
@@ -80,6 +81,13 @@ let searchTimeout = null
 const showResults = computed(() => {
   return isFocused.value && query.value.trim().length >= 2
 })
+
+function onFocus() {
+  isFocused.value = true
+  if (query.value.trim().length >= 2) {
+    onInput()
+  }
+}
 
 function onInput() {
   if (searchTimeout) clearTimeout(searchTimeout)
@@ -108,21 +116,32 @@ function onInput() {
 function onBlur() {
   setTimeout(() => {
     isFocused.value = false
-  }, 150)
+  }, 200)
 }
 
 function selectEmployee(emp) {
   emit('select', emp)
-  clear()
+  // Pasar true mantiene la sincronización entre el estado de Vue y el navegador
+  // logrando la experiencia de adición múltiple continua.
+  clear(true)
 }
 
-function clear() {
+function clear(keepFocus = false) {
   query.value = ''
   results.value = []
   isSearching.value = false
-  isFocused.value = false
   highlightedIndex.value = -1
   if (searchTimeout) clearTimeout(searchTimeout)
+  
+  if (keepFocus) {
+    isFocused.value = true
+    setTimeout(() => {
+      searchInput.value?.focus()
+    }, 10)
+  } else {
+    isFocused.value = false
+    searchInput.value?.blur()
+  }
 }
 
 function navigateResults(dir) {
