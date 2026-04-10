@@ -3,18 +3,18 @@
     
     <!-- LEFT COLUMN (Dynamic Layout Switcher) -->
     <section 
-      class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-slate-200/80 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white overflow-hidden"
+      class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-slate-200/80 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white overflow-visible xl:overflow-hidden"
       :class="activeScenario ? 'xl:w-[280px] 2xl:w-[320px] xl:border-r' : 'xl:w-[460px] 2xl:w-[500px] xl:border-r'"
     >
       <!-- STATE 1: NORMAL EXPANDED MODE -->
-      <div class="absolute top-0 left-0 h-full flex flex-col transition-all duration-500 w-full xl:w-[460px] 2xl:w-[500px] z-10"
-           :class="activeScenario ? 'opacity-0 translate-x-[-20px] pointer-events-none' : 'opacity-100 translate-x-0 delay-200'">
+      <div class="w-full flex-col transition-all duration-500 xl:absolute xl:top-0 xl:left-0 xl:h-full xl:w-[460px] 2xl:w-[500px] z-10"
+           :class="activeScenario ? 'hidden xl:flex opacity-0 xl:-translate-x-5 pointer-events-none' : 'flex opacity-100 translate-x-0 xl:delay-200'">
         <header class="px-6 md:px-8 py-6 md:py-8 border-b border-slate-100 bg-white shrink-0">
           <h1 class="text-3xl font-black text-slate-900 tracking-tight">Nuevo pase</h1>
           <p class="text-slate-500 mt-1 text-sm font-bold">Registro y justificación de incidencias</p>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0 shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
+        <div class="flex-1 xl:overflow-y-auto overflow-visible px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0 xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
           
           <div class="relative">
             <div class="flex items-center gap-4 mb-5">
@@ -119,10 +119,10 @@
       </div>
 
       <!-- STATE 2: COMPACT SIDEBAR MODE -->
-      <div class="absolute top-0 left-0 h-full flex flex-col transition-all duration-500 bg-white w-full xl:w-[280px] 2xl:w-[320px] z-20"
-           :class="activeScenario ? 'opacity-100 translate-x-0 delay-200' : 'opacity-0 translate-x-[-20px] pointer-events-none'">
+      <div class="w-full flex-col transition-all duration-500 bg-white xl:absolute xl:top-0 xl:left-0 xl:h-full xl:w-[280px] 2xl:w-[320px] z-20"
+           :class="activeScenario ? 'flex opacity-100 translate-x-0 xl:delay-200' : 'hidden xl:flex opacity-0 xl:-translate-x-5 pointer-events-none'">
         
-        <div class="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar flex flex-col gap-6 shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
+        <div class="flex-1 xl:overflow-y-auto overflow-visible p-4 sm:p-5 custom-scrollbar flex flex-col gap-6 xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
           
           <div class="flex items-center justify-between mb-1 border-b border-slate-100 pb-3">
             <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaboradores</h2>
@@ -170,10 +170,10 @@
 
     <!-- MIDDLE COLUMN (Form Details) -->
     <section 
-      class="transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] overflow-hidden shrink-0 flex flex-col bg-slate-50 z-20 relative"
-      :class="activeScenario ? 'max-h-[3000px] xl:max-h-none xl:w-[480px] 2xl:w-[560px] opacity-100 border-b xl:border-b-0 xl:border-r border-slate-200' : 'max-h-0 xl:max-h-none xl:w-0 opacity-0 border-transparent'"
+      class="transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] shrink-0 flex-col bg-slate-50 z-20 relative overflow-visible xl:overflow-hidden"
+      :class="activeScenario ? 'flex xl:w-[480px] 2xl:w-[560px] opacity-100 border-b xl:border-b-0 xl:border-r border-slate-200' : 'hidden xl:flex xl:w-0 opacity-0 border-transparent pointer-events-none'"
     >
-      <div class="w-full xl:w-[480px] 2xl:w-[560px] shrink-0 h-full flex flex-col relative transition-opacity duration-500 delay-300"
+      <div class="w-full xl:w-[480px] 2xl:w-[560px] shrink-0 xl:h-full flex flex-col relative transition-opacity duration-500 xl:delay-300"
            :class="activeScenario ? 'opacity-100' : 'opacity-0'">
         <template v-if="activeScenario">
           <header class="hidden xl:flex px-6 py-6 border-b border-slate-200/60 bg-white shrink-0 items-center justify-between">
@@ -189,7 +189,7 @@
           </header>
 
           <!-- Scrollable Fields Area -->
-          <div class="flex-1 overflow-y-auto px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
+          <div class="flex-1 xl:overflow-y-auto overflow-visible px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
             
             <div class="xl:hidden flex items-center gap-4 mb-6">
               <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-md border border-[#E99060] shrink-0 bg-gradient-to-br from-[#F7A37B] to-[#D97746] text-white">
@@ -405,7 +405,7 @@
           </div>
           
           <!-- Sticky Actions Footer -->
-          <div class="shrink-0 px-6 py-5 bg-white border-t border-slate-200 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] flex flex-col gap-4 relative">
+          <div class="shrink-0 px-6 py-5 bg-white border-t border-slate-200 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] flex flex-col gap-4 sticky bottom-[76px] xl:bottom-0">
             <transition name="fade">
               <div v-if="missingFieldsText" class="flex items-start gap-2.5 px-4 py-3 bg-[#F49A6D]/10 rounded-xl border border-[#F49A6D]/20">
                 <Info class="w-4 h-4 text-[#D97746] shrink-0 mt-0.5" />
@@ -451,7 +451,7 @@
     </section>
 
     <!-- RIGHT COLUMN (Context History) -->
-    <section class="w-full flex-1 flex flex-col p-5 md:p-8 relative bg-transparent z-10 xl:h-full min-w-0 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]">
+    <section class="w-full flex-1 flex flex-col p-5 md:p-8 relative bg-transparent z-10 xl:h-full min-w-0 overflow-visible xl:overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]">
       <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0">
         <template v-if="selectedEmployees.length > 0">
           <EmployeeContextPanel 

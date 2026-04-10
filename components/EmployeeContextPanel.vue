@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 relative w-full">
+  <div class="flex flex-col xl:h-full min-h-0 relative w-full">
     
     <!-- Header: Employee Context -->
     <div class="flex flex-col relative z-10 shrink-0 mb-6 pb-6 border-b border-slate-200/60">
@@ -64,7 +64,7 @@
     </transition>
 
     <!-- History Panel -->
-    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 pb-12 relative z-10" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
+    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar pr-2 sm:pr-4 pb-12 relative z-10 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
       
       <!-- Refined Sticky History Header -->
       <div class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md pt-2 pb-3 mb-5 border-b border-slate-200/60 flex items-end justify-between px-1">

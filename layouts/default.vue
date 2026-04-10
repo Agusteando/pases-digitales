@@ -68,8 +68,8 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="flex-1 w-full bg-transparent pb-[80px] md:pb-0 relative z-10 overflow-hidden">
-      <div class="relative z-10 h-full">
+    <main class="flex-1 w-full bg-transparent pb-[80px] md:pb-0 relative z-10 overflow-x-hidden md:overflow-hidden">
+      <div class="relative z-10 h-auto md:h-full">
         <slot />
       </div>
     </main>

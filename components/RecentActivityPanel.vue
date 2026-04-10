@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 relative w-full">
+  <div class="flex flex-col xl:h-full min-h-0 relative w-full">
     
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-slate-200/50 shrink-0 relative z-20 mb-6">
       <div>
@@ -11,7 +11,7 @@
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 relative z-10 pb-12" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
+    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar pr-2 sm:pr-4 relative z-10 pb-12 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
       
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-brand-500" /></div>
       
