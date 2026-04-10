@@ -1,14 +1,12 @@
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     
-    <!-- LEFT COLUMN (Dynamic Layout Switcher) -->
+    <!-- LEFT COLUMN (Paso 1: Selección - Divulgación Progresiva) -->
     <section 
-      class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-white/50 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white/50 backdrop-blur-2xl overflow-visible xl:overflow-hidden shadow-[4px_0_24px_rgba(0,0,0,0.02)]"
-      :class="activeScenario ? 'xl:w-[280px] 2xl:w-[320px] xl:border-r' : 'xl:w-[460px] 2xl:w-[500px] xl:border-r'"
+      class="w-full flex flex-col shrink-0 border-b xl:border-b-0 border-white/50 z-30 xl:h-full transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative bg-white/50 backdrop-blur-2xl shadow-[4px_0_24px_rgba(0,0,0,0.02)] overflow-hidden"
+      :class="activeScenario ? 'xl:w-0 xl:opacity-0 xl:border-none pointer-events-none' : 'xl:w-[460px] 2xl:w-[500px] xl:border-r opacity-100'"
     >
-      <!-- STATE 1: NORMAL EXPANDED MODE -->
-      <div class="w-full flex-col transition-all duration-500 xl:absolute xl:top-0 xl:left-0 xl:h-full xl:w-[460px] 2xl:w-[500px] z-10"
-           :class="activeScenario ? 'hidden xl:flex opacity-0 xl:-translate-x-5 pointer-events-none' : 'flex opacity-100 translate-x-0 xl:delay-200'">
+      <div class="w-full xl:w-[460px] 2xl:w-[500px] flex-col h-full flex shrink-0">
         <header class="px-6 md:px-8 py-6 md:py-8 border-b border-white/60 bg-transparent shrink-0">
           <h1 class="text-3xl font-black text-slate-900 tracking-tight">Nuevo pase</h1>
           <p class="text-slate-500 mt-1 text-sm font-bold">Registro y justificación de incidencias</p>
@@ -117,90 +115,53 @@
           </div>
         </div>
       </div>
-
-      <!-- STATE 2: COMPACT SIDEBAR MODE -->
-      <div class="w-full flex-col transition-all duration-500 bg-transparent xl:absolute xl:top-0 xl:left-0 xl:h-full xl:w-[280px] 2xl:w-[320px] z-20"
-           :class="activeScenario ? 'flex opacity-100 translate-x-0 xl:delay-200' : 'hidden xl:flex opacity-0 xl:-translate-x-5 pointer-events-none'">
-        
-        <div class="flex-1 xl:overflow-y-auto overflow-visible p-4 sm:p-5 custom-scrollbar flex flex-col gap-6 xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
-          
-          <div class="flex items-center justify-between mb-1 border-b border-white/60 pb-3">
-            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaboradores</h2>
-            <button @click="resetFlow" class="text-[10px] font-black text-[#007F92] hover:text-[#006575] transition-colors outline-none flex items-center gap-1.5 uppercase tracking-widest bg-white/60 hover:bg-white px-2 py-1 rounded-md border border-white shadow-sm">
-              <RotateCcw class="w-3 h-3" /> Reiniciar
-            </button>
-          </div>
-
-          <div class="flex flex-col gap-2.5">
-            <div v-for="emp in selectedEmployees" :key="emp.id" class="bg-white/70 backdrop-blur-md p-3 rounded-[1.25rem] border border-white flex items-center justify-between group relative overflow-hidden shadow-sm">
-              <div class="flex items-center gap-3 w-full min-w-0 pr-2">
-                <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 border border-white shadow-sm" />
-                <div class="flex flex-col min-w-0">
-                  <span class="text-sm font-black text-slate-900 truncate tracking-tight" :title="emp.name">{{ emp.name.split(' ')[0] }} {{ emp.name.split(' ')[1] || '' }}</span>
-                  <span class="text-[10px] font-bold text-slate-500 truncate mt-[1px]">{{ emp.plantelActual || emp.plantelBase }}</span>
-                </div>
-              </div>
-              <button @click="removeEmployee(emp.id)" class="text-slate-400 hover:text-red-500 bg-white border border-white shadow-sm w-7 h-7 flex items-center justify-center rounded-full transition-colors shrink-0 outline-none hover:bg-red-50">
-                <XIcon class="w-4 h-4" />
-              </button>
-            </div>
-            
-            <button @click="activeScenario = null" class="mt-2 text-[10px] font-black text-[#007F92] hover:text-[#006575] flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-colors outline-none border border-dashed border-[#007F92]/40 bg-white/40 hover:bg-white/70 uppercase tracking-widest backdrop-blur-sm shadow-sm">
-              <Plus class="w-3.5 h-3.5" /> Añadir otro
-            </button>
-          </div>
-
-          <div class="flex flex-col relative mt-6">
-            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-white/60 pb-3">Motivo</h3>
-            
-            <div class="bg-white/40 backdrop-blur-md p-2.5 rounded-[2rem] shadow-sm border border-white/60 flex flex-col gap-2.5">
-              <ScenarioCard 
-                v-for="scenario in predefinedScenarios" 
-                :key="scenario.id"
-                :title="scenario.title"
-                :iconName="scenario.icon"
-                :active="activeScenario?.id === scenario.id"
-                @click="selectScenario(scenario)"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
 
-    <!-- MIDDLE COLUMN (Form Details) -->
+    <!-- MIDDLE COLUMN (Paso 2: Detalles y Envío) -->
     <section 
-      class="transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] shrink-0 flex-col bg-white/30 backdrop-blur-xl z-20 relative overflow-visible xl:overflow-hidden"
-      :class="activeScenario ? 'flex xl:w-[480px] 2xl:w-[560px] opacity-100 border-b xl:border-b-0 xl:border-r border-white/50' : 'hidden xl:flex xl:w-0 opacity-0 border-transparent pointer-events-none'"
+      class="transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)] shrink-0 flex-col bg-white/30 backdrop-blur-xl z-20 relative overflow-hidden"
+      :class="activeScenario ? 'flex xl:w-[500px] 2xl:w-[600px] opacity-100 border-b xl:border-b-0 xl:border-r border-white/50' : 'hidden xl:flex xl:w-0 opacity-0 border-transparent pointer-events-none'"
     >
-      <div class="w-full xl:w-[480px] 2xl:w-[560px] shrink-0 xl:h-full flex flex-col relative transition-opacity duration-500 xl:delay-300"
+      <div class="w-full xl:w-[500px] 2xl:w-[600px] shrink-0 xl:h-full flex flex-col relative transition-opacity duration-500 xl:delay-300"
            :class="activeScenario ? 'opacity-100' : 'opacity-0'">
         <template v-if="activeScenario">
-          <header class="hidden xl:flex px-6 py-6 border-b border-white/60 bg-transparent shrink-0 items-center justify-between">
+          
+          <!-- Resumen de selección (Reemplaza la columna izquierda colapsada) -->
+          <header class="hidden xl:flex px-6 py-5 border-b border-white/60 bg-white/40 items-center justify-between shrink-0">
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-[#F7A37B] to-[#D97746] text-white flex items-center justify-center shadow-md border border-[#E99060] shrink-0 font-black text-base shadow-[#F49A6D]/20">
-                3
+              <button type="button" @click="goBack" class="p-2.5 bg-white rounded-xl text-slate-400 hover:text-[#007F92] hover:shadow-md transition-all border border-white/80 shadow-sm outline-none" title="Modificar selección">
+                <ArrowLeft class="w-5 h-5" />
+              </button>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-[1rem] flex items-center justify-center shadow-sm shrink-0 border border-white bg-white text-[#007F92]">
+                  <component :is="getScenarioIcon(activeScenario.icon)" class="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 class="text-base font-black text-slate-900 tracking-tight leading-none">{{ activeScenario.title }}</h2>
+                  <p class="text-[11px] font-bold text-slate-500 mt-1">{{ selectedEmployees.length }} colaborador(es) seleccionado(s)</p>
+                </div>
               </div>
-              <div>
-                <h2 class="text-xl font-black text-slate-900 tracking-tight leading-none">Detalles de la solicitud</h2>
-                <p class="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">Completa la información</p>
-              </div>
+            </div>
+            <div class="hidden sm:flex -space-x-3 overflow-hidden px-2">
+              <PremiumAvatar v-for="emp in selectedEmployees" :key="emp.id" :src="emp.picture" :name="emp.name" size="sm" class="inline-block ring-2 ring-white shadow-sm" />
             </div>
           </header>
 
-          <!-- Scrollable Fields Area -->
-          <div class="flex-1 xl:overflow-y-auto overflow-visible px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
-            
-            <div class="xl:hidden flex items-center gap-4 mb-6">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-md border border-[#E99060] shrink-0 bg-gradient-to-br from-[#F7A37B] to-[#D97746] text-white">
-                3
-              </div>
-              <div>
-                <h2 class="text-lg font-black text-slate-900 tracking-tight leading-none">Detalles de la solicitud</h2>
-                <p class="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Completa la información</p>
-              </div>
+          <header class="xl:hidden flex px-6 py-5 border-b border-white/60 bg-white/40 shrink-0 items-center justify-between">
+            <div class="flex items-center gap-4">
+               <button type="button" @click="goBack" class="p-2 bg-white rounded-xl text-slate-400 hover:text-[#007F92] transition-colors shadow-sm border border-white/80 outline-none">
+                 <ArrowLeft class="w-5 h-5" />
+               </button>
+               <div>
+                 <h2 class="text-lg font-black text-slate-900 tracking-tight leading-none">Detalles de la solicitud</h2>
+                 <p class="text-[11px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Completa la información</p>
+               </div>
             </div>
+          </header>
 
+          <!-- Scrollable Fields Area with explicit bottom padding for Mobile Actions -->
+          <div class="flex-1 xl:overflow-y-auto overflow-visible px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)] pb-40 xl:pb-6">
+            
             <form @submit.prevent class="relative flex flex-col gap-8 py-2">
               
               <!-- Quick Presets -->
@@ -404,8 +365,8 @@
             </form>
           </div>
           
-          <!-- Sticky Actions Footer -->
-          <div class="shrink-0 mt-4 mb-6 xl:mt-0 xl:mb-0 p-5 sm:p-6 bg-white/80 backdrop-blur-2xl border border-white/80 xl:border-0 xl:border-t xl:border-white z-30 rounded-[2rem] xl:rounded-none shadow-sm xl:shadow-[0_-10px_30px_rgba(0,0,0,0.03)] flex flex-col gap-4 relative xl:sticky xl:bottom-0">
+          <!-- Sticky Actions Footer (Mobile Fixed / Desktop Sticky) -->
+          <div class="fixed bottom-14 md:bottom-0 left-0 right-0 z-50 p-4 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] xl:static xl:bg-white/80 xl:border-0 xl:border-t xl:border-white xl:shadow-[0_-10px_30px_rgba(0,0,0,0.03)] xl:p-6 xl:rounded-none xl:mt-auto shrink-0 flex flex-col gap-4">
 
             <div class="flex flex-col sm:flex-row gap-4 items-stretch">
               <button 
@@ -436,7 +397,7 @@
               </button>
             </div>
             
-            <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">
+            <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4 pb-2 md:pb-0">
               <Info class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
               Estás generando una solicitud a tu propio nombre.
             </p>
@@ -447,7 +408,7 @@
 
     <!-- RIGHT COLUMN (Context History) -->
     <section class="w-full flex-1 flex flex-col p-5 md:p-8 relative bg-transparent z-10 xl:h-full min-w-0 overflow-visible xl:overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.2,0.8,0.2,1)]">
-      <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0">
+      <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0 relative">
         <template v-if="selectedEmployees.length > 0">
           <EmployeeContextPanel 
             v-for="emp in selectedEmployees" 
@@ -459,6 +420,9 @@
         <template v-else>
           <RecentActivityPanel class="flex-1 min-h-0 animate-in fade-in duration-700" />
         </template>
+        
+        <!-- Gradient Overlay para sugerencia visual de desplazamiento persistente -->
+        <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-slate-50/90 to-transparent pointer-events-none z-20 rounded-b-3xl"></div>
       </div>
     </section>
 
@@ -478,7 +442,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -658,6 +622,10 @@ function resetFlow() {
   activeScenario.value = null
   selectedEmployees.value = []
   coverageQueue.value = []
+}
+
+function goBack() {
+  activeScenario.value = null
 }
 
 async function onPlantelActualSelected(emp) {

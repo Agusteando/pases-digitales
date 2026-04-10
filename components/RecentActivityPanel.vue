@@ -1,37 +1,34 @@
 <template>
   <div class="flex flex-col xl:h-full min-h-0 relative w-full">
     
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 pb-4 border-b border-slate-200/50 shrink-0 relative z-20 mb-6 mt-2 px-1">
-      <div class="flex items-center gap-3">
-        <h2 class="text-xl font-black text-slate-900 tracking-tight">Actividad</h2>
-      </div>
-      <button @click="refresh" class="px-3 py-1.5 text-slate-500 hover:text-brand-600 bg-white border border-slate-200 hover:border-brand-300 rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-widest outline-none focus:shadow-md">
-        <RefreshCcw :class="{'animate-spin': pending}" class="w-3 h-3 shrink-0" /> 
-        <span class="mt-[1px]">Actualizar</span>
+    <div class="flex items-center justify-between gap-4 pb-3 border-b border-slate-200/50 shrink-0 relative z-20 mb-4">
+      <h2 class="text-xl font-black text-slate-900 tracking-tight">Actividad Reciente</h2>
+      <button @click="refresh" class="p-2 text-slate-400 hover:text-brand-600 bg-white border border-white hover:border-brand-200 rounded-xl shadow-sm transition-all outline-none">
+        <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4 shrink-0" /> 
       </button>
     </div>
 
-    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar pr-2 sm:pr-4 relative z-10 pb-12 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
+    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar pr-2 sm:pr-4 relative z-10 pb-12">
       
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-brand-500" /></div>
       
-      <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-casita-red gap-4 bg-white/40 rounded-[2rem] border border-white border-dashed">
-        <div class="w-16 h-16 bg-casita-red/10 rounded-full flex items-center justify-center border border-casita-red/20 shadow-sm">
-          <AlertTriangle class="w-8 h-8 text-casita-red" />
+      <div v-else-if="error" class="flex flex-col items-center justify-center py-12 text-casita-red gap-3 bg-white/40 rounded-[2rem] border border-white shadow-sm">
+        <div class="w-12 h-12 bg-casita-red/10 rounded-full flex items-center justify-center border border-casita-red/20 shadow-sm">
+          <AlertTriangle class="w-5 h-5 text-casita-red" />
         </div>
         <div class="text-center">
           <span class="text-sm font-black text-casita-red-dark block">Error de conexión</span>
-          <span class="text-xs font-medium text-casita-red-dark/80 mt-1 block">No se pudo cargar la actividad reciente.</span>
+          <span class="text-[10px] font-bold text-casita-red-dark/80 mt-1 block uppercase tracking-widest">No se pudo cargar la actividad.</span>
         </div>
       </div>
 
-      <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-4 bg-white/40 rounded-[2rem] border border-white border-dashed">
-        <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
-          <FileText class="w-8 h-8 text-slate-300" />
+      <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 gap-3 bg-white/40 rounded-[2rem] border border-white shadow-sm">
+        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
+          <FileText class="w-5 h-5 text-slate-300" />
         </div>
         <div class="text-center">
-          <span class="text-base font-black text-slate-700 block">Bandeja vacía</span>
-          <span class="text-sm font-medium text-slate-500 mt-1 block">No hay pases generados recientemente.</span>
+          <span class="text-sm font-black text-slate-700 block">Sin actividad</span>
+          <span class="text-[10px] font-bold text-slate-500 mt-1 block uppercase tracking-widest">Aún no se generan incidencias.</span>
         </div>
       </div>
 
@@ -39,7 +36,7 @@
         <!-- Main Line -->
         <div class="absolute top-4 bottom-0 left-[11px] w-[2px] bg-gradient-to-b from-slate-200 via-slate-200/50 to-transparent z-0"></div>
 
-        <div class="space-y-6">
+        <div class="space-y-4">
           <div v-for="(pass, index) in data" :key="pass.id" class="relative pl-10 group/item timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
             
             <!-- Node Icon -->
@@ -48,28 +45,28 @@
             </div>
 
             <!-- Card Content -->
-            <div class="flex flex-col p-4 sm:p-5 rounded-[1.5rem] bg-white/60 hover:bg-white border border-transparent hover:border-slate-200/80 transition-all duration-300 cursor-default relative overflow-hidden group/card shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_24px_-6px_rgba(0,0,0,0.08)]">
+            <div class="flex flex-col p-4 rounded-[1.25rem] bg-white/60 hover:bg-white border border-transparent hover:border-slate-200/80 transition-all duration-300 cursor-default relative overflow-hidden group/card shadow-sm hover:shadow-md">
               
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2.5">
-                  <span class="font-mono text-[11px] font-black text-slate-400 group-hover/card:text-brand-600 transition-colors">#{{ String(pass.id).padStart(5, '0') }}</span>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-[10px] font-black text-slate-400 group-hover/card:text-brand-600 transition-colors">#{{ String(pass.id).padStart(5, '0') }}</span>
                   <div class="w-1 h-1 rounded-full bg-slate-200"></div>
-                  <span class="text-[10px] font-bold text-slate-500">{{ formatDateTime(pass.date, pass.time) }}</span>
+                  <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{{ formatDateTime(pass.date, pass.time) }}</span>
                 </div>
                 <div class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white border border-slate-100 shadow-sm">
                   <div class="w-1.5 h-1.5 rounded-full animate-pulse" :class="getStatusDotColor(pass.status)"></div>
-                  <span class="text-[9px] font-black uppercase tracking-widest" :class="getStatusTextColor(pass.status)">{{ pass.status }}</span>
+                  <span class="text-[8px] font-black uppercase tracking-widest" :class="getStatusTextColor(pass.status)">{{ pass.status }}</span>
                 </div>
               </div>
 
               <div class="flex items-start justify-between gap-4">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <h4 class="text-base font-black text-slate-900 tracking-tight truncate">{{ pass.employee_name }}</h4>
-                  <div class="flex items-center gap-2 mt-1 flex-wrap">
-                    <span class="text-[11px] font-bold text-slate-600">{{ getCategoryName(pass.category_id) }}</span>
+                  <h4 class="text-sm font-black text-slate-900 tracking-tight truncate">{{ pass.employee_name }}</h4>
+                  <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span class="text-[10px] font-bold text-slate-600">{{ getCategoryName(pass.category_id) }}</span>
                     <span v-if="pass.plantel" class="text-slate-300">•</span>
-                    <span v-if="pass.plantel" class="text-[10px] font-bold text-slate-500 flex items-center gap-1">
-                      <Building2 class="w-3 h-3 text-slate-400" /> {{ pass.plantel }}
+                    <span v-if="pass.plantel" class="text-[9px] font-black text-slate-500 flex items-center gap-1 uppercase tracking-widest">
+                      <Building2 class="w-2.5 h-2.5 text-slate-400" /> {{ pass.plantel }}
                     </span>
                   </div>
                 </div>

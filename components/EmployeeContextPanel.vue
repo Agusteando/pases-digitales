@@ -1,171 +1,154 @@
 <template>
   <div class="flex flex-col xl:h-full min-h-0 relative w-full bg-transparent">
     
-    <!-- Top Information Card (Glassmorphism to let background flow through) -->
-    <div class="flex flex-col relative z-20 shrink-0 mb-6 p-6 sm:p-8 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.05)] rounded-[2rem]">
-      <div class="flex flex-col sm:flex-row sm:items-center gap-6">
-        <PremiumAvatar :src="displayPic" :name="employee.name" size="lg" class="shrink-0 shadow-md border-2 border-white" />
+    <!-- Top Information Card (Reimaginado: Muy compacto) -->
+    <div class="flex flex-col relative z-20 shrink-0 mb-4 p-4 sm:p-5 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-sm rounded-[1.5rem]">
+      <div class="flex items-center gap-4">
+        <PremiumAvatar :src="displayPic" :name="employee.name" size="md" class="shrink-0 shadow-sm border border-white" />
         
         <div class="flex flex-col min-w-0 flex-1">
-          <h2 class="text-2xl sm:text-3xl font-light text-[#50535A] tracking-tight line-clamp-2 break-words" :title="employee.name">
+          <h2 class="text-xl sm:text-2xl font-black text-[#50535A] tracking-tight truncate" :title="employee.name">
             {{ employee.name }}
           </h2>
           
-          <div v-if="pendingEnrich" class="mt-3 space-y-2 w-32">
-            <div class="h-2 bg-[#86888C]/10 rounded animate-pulse w-full"></div>
-            <div class="h-2 bg-[#86888C]/10 rounded animate-pulse w-2/3"></div>
+          <div v-if="pendingEnrich" class="mt-2 space-y-1.5 w-32">
+            <div class="h-1.5 bg-[#86888C]/10 rounded animate-pulse w-full"></div>
+            <div class="h-1.5 bg-[#86888C]/10 rounded animate-pulse w-2/3"></div>
           </div>
           
-          <div v-else class="mt-2.5 flex flex-wrap gap-3 items-center">
-            <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[11px] uppercase tracking-widest flex items-center gap-1.5 bg-white/50 px-2.5 py-1 rounded-lg border border-white">
-              <Building2 class="w-3.5 h-3.5 opacity-70" /> {{ displayPlantel }}
+          <div v-else class="mt-1 flex flex-wrap gap-2 items-center">
+            <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white">
+              <Building2 class="w-3 h-3 opacity-70" /> {{ displayPlantel }}
             </span>
             <span v-if="displayPlantel && displayRole" class="text-[#86888C]/30 hidden sm:inline">•</span>
-            <span v-if="displayRole" class="text-[#86888C] font-bold text-[11px] uppercase tracking-widest flex items-center gap-1.5 bg-white/50 px-2.5 py-1 rounded-lg border border-white">
-              <Briefcase class="w-3.5 h-3.5 opacity-70" /> {{ displayRole }}
+            <span v-if="displayRole" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white">
+              <Briefcase class="w-3 h-3 opacity-70" /> {{ displayRole }}
             </span>
           </div>
         </div>
       </div>
 
-      <!-- KPI Summary -->
-      <div class="flex flex-wrap gap-x-8 gap-y-4 mt-8 pt-6 border-t border-[#86888C]/15 relative">
-        <div class="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-white to-transparent opacity-80"></div>
-        <div v-if="Object.keys(statCounters).length === 0" class="text-[11px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-2">
-          <CheckCircle2 class="w-4 h-4 text-[#8EC152]" /> Sin incidencias en el ciclo actual.
+      <!-- KPI Summary en línea -->
+      <div class="flex flex-wrap gap-x-6 gap-y-3 mt-4 pt-3 border-t border-[#86888C]/10 relative">
+        <div v-if="Object.keys(statCounters).length === 0" class="text-[10px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-1.5">
+          <CheckCircle2 class="w-3.5 h-3.5 text-[#8EC152]" /> Sin incidencias en el ciclo.
         </div>
         <template v-else>
-          <KpiIndicator 
-            v-for="(count, cat) in statCounters" 
-            :key="cat" 
-            :count="count" 
-            :label="getCategoryName(Number(cat))" 
-          />
+          <div v-for="(count, cat) in statCounters" :key="cat" class="flex items-center gap-1.5">
+            <span class="text-base font-black text-[#007F92] leading-none">{{ count }}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ getCategoryName(Number(cat)) }}</span>
+          </div>
         </template>
       </div>
     </div>
 
-    <!-- Active Open Pass Warning -->
+    <!-- Active Open Pass Warning (Compacto) -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-[#F49A6D]/10 to-transparent p-5 sm:p-6 flex flex-col sm:flex-row gap-5 border border-[#F49A6D]/20 shadow-sm rounded-[2rem] relative z-10 items-start sm:items-center justify-between group transition-all mb-8 backdrop-blur-md">
-        <div class="flex gap-4 items-center min-w-0">
-          <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-[#F49A6D]/20">
-            <AlertCircle class="w-6 h-6 text-[#F49A6D]" />
+      <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-[#F49A6D]/10 to-transparent p-3 sm:p-4 flex items-center justify-between gap-4 border border-[#F49A6D]/20 shadow-sm rounded-2xl relative z-10 mb-4 backdrop-blur-md">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-[#F49A6D]/20">
+            <AlertCircle class="w-4 h-4 text-[#F49A6D]" />
           </div>
           <div class="min-w-0">
-            <h4 class="text-base font-medium text-[#50535A] truncate">Registro abierto hoy</h4>
-            <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1 truncate">El colaborador ya cuenta con una incidencia en curso.</p>
+            <h4 class="text-sm font-black text-[#50535A] truncate">Incidencia en curso</h4>
+            <p class="text-[9px] font-bold text-[#86888C] uppercase tracking-widest truncate">Existe una solicitud abierta hoy.</p>
           </div>
         </div>
-        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-6 py-3 bg-white text-[#50535A] hover:text-[#007F92] border border-white shadow-sm hover:shadow-md rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 outline-none">
-          <span>Revisar</span>
-          <ArrowRight class="w-4 h-4" />
+        <NuxtLink :to="`/pass/${todayPasses[0].id}`" class="shrink-0 px-4 py-2 bg-white text-[#50535A] hover:text-[#007F92] border border-white shadow-sm hover:shadow-md rounded-xl text-[10px] font-black uppercase tracking-widest transition-all outline-none">
+          Revisar
         </NuxtLink>
       </div>
     </transition>
 
-    <!-- Flowing Timeline Panel -->
-    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar px-1 sm:px-2 pb-16 relative z-10 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
+    <!-- Flowing Timeline Panel (Reestructurado) -->
+    <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar px-1 sm:px-2 pb-12 relative z-10">
       
-      <!-- Sticky Header for Timeline -->
-      <div class="sticky top-0 z-30 pt-6 pb-6 mb-8 bg-white/60 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mx-1 sm:-mx-3 px-3 sm:px-5 rounded-b-3xl shadow-sm">
-        <div>
-          <h3 class="text-xl sm:text-2xl font-light text-[#50535A] tracking-tight">Historial</h3>
-          <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5" v-if="historyData?.cycle">
-            Ciclo Escolar {{ historyData.cycle }}
-          </p>
+      <!-- Sticky Header Compacto -->
+      <div class="sticky top-0 z-30 pt-3 pb-3 mb-5 bg-white/80 backdrop-blur-xl border-b border-[#86888C]/15 flex items-center justify-between gap-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-b-2xl shadow-sm">
+        <div class="flex flex-col">
+          <h3 class="text-lg font-black text-[#50535A] tracking-tight leading-none">Historial</h3>
+          <span class="text-[9px] font-bold text-[#86888C] uppercase tracking-widest mt-1" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</span>
         </div>
-        <div class="relative group w-full sm:w-auto">
-           <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <Search class="w-4 h-4 text-[#86888C] group-focus-within:text-[#007F92] transition-colors" />
+        <div class="relative group flex-1 max-w-[220px]">
+           <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+              <Search class="w-3.5 h-3.5 text-[#86888C] group-focus-within:text-[#007F92] transition-colors" />
            </div>
-           <input type="text" v-model="searchQuery" placeholder="Buscar en historial..." class="w-full sm:w-64 pl-10 pr-4 py-2.5 bg-white/70 backdrop-blur-md border border-white/80 focus:border-[#007F92] focus:ring-4 focus:ring-[#007F92]/10 rounded-xl text-sm text-[#50535A] outline-none transition-all placeholder:text-[#86888C]/60 shadow-sm" />
+           <input type="text" v-model="searchQuery" placeholder="Buscar..." class="w-full pl-8 pr-3 py-2 bg-white/90 backdrop-blur-md border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/10 rounded-xl text-xs font-bold text-[#50535A] outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" />
         </div>
       </div>
 
-      <div v-if="pendingHistory" class="py-20 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
+      <div v-if="pendingHistory" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
       
-      <div v-else-if="historyError" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
-        <div class="w-14 h-14 mb-4 rounded-full bg-white shadow-sm flex items-center justify-center">
-          <AlertTriangle class="w-6 h-6 text-[#E83F4B]" />
+      <div v-else-if="historyError" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+        <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#E83F4B]/20">
+          <AlertTriangle class="w-5 h-5 text-[#E83F4B]" />
         </div>
-        <p class="text-base font-medium text-[#50535A]">Error de conexión</p>
-        <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5">No se pudo cargar la información</p>
+        <p class="text-sm font-black text-[#50535A]">Error de conexión</p>
       </div>
 
-      <div v-else-if="!filteredGroupedHistory.length" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
-        <div class="w-14 h-14 mb-4 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
-          <FileText class="w-6 h-6 text-[#86888C]/40" />
+      <div v-else-if="!filteredGroupedHistory.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+        <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
+          <FileText class="w-5 h-5 text-[#86888C]/40" />
         </div>
-        <p class="text-base font-medium text-[#50535A]">Sin registros</p>
-        <p class="text-[11px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5">No hay incidencias que mostrar</p>
+        <p class="text-sm font-black text-[#50535A]">Sin incidencias</p>
+        <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">El colaborador no tiene registros.</p>
       </div>
 
-      <div v-else class="relative mt-4">
-        <!-- Main timeline loop -->
-        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-14 relative">
+      <div v-else class="relative mt-2">
+        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-10 relative">
           
           <!-- Month Divider Header -->
-          <div class="flex items-center mb-10 pl-[3.5rem] sm:pl-[4.5rem]">
-             <span class="bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-[#86888C] uppercase tracking-widest shadow-sm border border-white">
+          <div class="flex items-center mb-6 pl-[3rem] sm:pl-[4rem]">
+             <span class="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black text-[#86888C] uppercase tracking-widest shadow-sm border border-white">
                {{ group.month }}
              </span>
           </div>
           
           <div class="relative w-full">
-            <!-- Continuous Rail for the month -->
-            <div class="absolute inset-y-0 left-[3.5rem] sm:left-[4.5rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
+            <!-- Continuous Rail -->
+            <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
 
-            <div class="space-y-8 relative z-10">
+            <div class="space-y-6 relative z-10">
               <NuxtLink v-for="(pass, index) in group.passes" :key="pass.id" :to="`/pass/${pass.id}`" class="group flex items-start w-full relative outline-none cursor-pointer" :style="{ animationDelay: `${index * 0.05}s` }">
                 
                 <!-- Date Left Column -->
-                <div class="w-[3.5rem] sm:w-[4.5rem] shrink-0 pt-4 text-right pr-4 sm:pr-6 transition-transform group-hover:-translate-x-1 duration-300">
-                  <div class="text-2xl font-light text-[#50535A] leading-none">{{ formatDay(pass.date) }}</div>
-                  <div class="text-[10px] font-black text-[#86888C] uppercase tracking-widest mt-1.5">{{ formatMonth(pass.date) }}</div>
+                <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4 transition-transform group-hover:-translate-x-1 duration-300">
+                  <div class="text-xl font-black text-[#50535A] leading-none">{{ formatDay(pass.date) }}</div>
+                  <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ formatMonth(pass.date) }}</div>
                 </div>
 
                 <!-- Node Center Column -->
-                <div class="absolute left-[3.5rem] sm:left-[4.5rem] top-[1.35rem] w-3 h-3 rounded-full border-[2.5px] border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
+                <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
 
                 <!-- Floating Card Content -->
-                <div class="flex-1 pl-4 sm:pl-6 relative z-10">
-                  <div class="bg-white/70 backdrop-blur-2xl border border-white/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.5rem] p-5 sm:p-6 group-hover:bg-white/90 group-hover:-translate-y-0.5">
+                <div class="flex-1 pl-4 relative z-10">
+                  <div class="bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] group-hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.25rem] p-4 sm:p-5 group-hover:bg-white/90 group-hover:-translate-y-0.5">
                     
-                    <!-- Header -->
                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
                       <div>
-                        <h5 class="text-lg font-medium text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
+                        <h5 class="text-sm font-black text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
                           {{ getCategoryName(pass.category_id) }}
                         </h5>
-                        <p v-if="pass.tipo_permiso" class="text-xs font-medium text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
+                        <p v-if="pass.tipo_permiso" class="text-[10px] font-bold text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
                       </div>
                       
-                      <!-- Refined Status Pill -->
-                      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
+                      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
                         <div class="w-1.5 h-1.5 rounded-full" :class="getStatusConfig(pass.status).dot"></div>
-                        <span class="text-[9px] font-black uppercase tracking-widest">{{ pass.status }}</span>
+                        <span class="text-[8px] font-black uppercase tracking-widest">{{ pass.status }}</span>
                       </div>
                     </div>
 
-                    <!-- Quoted Comment -->
-                    <div v-if="pass.comentarios" class="relative pl-3.5 border-l-2 py-0.5 my-4 transition-all duration-300 bg-white/40 rounded-r-xl p-3 border-white shadow-sm" :class="getCategoryConfig(pass.category_id).border">
-                      <p class="text-[13px] text-[#50535A] italic leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
+                    <div v-if="pass.comentarios" class="relative pl-3 border-l-2 py-0.5 my-3 transition-all duration-300 bg-white/40 rounded-r-lg p-2.5 border-white shadow-sm" :class="getCategoryConfig(pass.category_id).border">
+                      <p class="text-xs text-[#50535A] italic leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
                         "{{ pass.comentarios }}"
                       </p>
                     </div>
                     
-                    <!-- Footer Metadata -->
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 pt-4 border-t border-[#86888C]/10 text-[10px] font-black uppercase tracking-widest text-[#86888C]">
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4 pt-3 border-t border-[#86888C]/10 text-[9px] font-black uppercase tracking-widest text-[#86888C]">
                       <span class="group-hover:text-[#50535A] transition-colors bg-[#86888C]/5 px-2 py-1 rounded-md">ID: {{ String(pass.id).padStart(5, '0') }}</span>
-                      
-                      <span v-if="pass.authorized_by" class="flex items-center gap-1.5 group-hover:text-[#50535A] transition-colors">
+                      <span v-if="pass.authorized_by" class="flex items-center gap-1 group-hover:text-[#50535A] transition-colors">
                         <span class="w-1 h-1 rounded-full bg-[#86888C]/40"></span>
-                        Por {{ pass.authorized_by.split(' ')[0] || 'Responsable' }}
-                      </span>
-
-                      <span class="ml-auto flex items-center gap-1.5 text-[#007F92] opacity-0 -translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 bg-[#007F92]/5 px-3 py-1 rounded-lg">
-                        Ver detalle <ArrowRight class="w-3.5 h-3.5" />
+                        {{ pass.authorized_by.split(' ')[0] || 'Responsable' }}
                       </span>
                     </div>
 
