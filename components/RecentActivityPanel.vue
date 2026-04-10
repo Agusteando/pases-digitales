@@ -3,15 +3,15 @@
     
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-slate-200/50 shrink-0 relative z-20 mb-6">
       <div>
-        <h2 class="text-3xl font-black text-slate-900 tracking-tighter">Actividad reciente</h2>
-        <p class="text-[11px] font-bold text-slate-500 mt-2 uppercase tracking-widest">Últimos pases operativos</p>
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
+        <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Últimos pases registrados</p>
       </div>
-      <button @click="refresh" class="px-5 py-3 text-slate-600 hover:text-brand-600 bg-white/80 backdrop-blur-sm hover:bg-white rounded-xl shadow-sm transition-all focus:outline-none border border-white hover:shadow-md flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-        <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4" /> Actualizar
+      <button @click="refresh" class="px-4 py-2.5 text-slate-600 hover:text-brand-600 bg-white/80 backdrop-blur-sm hover:bg-white rounded-xl shadow-sm transition-all focus:outline-none border border-white hover:shadow flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest outline-none">
+        <RefreshCcw :class="{'animate-spin': pending}" class="w-3.5 h-3.5 shrink-0" /> <span class="leading-none mt-[1px]">Actualizar</span>
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar pr-4 relative z-10 pb-12" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
+    <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 relative z-10 pb-12" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
       
       <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-brand-500" /></div>
       
@@ -35,18 +35,18 @@
         </div>
       </div>
 
-      <div v-else class="relative mt-4">
-        <div class="absolute top-2 bottom-0 left-[23px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
-        <div class="absolute top-2 bottom-0 left-[23px] w-[2px] rounded-full z-0 timeline-line opacity-50"></div>
+      <div v-else class="relative mt-2">
+        <div class="absolute top-2 bottom-0 left-[19px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
+        <div class="absolute top-2 bottom-0 left-[19px] w-[2px] rounded-full z-0 timeline-line opacity-50"></div>
 
         <div class="space-y-0">
-          <div v-for="(pass, index) in data" :key="pass.id" class="relative pl-14 pb-6 group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
+          <div v-for="(pass, index) in data" :key="pass.id" class="relative pl-12 pb-6 group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
             
-            <div class="absolute left-[4px] top-1 w-10 h-10 rounded-[1rem] bg-white flex items-center justify-center shadow-sm z-10 ring-[4px] ring-slate-50/80 transition-transform duration-300 group-hover:scale-110 border border-slate-100" :class="getCategoryColorText(pass.category_id)">
-              <component :is="getCategoryIcon(pass.category_id)" class="w-4 h-4" />
+            <div class="absolute left-[0px] top-1 w-10 h-10 rounded-[1rem] bg-white flex items-center justify-center shadow-sm z-10 ring-[4px] ring-slate-50/80 transition-transform duration-300 group-hover:scale-110 border border-slate-100" :class="getCategoryColorText(pass.category_id)">
+              <component :is="getCategoryIcon(pass.category_id)" class="w-4 h-4 shrink-0" />
             </div>
 
-            <div class="bg-white/80 backdrop-blur-md p-5 rounded-[1.5rem] border border-white hover:border-brand-200 hover:shadow-md transition-all shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 outline-none relative overflow-hidden">
+            <div class="bg-white/80 backdrop-blur-md p-4 sm:p-5 rounded-[1.5rem] border border-white hover:border-brand-200 hover:shadow-md transition-all shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 outline-none relative overflow-hidden">
               <div class="min-w-0 flex-1 relative z-10">
                 <div class="flex items-center gap-3 mb-2">
                   <span class="font-mono text-sm font-black text-brand-600 tracking-tight">
@@ -59,23 +59,23 @@
                     {{ pass.status }}
                   </span>
                 </div>
-                <h4 class="text-base font-black text-slate-900 truncate">{{ pass.employee_name }}</h4>
+                <h4 class="text-sm sm:text-base font-black text-slate-900 truncate">{{ pass.employee_name }}</h4>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
-                  <span class="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-white/60 px-2 py-1 rounded-lg border border-white shadow-sm">{{ getCategoryName(pass.category_id) }}</span>
-                  <span v-if="pass.plantel" class="text-[10px] font-bold text-slate-500 flex items-center gap-1 bg-white/60 px-2 py-1 rounded-lg border border-white shadow-sm">
-                    <Building2 class="w-3 h-3 text-brand-400" /> {{ pass.plantel }}
+                  <span class="text-[9px] sm:text-[10px] font-black text-slate-600 uppercase tracking-widest bg-white/60 px-2 py-1 rounded-md border border-white shadow-sm">{{ getCategoryName(pass.category_id) }}</span>
+                  <span v-if="pass.plantel" class="text-[9px] sm:text-[10px] font-bold text-slate-500 flex items-center gap-1 bg-white/60 px-2 py-1 rounded-md border border-white shadow-sm">
+                    <Building2 class="w-3 h-3 text-brand-400 shrink-0" /> {{ pass.plantel }}
                   </span>
                 </div>
               </div>
               
               <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0 relative z-10 border-t sm:border-t-0 border-white/60 pt-3 sm:pt-0">
                 <span class="text-[10px] font-black text-slate-500 bg-white/60 px-3 py-1.5 rounded-xl border border-white shadow-sm flex items-center gap-1.5">
-                  <Clock class="w-3.5 h-3.5 text-slate-400" /> {{ formatDateTime(pass.date, pass.time) }}
+                  <Clock class="w-3.5 h-3.5 text-slate-400 shrink-0" /> <span class="leading-none mt-[1px]">{{ formatDateTime(pass.date, pass.time) }}</span>
                 </span>
                 
-                <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center gap-1.5 text-[10px] font-black text-brand-600 hover:text-brand-800 bg-white hover:bg-brand-50 px-3 py-1.5 rounded-xl border border-white hover:border-brand-100 transition-colors shadow-sm outline-none uppercase tracking-widest">
-                  <span>Revisar</span>
-                  <ArrowRight class="w-3 h-3" />
+                <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center justify-center gap-1.5 text-[9px] font-black text-brand-600 hover:text-brand-800 bg-white hover:bg-brand-50 px-3 py-1.5 rounded-xl border border-white hover:border-brand-100 transition-colors shadow-sm outline-none uppercase tracking-widest">
+                  <span class="leading-none mt-[1px]">Revisar</span>
+                  <ArrowRight class="w-3 h-3 shrink-0" />
                 </NuxtLink>
               </div>
             </div>
