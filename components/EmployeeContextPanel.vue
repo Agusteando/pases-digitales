@@ -1,4 +1,3 @@
-### components/EmployeeContextPanel.vue
 <template>
   <div class="flex flex-col h-full min-h-0 relative w-full">
     
@@ -30,15 +29,17 @@
       </div>
 
       <!-- KPI Summary -->
-      <div class="flex flex-wrap gap-x-6 gap-y-3 mt-5 pt-5 border-t border-slate-100">
+      <div class="flex flex-wrap gap-x-8 gap-y-4 mt-5 pt-5 border-t border-slate-200/60">
         <div v-if="Object.keys(statCounters).length === 0" class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
           <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Sin incidencias registradas en el ciclo actual.
         </div>
         <template v-else>
-          <div v-for="(count, cat) in statCounters" :key="cat" class="flex flex-col">
-            <span class="text-xl font-black text-slate-800 leading-none tracking-tight">{{ count }}</span>
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">{{ getCategoryName(Number(cat)) }}</span>
-          </div>
+          <KpiIndicator 
+            v-for="(count, cat) in statCounters" 
+            :key="cat" 
+            :count="count" 
+            :label="getCategoryName(Number(cat))" 
+          />
         </template>
       </div>
     </div>
@@ -65,23 +66,17 @@
     <!-- History Panel -->
     <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 pb-12 relative z-10" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
       
-      <!-- Sticky History Header -->
-      <div class="sticky top-0 bg-white/95 backdrop-blur-xl z-30 pt-3 pb-3 mb-6 flex items-center justify-between border-b border-slate-200/60">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200/60 flex items-center justify-center shadow-sm shrink-0">
-            <History class="w-4 h-4 text-slate-500" />
-          </div>
-          <div>
-            <h3 class="text-sm font-black text-slate-900 tracking-tight">Historial</h3>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</p>
-          </div>
+      <!-- Refined Sticky History Header -->
+      <div class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md pt-2 pb-3 mb-5 border-b border-slate-200/60 flex items-end justify-between px-1">
+        <div class="flex flex-col">
+          <h3 class="text-sm font-black text-slate-800 tracking-tight">Historial operativo</h3>
+          <p class="text-[10px] font-bold text-slate-400 mt-0.5" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</p>
         </div>
-        <!-- Search Affordance -->
-        <div class="relative flex items-center justify-end">
-          <div class="flex items-center bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-full px-2 py-1.5 transition-all duration-300 w-8 hover:w-56 focus-within:w-56 focus-within:bg-white focus-within:border-[#007F92]/40 focus-within:shadow-sm overflow-hidden group cursor-text">
-            <Search class="w-4 h-4 text-slate-400 shrink-0 ml-0.5 group-focus-within:text-[#007F92] transition-colors" />
-            <input type="text" v-model="searchQuery" placeholder="Buscar..." class="ml-2 bg-transparent text-xs font-bold text-slate-700 outline-none w-full opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity placeholder:text-slate-400" />
-          </div>
+        <div class="relative">
+           <div class="flex items-center bg-white border border-slate-200/80 hover:border-slate-300 rounded-xl px-2.5 py-1.5 transition-all shadow-sm w-32 focus-within:w-48 overflow-hidden group cursor-text">
+              <Search class="w-3.5 h-3.5 text-slate-400 shrink-0 group-focus-within:text-[#007F92] transition-colors" />
+              <input type="text" v-model="searchQuery" placeholder="Buscar..." class="ml-2 w-full bg-transparent text-[11px] font-bold text-slate-700 outline-none placeholder:text-slate-400 placeholder:font-medium" />
+           </div>
         </div>
       </div>
 
@@ -100,13 +95,13 @@
       </div>
 
       <div v-else class="relative mt-2">
-        <div class="absolute top-2 bottom-0 left-[19px] w-px bg-slate-200 z-0"></div>
+        <div class="absolute top-2 bottom-0 left-[19px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
 
         <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-8">
           
           <div class="relative pl-12 mb-5 flex items-center">
-             <div class="absolute left-[16px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-white z-10"></div>
-             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+             <div class="absolute left-[16px] top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-300 ring-4 ring-slate-50 z-10 shadow-sm"></div>
+             <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                {{ group.month }}
              </span>
           </div>
@@ -114,9 +109,9 @@
           <div class="space-y-0">
             <div v-for="(pass, index) in group.passes" :key="pass.id" class="relative pl-12 pb-5 group/timeline timeline-item" :style="{ animationDelay: `${index * 0.04}s` }">
               
-              <div class="absolute left-[15px] top-5 w-2.5 h-2.5 rounded-full z-10 ring-4 ring-white transition-transform duration-300 group-hover/timeline:scale-125" :class="getCategoryColor(pass.category_id)"></div>
+              <div class="absolute left-[15px] top-5 w-2.5 h-2.5 rounded-full z-10 ring-[4px] ring-slate-50 transition-transform duration-300 group-hover/timeline:scale-125 shadow-sm" :class="getCategoryColor(pass.category_id)"></div>
               
-              <div class="block bg-white/60 backdrop-blur-sm p-4 sm:p-5 rounded-[1.25rem] border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow relative group/card">
+              <div class="block bg-white/80 backdrop-blur-sm p-4 sm:p-5 rounded-[1.25rem] border border-slate-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow relative group/card">
                 <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-2 gap-2 relative z-10">
                   <div class="flex items-center gap-2">
                     <span class="font-mono text-xs font-black text-slate-400 group-hover/card:text-slate-600 transition-colors">#{{ String(pass.id).padStart(5, '0') }}</span>
@@ -144,12 +139,12 @@
                   <div v-if="pass.status !== 'pendiente' && pass.status !== 'cancelado'" class="flex items-center gap-1.5">
                     <ShieldCheck class="w-3.5 h-3.5" :class="pass.status === 'autorizado' ? 'text-emerald-500' : 'text-rose-500'" />
                     <span class="text-[9px] font-bold uppercase tracking-widest" :class="pass.status === 'autorizado' ? 'text-emerald-700' : 'text-rose-700'">
-                      Resuelto{{ pass.authorized_by ? ' por ' + pass.authorized_by.split(' ')[0] : '' }}
+                      Autorizado{{ pass.authorized_by ? ' por ' + pass.authorized_by.split(' ')[0] : '' }}
                     </span>
                   </div>
                   <div v-else></div>
                   
-                  <NuxtLink :to="`/pass/${pass.id}`" class="text-[#007F92] flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity hover:text-[#006575] outline-none text-[10px] font-black uppercase tracking-widest">
+                  <NuxtLink :to="`/pass/${pass.id}`" class="text-[#007F92] flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/card:opacity-100 transition-opacity hover:text-[#006575] outline-none text-[10px] font-black uppercase tracking-widest bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                     <span>Ver detalle</span>
                     <ArrowRight class="w-3 h-3" />
                   </NuxtLink>
@@ -167,6 +162,7 @@
 import { computed, ref } from 'vue'
 import { FileText, Loader2, ShieldCheck, History, Building2, Briefcase, ArrowRight, AlertTriangle, AlertCircle, Search, CheckCircle2 } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
+import KpiIndicator from '~/components/KpiIndicator.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 dayjs.locale('es')

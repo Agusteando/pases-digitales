@@ -1,4 +1,3 @@
-### pages/index.vue
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     
@@ -15,11 +14,11 @@
           <p class="text-slate-500 mt-1 text-sm font-bold">Registro y justificación de incidencias</p>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0">
+        <div class="flex-1 overflow-y-auto px-6 py-6 md:px-8 custom-scrollbar relative flex flex-col gap-10 min-h-0 shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
           
           <div class="relative">
             <div class="flex items-center gap-4 mb-5">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm shrink-0 bg-[#618B2F] text-white">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-md shrink-0 bg-gradient-to-br from-[#8EC152] to-[#618B2F] text-white border border-[#7DB041] shadow-[#8EC152]/20">
                 1
               </div>
               <div>
@@ -94,7 +93,7 @@
           
           <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="relative animate-in slide-in-from-bottom-4 fade-in duration-500 pb-8">
             <div class="flex items-center gap-4 mb-5 transition-opacity duration-300" :class="selectedEmployees.length === 0 ? 'opacity-50' : 'opacity-100'">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm shrink-0 bg-[#007F92] text-white">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
                 2
               </div>
               <div>
@@ -121,7 +120,7 @@
       <div class="absolute top-0 left-0 h-full flex flex-col transition-all duration-500 bg-white w-full xl:w-[280px] 2xl:w-[320px] z-20"
            :class="activeScenario ? 'opacity-100 translate-x-0 delay-200' : 'opacity-0 translate-x-[-20px] pointer-events-none'">
         
-        <div class="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar flex flex-col gap-6">
+        <div class="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar flex flex-col gap-6 shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
           
           <div class="flex items-center justify-between mb-1 border-b border-slate-100 pb-3">
             <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Colaboradores</h2>
@@ -181,7 +180,7 @@
         <template v-if="activeScenario">
           <header class="hidden xl:flex px-6 py-6 border-b border-slate-200/60 bg-white shrink-0 items-center justify-between">
             <div class="flex items-center gap-4">
-              <div class="w-10 h-10 rounded-[1rem] bg-[#F49A6D] text-white flex items-center justify-center shadow-sm shrink-0 font-black text-base">
+              <div class="w-10 h-10 rounded-[1rem] bg-gradient-to-br from-[#F7A37B] to-[#D97746] text-white flex items-center justify-center shadow-md border border-[#E99060] shrink-0 font-black text-base shadow-[#F49A6D]/20">
                 3
               </div>
               <div>
@@ -191,10 +190,11 @@
             </div>
           </header>
 
-          <div class="flex-1 overflow-y-auto px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent">
+          <!-- Scrollable Fields Area -->
+          <div class="flex-1 overflow-y-auto px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
             
             <div class="xl:hidden flex items-center gap-4 mb-6">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-sm shrink-0 bg-[#F49A6D] text-white">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shadow-md border border-[#E99060] shrink-0 bg-gradient-to-br from-[#F7A37B] to-[#D97746] text-white">
                 3
               </div>
               <div>
@@ -403,51 +403,50 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Actions -->
-              <div class="pt-5 flex flex-col gap-4">
-                <transition name="fade">
-                  <div v-if="missingFieldsText" class="flex items-start gap-2.5 px-4 py-3 bg-[#F49A6D]/10 rounded-xl border border-[#F49A6D]/20">
-                    <Info class="w-4 h-4 text-[#D97746] shrink-0 mt-0.5" />
-                    <span class="text-xs font-bold text-[#B3582A]">{{ missingFieldsText }}</span>
-                  </div>
-                </transition>
-
-                <div class="flex flex-col sm:flex-row gap-4 items-stretch">
-                  <button 
-                    type="button" 
-                    @click="submitPass(false)" 
-                    :disabled="isSubmitting || !isFormComplete" 
-                    class="flex-1 relative bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-2xl transition-all border border-slate-200 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none"
-                  >
-                    <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
-                      <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-slate-400" />
-                      <Send v-else class="w-4 h-4 text-slate-400" /> 
-                      <span>Solicitar autorización</span>
-                    </div>
-                  </button>
-
-                  <button 
-                    type="button" 
-                    @click="submitPass(true)" 
-                    :disabled="isSubmitting || !isFormComplete" 
-                    class="flex-1 relative bg-gradient-to-r from-[#618B2F] to-[#4e7025] hover:from-[#4e7025] hover:to-[#3b551c] text-white font-black text-sm rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-transparent"
-                  >
-                    <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
-                      <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-white/80" />
-                      <CheckCircle v-else class="w-4 h-4 text-white/90" /> 
-                      <span>Autorizar de inmediato</span>
-                    </div>
-                  </button>
-                </div>
-                
-                <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">
-                  <Info class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
-                  Estás generando una solicitud a tu propio nombre.
-                </p>
-              </div>
-              
             </form>
+          </div>
+          
+          <!-- Sticky Actions Footer -->
+          <div class="shrink-0 px-6 py-5 bg-white border-t border-slate-200 z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.03)] flex flex-col gap-4 relative">
+            <transition name="fade">
+              <div v-if="missingFieldsText" class="flex items-start gap-2.5 px-4 py-3 bg-[#F49A6D]/10 rounded-xl border border-[#F49A6D]/20">
+                <Info class="w-4 h-4 text-[#D97746] shrink-0 mt-0.5" />
+                <span class="text-xs font-bold text-[#B3582A]">{{ missingFieldsText }}</span>
+              </div>
+            </transition>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-stretch">
+              <button 
+                type="button" 
+                @click="submitPass(false)" 
+                :disabled="isSubmitting || !isFormComplete" 
+                class="flex-1 relative bg-white hover:bg-slate-50 text-slate-700 font-black text-sm rounded-2xl transition-all border border-slate-200 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none"
+              >
+                <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
+                  <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-slate-400" />
+                  <Send v-else class="w-4 h-4 text-slate-400" /> 
+                  <span>Solicitar autorización</span>
+                </div>
+              </button>
+
+              <button 
+                type="button" 
+                @click="submitPass(true)" 
+                :disabled="isSubmitting || !isFormComplete" 
+                class="flex-1 relative bg-gradient-to-r from-[#8EC152] to-[#618B2F] hover:from-[#7DB041] hover:to-[#507525] text-white font-black text-sm rounded-2xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-transparent"
+              >
+                <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300">
+                  <Loader2 v-if="isSubmitting" class="w-4 h-4 animate-spin text-white/80" />
+                  <CheckCircle v-else class="w-4 h-4 text-white/90" /> 
+                  <span>Autorizar de inmediato</span>
+                </div>
+              </button>
+            </div>
+            
+            <p v-if="hasSelfPass" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">
+              <Info class="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" />
+              Estás generando una solicitud a tu propio nombre.
+            </p>
           </div>
         </template>
       </div>
