@@ -55,8 +55,9 @@
             </div>
           </div>
 
-          <div v-if="[2, 3].includes(form.categoryId)" class="space-y-2">
-             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Tipo de permiso (Opcional)</label>
+          <!-- Subcategoría for Cat 3 (Ausencia justificada) -->
+          <div v-if="form.categoryId === 3" class="space-y-2">
+             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Subcategoría (Opcional)</label>
              <select v-model="form.tipoPermiso" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500 cursor-pointer">
                <option value="">Seleccione una clasificación...</option>
                <option value="Cuidados Maternos">Cuidados Maternos</option>
@@ -65,6 +66,16 @@
                <option value="Por Embarazo">Por Embarazo</option>
                <option value="Por Definir">Por Definir</option>
                <option value="Permiso de Paternidad">Permiso de Paternidad</option>
+             </select>
+          </div>
+
+          <!-- Tipo de permiso for Cat 4 (Cambio de horario) -->
+          <div v-if="form.categoryId === 4" class="space-y-2">
+             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Tipo de permiso (Opcional)</label>
+             <select v-model="form.tipoPermiso" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500 cursor-pointer">
+               <option value="">Seleccione un permiso...</option>
+               <option value="Permiso para salir temprano">Permiso para salir temprano</option>
+               <option value="Permiso para llegar tarde">Permiso para llegar tarde</option>
              </select>
           </div>
 
@@ -98,7 +109,8 @@
             </div>
           </div>
 
-          <div class="space-y-2">
+          <!-- Evidence / File Upload -->
+          <div v-if="[3, 5].includes(form.categoryId) || form.evidenceUrl" class="space-y-2">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
               <Paperclip class="w-3.5 h-3.5" /> Evidencia / Justificante
             </label>
