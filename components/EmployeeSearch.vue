@@ -13,8 +13,8 @@
         @keydown.down.prevent="navigateResults(1)"
         @keydown.up.prevent="navigateResults(-1)"
         @keydown.enter.prevent="selectHighlighted"
-        placeholder="Nombre o apellidos del colaborador..."
-        class="w-full pl-14 pr-14 py-4 bg-white/70 backdrop-blur-sm border-2 border-white focus:border-casita-green/60 focus:bg-white rounded-3xl text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-medium outline-none transition-all shadow-sm"
+        placeholder="Buscar colaborador..."
+        class="w-full pl-14 pr-14 py-4 bg-white/80 backdrop-blur-sm border-2 border-white focus:border-casita-green/60 focus:bg-white rounded-[1.5rem] text-base sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none transition-all shadow-sm"
         autocomplete="off"
         spellcheck="false"
       />
@@ -28,34 +28,34 @@
 
     <!-- Search Results Popover -->
     <transition name="fade">
-      <div v-if="showResults" class="absolute top-full mt-3 w-full bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-white overflow-hidden z-50">
+      <div v-if="showResults" class="absolute top-full left-0 right-0 mt-3 w-full bg-white/95 backdrop-blur-2xl rounded-[1.5rem] shadow-2xl border border-white overflow-hidden z-[100]">
         <div v-if="results.length > 0" class="max-h-[320px] overflow-y-auto py-2 custom-scrollbar">
           <div v-for="(emp, idx) in results" :key="emp.id" 
                @mousedown.prevent="selectEmployee(emp)" 
                @mouseenter="highlightedIndex = idx"
-               class="px-6 py-4 cursor-pointer flex items-center gap-4 transition-all relative"
+               class="px-5 py-4 cursor-pointer flex items-center gap-4 transition-all relative"
                :class="highlightedIndex === idx ? 'bg-casita-green-light/10' : 'hover:bg-white/80'">
             
             <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full transition-colors" :class="highlightedIndex === idx ? 'bg-casita-green' : 'bg-transparent'"></div>
 
-            <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-white" :class="highlightedIndex === idx ? 'ring-2 ring-casita-green ring-offset-2 ring-offset-white' : ''" />
+            <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-white" :class="highlightedIndex === idx ? 'ring-2 ring-casita-green ring-offset-1 ring-offset-transparent' : ''" />
             
             <div class="flex-1 min-w-0">
               <p class="text-sm font-black text-slate-900 truncate" :class="{'text-casita-green-dark': highlightedIndex === idx}">{{ emp.name }}</p>
               <div class="flex items-center gap-2 mt-1">
-                <span v-if="emp.plantel" class="text-[10px] font-bold text-slate-500 uppercase tracking-wide bg-white/80 px-2 py-0.5 rounded-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.05)]">{{ emp.plantel }}</span>
+                <span v-if="emp.plantel" class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-white/60">{{ emp.plantel }}</span>
                 <span v-if="emp.puesto" class="text-[11px] text-slate-500 font-medium truncate">{{ emp.puesto }}</span>
               </div>
             </div>
           </div>
         </div>
-        <div v-else-if="!isSearching" class="px-6 py-12 text-center flex flex-col items-center gap-4">
-          <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
-            <SearchX class="w-8 h-8 text-slate-300" />
+        <div v-else-if="!isSearching" class="px-6 py-10 text-center flex flex-col items-center gap-3">
+          <div class="w-14 h-14 bg-white/80 rounded-full flex items-center justify-center border border-white shadow-sm">
+            <SearchX class="w-6 h-6 text-slate-300" />
           </div>
           <div>
-            <p class="text-base font-black text-slate-700">Sin coincidencias</p>
-            <p class="text-sm font-medium text-slate-500 mt-1">Intenta buscar por un apellido diferente.</p>
+            <p class="text-sm font-black text-slate-700">Sin coincidencias</p>
+            <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">Verifica la ortografía de los apellidos.</p>
           </div>
         </div>
       </div>

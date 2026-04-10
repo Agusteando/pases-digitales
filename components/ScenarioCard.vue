@@ -2,13 +2,13 @@
   <button 
     type="button"
     @click="$emit('click')"
-    class="relative flex items-center p-4 rounded-[1.5rem] transition-all duration-300 w-full text-left outline-none group border shadow-sm"
+    class="relative flex items-center p-4 sm:p-5 rounded-[1.5rem] transition-all duration-300 w-full text-left outline-none group border shadow-sm"
     :class="active 
-      ? 'bg-white/90 border-white shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] scale-[1.02]' 
-      : 'bg-white/40 border-white/60 hover:bg-white/70 hover:border-white/80 hover:shadow-md'"
+      ? 'bg-white/95 border-[#007F92]/40 shadow-[0_8px_30px_-4px_rgba(0,127,146,0.15)] scale-[1.02] ring-2 ring-[#007F92]/10' 
+      : 'bg-white/60 border-white/80 hover:bg-white/90 hover:border-white hover:shadow-md'"
   >
     <div class="w-12 h-12 rounded-[1rem] shrink-0 relative z-10 transition-all duration-300 flex items-center justify-center shadow-sm"
-         :class="active ? 'bg-gradient-to-br from-[#007F92] to-[#00497B] text-white border border-[#007F92]/50 shadow-[#007F92]/30' : 'bg-white text-[#86888C] group-hover:text-[#007F92] border border-white/80'">
+         :class="active ? 'bg-gradient-to-br from-[#007F92] to-[#00497B] text-white border border-[#007F92]/50 shadow-md shadow-[#007F92]/20' : 'bg-white text-[#86888C] group-hover:text-[#007F92] border border-white/80'">
       <component :is="icon" class="w-5 h-5" :class="active ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'" />
     </div>
     
