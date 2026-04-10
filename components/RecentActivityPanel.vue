@@ -1,78 +1,82 @@
 <template>
-  <div class="glass-panel p-6 lg:p-8 rounded-[2.5rem] flex flex-col h-full min-h-0 relative overflow-hidden">
+  <div class="flex flex-col h-full min-h-0 relative w-full">
     
-    <div class="flex items-center justify-between pb-4 border-b border-white/60 shrink-0 relative z-20">
+    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-slate-200/50 shrink-0 relative z-20 mb-6">
       <div>
-        <h2 class="text-xl font-black text-slate-900 tracking-tight">Actividad reciente</h2>
-        <p class="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-wider">Últimos pases registrados</p>
+        <h2 class="text-3xl font-black text-slate-900 tracking-tighter">Actividad reciente</h2>
+        <p class="text-[11px] font-bold text-slate-500 mt-2 uppercase tracking-widest">Últimos pases operativos</p>
       </div>
-      <button @click="refresh" class="p-2.5 text-slate-400 hover:text-iedis-teal-dark bg-white hover:bg-white/80 rounded-xl shadow-sm transition-all focus:outline-none border border-white/80 hover:shadow-md">
-        <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4" />
+      <button @click="refresh" class="px-5 py-3 text-slate-600 hover:text-brand-600 bg-white/80 backdrop-blur-sm hover:bg-white rounded-xl shadow-sm transition-all focus:outline-none border border-white hover:shadow-md flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+        <RefreshCcw :class="{'animate-spin': pending}" class="w-4 h-4" /> Actualizar
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto mt-4 custom-scrollbar min-h-0 relative z-10 pb-12" style="mask-image: linear-gradient(to bottom, black 85%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);">
+    <div class="flex-1 overflow-y-auto custom-scrollbar pr-4 relative z-10 pb-12" style="mask-image: linear-gradient(to bottom, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);">
       
-      <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-iedis-teal" /></div>
+      <div v-if="pending && !data" class="flex justify-center py-16"><Loader2 class="w-8 h-8 animate-spin text-brand-500" /></div>
       
-      <div v-else-if="error" class="flex flex-col items-center justify-center py-12 text-casita-red gap-4">
+      <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-casita-red gap-4 bg-white/40 rounded-[2rem] border border-white border-dashed">
         <div class="w-16 h-16 bg-casita-red/10 rounded-full flex items-center justify-center border border-casita-red/20 shadow-sm">
           <AlertTriangle class="w-8 h-8 text-casita-red" />
         </div>
-        <span class="text-sm font-bold text-casita-red-dark">Error de conexión al cargar la actividad.</span>
+        <div class="text-center">
+          <span class="text-sm font-black text-casita-red-dark block">Error de conexión</span>
+          <span class="text-xs font-medium text-casita-red-dark/80 mt-1 block">No se pudo cargar la actividad reciente.</span>
+        </div>
       </div>
 
-      <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 gap-4">
+      <div v-else-if="!data || data.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400 gap-4 bg-white/40 rounded-[2rem] border border-white border-dashed">
         <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center border border-white shadow-sm">
           <FileText class="w-8 h-8 text-slate-300" />
         </div>
-        <span class="text-sm font-bold text-slate-500">No hay pases recientes.</span>
+        <div class="text-center">
+          <span class="text-base font-black text-slate-700 block">Bandeja vacía</span>
+          <span class="text-sm font-medium text-slate-500 mt-1 block">No hay pases generados recientemente.</span>
+        </div>
       </div>
 
-      <div v-else class="relative mt-2">
+      <div v-else class="relative mt-4">
         <div class="absolute top-2 bottom-0 left-[23px] w-[2px] bg-slate-200/60 rounded-full z-0"></div>
         <div class="absolute top-2 bottom-0 left-[23px] w-[2px] rounded-full z-0 timeline-line opacity-50"></div>
 
         <div class="space-y-0">
           <div v-for="(pass, index) in data" :key="pass.id" class="relative pl-14 pb-6 group timeline-item" :style="{ animationDelay: `${index * 0.05}s` }">
             
-            <div class="absolute left-[4px] top-1 w-10 h-10 rounded-[1rem] bg-white flex items-center justify-center shadow-sm z-10 ring-[4px] ring-white/90 transition-transform duration-300 group-hover:scale-110" :class="getCategoryColorText(pass.category_id)">
+            <div class="absolute left-[4px] top-1 w-10 h-10 rounded-[1rem] bg-white flex items-center justify-center shadow-sm z-10 ring-[4px] ring-slate-50/80 transition-transform duration-300 group-hover:scale-110 border border-slate-100" :class="getCategoryColorText(pass.category_id)">
               <component :is="getCategoryIcon(pass.category_id)" class="w-4 h-4" />
             </div>
 
-            <div class="bg-white/80 backdrop-blur-md p-4 rounded-[1.25rem] border border-white hover:border-iedis-teal/30 hover:shadow-md transition-all shadow-sm">
-              <div class="flex items-start justify-between gap-3 mb-2">
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2 mb-1.5">
-                    <span class="font-mono text-sm font-black text-brand-600 tracking-tight">
-                      #{{ String(pass.id).padStart(5, '0') }}
-                    </span>
-                    <span class="text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border shadow-sm"
-                          :class="{'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
-                                   'bg-casita-green/10 text-casita-green border-casita-green/30': pass.status === 'autorizado',
-                                   'bg-casita-red/10 text-casita-red border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                      {{ pass.status }}
-                    </span>
-                  </div>
-                  <h4 class="text-sm font-black text-slate-800 truncate">{{ pass.employee_name }}</h4>
+            <div class="bg-white/80 backdrop-blur-md p-5 rounded-[1.5rem] border border-white hover:border-brand-200 hover:shadow-md transition-all shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 outline-none relative overflow-hidden">
+              <div class="min-w-0 flex-1 relative z-10">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="font-mono text-sm font-black text-brand-600 tracking-tight">
+                    #{{ String(pass.id).padStart(5, '0') }}
+                  </span>
+                  <span class="text-[9px] uppercase font-black tracking-widest px-2.5 py-0.5 rounded-md border shadow-sm"
+                        :class="{'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
+                                 'bg-casita-green/10 text-casita-green-dark border-casita-green/30': pass.status === 'autorizado',
+                                 'bg-casita-red/10 text-casita-red-dark border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">
+                    {{ pass.status }}
+                  </span>
                 </div>
-                <span class="text-[10px] font-black text-slate-400 shrink-0 text-right bg-white/50 px-2 py-1 rounded-md border border-slate-100 shadow-sm">
-                  {{ formatDateTime(pass.date, pass.time) }}
-                </span>
+                <h4 class="text-base font-black text-slate-900 truncate">{{ pass.employee_name }}</h4>
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                  <span class="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-white/60 px-2 py-1 rounded-lg border border-white shadow-sm">{{ getCategoryName(pass.category_id) }}</span>
+                  <span v-if="pass.plantel" class="text-[10px] font-bold text-slate-500 flex items-center gap-1 bg-white/60 px-2 py-1 rounded-lg border border-white shadow-sm">
+                    <Building2 class="w-3 h-3 text-brand-400" /> {{ pass.plantel }}
+                  </span>
+                </div>
               </div>
               
-              <p class="text-[11px] font-bold text-slate-500 truncate flex flex-wrap items-center gap-1.5 mt-2 bg-white/60 px-2.5 py-1.5 rounded-lg border border-white shadow-sm">
-                <span class="text-slate-700">{{ getCategoryName(pass.category_id) }}</span>
-                <span v-if="pass.plantel" class="text-slate-300">•</span>
-                <span v-if="pass.plantel">{{ pass.plantel }}</span>
-              </p>
-
-              <div class="mt-3 pt-3 border-t border-white/60 flex items-center justify-between">
-                 <span class="text-[9px] font-bold text-slate-400">Por: <span class="text-slate-600">{{ pass.user }}</span></span>
-                 <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center gap-1 text-[10px] font-black text-iedis-teal hover:text-iedis-teal-dark bg-white hover:bg-iedis-teal/10 px-2.5 py-1.5 rounded-lg border border-white hover:border-iedis-teal/20 transition-colors shadow-sm outline-none">
-                   <span>Revisar</span>
-                   <ArrowRight class="w-3 h-3" />
-                 </NuxtLink>
+              <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 shrink-0 relative z-10 border-t sm:border-t-0 border-white/60 pt-3 sm:pt-0">
+                <span class="text-[10px] font-black text-slate-500 bg-white/60 px-3 py-1.5 rounded-xl border border-white shadow-sm flex items-center gap-1.5">
+                  <Clock class="w-3.5 h-3.5 text-slate-400" /> {{ formatDateTime(pass.date, pass.time) }}
+                </span>
+                
+                <NuxtLink :to="`/pass/${pass.id}`" class="inline-flex items-center gap-1.5 text-[10px] font-black text-brand-600 hover:text-brand-800 bg-white hover:bg-brand-50 px-3 py-1.5 rounded-xl border border-white hover:border-brand-100 transition-colors shadow-sm outline-none uppercase tracking-widest">
+                  <span>Revisar</span>
+                  <ArrowRight class="w-3 h-3" />
+                </NuxtLink>
               </div>
             </div>
           </div>
@@ -83,7 +87,7 @@
 </template>
 
 <script setup>
-import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight, AlertTriangle } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight, AlertTriangle, Building2 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { data, pending, error, refresh } = useFetch('/api/passes/recent')

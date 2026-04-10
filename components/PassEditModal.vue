@@ -55,28 +55,42 @@
             </div>
           </div>
 
-          <!-- Subcategoría for Cat 3 (Ausencia justificada) -->
-          <div v-if="form.categoryId === 3" class="space-y-2">
-             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Subcategoría (Opcional)</label>
-             <select v-model="form.tipoPermiso" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500 cursor-pointer">
-               <option value="">Seleccione una clasificación...</option>
-               <option value="Cuidados Maternos">Cuidados Maternos</option>
-               <option value="Comisiones">Comisiones</option>
-               <option value="Por Estudios">Por Estudios</option>
-               <option value="Por Embarazo">Por Embarazo</option>
-               <option value="Por Definir">Por Definir</option>
-               <option value="Permiso de Paternidad">Permiso de Paternidad</option>
-             </select>
+          <!-- Edit Modal Subcategories (Category 3) -->
+          <div v-if="form.categoryId === 3" class="space-y-3">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Clasificación de la ausencia</label>
+            <div class="flex flex-wrap gap-3">
+              <button 
+                v-for="sub in ['Cuidados Maternos', 'Comisiones', 'Por Estudios', 'Por Embarazo', 'Por Definir', 'Permiso de Paternidad']" :key="sub"
+                type="button"
+                :disabled="!isEditable"
+                @click="form.tipoPermiso = form.tipoPermiso === sub ? '' : sub"
+                class="px-4 py-2.5 text-xs font-bold rounded-xl transition-all border outline-none shadow-sm flex-1 sm:flex-none text-center disabled:opacity-50"
+                :class="form.tipoPermiso === sub 
+                  ? 'bg-casita-red/10 text-casita-red-dark border-casita-red/50 shadow-sm ring-1 ring-casita-red/30' 
+                  : 'bg-white/60 text-slate-600 border-transparent shadow-sm hover:border-slate-300 hover:bg-white'"
+              >
+                {{ sub }}
+              </button>
+            </div>
           </div>
 
-          <!-- Tipo de permiso for Cat 4 (Cambio de horario) -->
-          <div v-if="form.categoryId === 4" class="space-y-2">
-             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Tipo de permiso (Opcional)</label>
-             <select v-model="form.tipoPermiso" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500 cursor-pointer">
-               <option value="">Seleccione un permiso...</option>
-               <option value="Permiso para salir temprano">Permiso para salir temprano</option>
-               <option value="Permiso para llegar tarde">Permiso para llegar tarde</option>
-             </select>
+          <!-- Edit Modal Opciones (Category 4) -->
+          <div v-if="form.categoryId === 4" class="space-y-3">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Tipo de cambio de horario</label>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <button 
+                v-for="opt in ['Permiso para salir temprano', 'Permiso para llegar tarde']" :key="opt"
+                type="button"
+                :disabled="!isEditable"
+                @click="form.tipoPermiso = form.tipoPermiso === opt ? '' : opt"
+                class="px-4 py-2.5 text-xs font-bold rounded-xl transition-all border outline-none shadow-sm flex-1 text-center disabled:opacity-50"
+                :class="form.tipoPermiso === opt 
+                  ? 'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/50 shadow-sm ring-1 ring-casita-gold/30' 
+                  : 'bg-white/60 text-slate-600 border-transparent shadow-sm hover:border-slate-300 hover:bg-white'"
+              >
+                {{ opt }}
+              </button>
+            </div>
           </div>
 
           <div class="space-y-2">
@@ -99,18 +113,27 @@
               <label class="block text-[11px] font-black text-iedis-teal-dark uppercase tracking-widest">Folio IMSS</label>
               <input type="text" v-model="form.imss" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/80 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500" />
             </div>
-            <div class="space-y-2">
+            <div class="space-y-3">
               <label class="block text-[11px] font-black text-iedis-teal-dark uppercase tracking-widest">Tipo de incapacidad</label>
-              <select v-model="form.tipoIncapacidad" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/80 shadow-sm disabled:bg-slate-50/50 disabled:text-slate-500 cursor-pointer">
-                <option value="Enfermedad general">Enfermedad general</option>
-                <option value="Riesgo de trabajo">Riesgo de trabajo</option>
-                <option value="Maternidad">Maternidad</option>
-              </select>
+              <div class="flex flex-col sm:flex-row gap-3">
+                <button 
+                  v-for="tipo in ['Enfermedad general', 'Riesgo de trabajo', 'Maternidad']" :key="tipo"
+                  type="button"
+                  :disabled="!isEditable"
+                  @click="form.tipoIncapacidad = tipo"
+                  class="px-4 py-2.5 text-xs font-bold rounded-xl transition-all border outline-none shadow-sm flex-1 text-center disabled:opacity-50"
+                  :class="form.tipoIncapacidad === tipo 
+                    ? 'bg-iedis-teal/10 text-iedis-teal-dark border-iedis-teal/50 shadow-sm ring-1 ring-iedis-teal/30' 
+                    : 'bg-white/60 text-slate-600 border-transparent shadow-sm hover:border-iedis-teal/30 hover:bg-white'"
+                >
+                  {{ tipo }}
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- Evidence / File Upload -->
-          <div v-if="[3, 5].includes(form.categoryId) || form.evidenceUrl" class="space-y-2">
+          <!-- Evidence / File Upload (Restricted to Ausencia Justificada) -->
+          <div v-if="form.categoryId === 3" class="space-y-2">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
               <Paperclip class="w-3.5 h-3.5" /> Evidencia / Justificante
             </label>
