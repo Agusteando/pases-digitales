@@ -68,7 +68,7 @@
     <div class="flex-1 xl:overflow-y-auto overflow-visible custom-scrollbar px-1 sm:px-2 pb-16 relative z-10 xl:[mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)] xl:[-webkit-mask-image:linear-gradient(to_bottom,black_90%,transparent_100%)]">
       
       <!-- Sticky Header for Timeline -->
-      <div class="sticky top-0 z-30 pt-2 pb-4 mb-8 bg-white/60 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mx-1 px-1 rounded-b-2xl">
+      <div class="sticky top-0 z-30 pt-6 pb-6 mb-8 bg-white/60 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mx-1 sm:-mx-3 px-3 sm:px-5 rounded-b-3xl shadow-sm">
         <div>
           <h3 class="text-xl sm:text-2xl font-light text-[#50535A] tracking-tight">Historial</h3>
           <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1.5" v-if="historyData?.cycle">
@@ -211,9 +211,9 @@ const getCategoryConfig = (id) => {
 
 const getStatusConfig = (status) => {
   const s = status.toLowerCase()
-  if (s === 'autorizado') return { badge: 'border-[#8EC152]/30 bg-[#8EC152]/10 text-[#00692F]', dot: 'bg-[#8EC152]' }
-  if (s === 'rechazado') return { badge: 'border-[#E83F4B]/30 bg-[#E83F4B]/10 text-[#762728]', dot: 'bg-[#E83F4B]' }
-  if (s === 'pendiente') return { badge: 'border-[#FCBF2C]/30 bg-[#FCBF2C]/10 text-[#6D5F24]', dot: 'bg-[#FCBF2C]' }
+  if (s === 'autorizado') return { badge: 'border-[#8EC152]/40 bg-[#8EC152]/20 text-[#00692F]', dot: 'bg-[#8EC152]' }
+  if (s === 'rechazado') return { badge: 'border-[#E83F4B]/40 bg-[#E83F4B]/20 text-[#762728]', dot: 'bg-[#E83F4B]' }
+  if (s === 'pendiente') return { badge: 'border-[#FCBF2C]/40 bg-[#FCBF2C]/25 text-[#6D5F24]', dot: 'bg-[#FCBF2C]' }
   return { badge: 'border-[#86888C]/20 bg-white/50 text-[#50535A]', dot: 'bg-[#86888C]' }
 }
 

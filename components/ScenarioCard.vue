@@ -2,19 +2,19 @@
   <button 
     type="button"
     @click="$emit('click')"
-    class="relative flex items-center p-3 rounded-2xl transition-all duration-300 w-full text-left outline-none group"
+    class="relative flex items-center p-4 rounded-[1.5rem] transition-all duration-300 w-full text-left outline-none group border shadow-sm"
     :class="active 
-      ? 'bg-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)]' 
-      : 'bg-transparent hover:bg-white/60 hover:shadow-sm'"
+      ? 'bg-white/90 border-white shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] scale-[1.02]' 
+      : 'bg-white/40 border-white/60 hover:bg-white/70 hover:border-white/80 hover:shadow-md'"
   >
-    <div class="w-10 h-10 rounded-[0.65rem] shrink-0 relative z-10 transition-colors flex items-center justify-center shadow-sm"
-         :class="active ? 'bg-[#007F92] text-white' : 'bg-white text-slate-400 group-hover:text-[#007F92]'">
-      <component :is="icon" class="w-5 h-5" />
+    <div class="w-12 h-12 rounded-[1rem] shrink-0 relative z-10 transition-all duration-300 flex items-center justify-center shadow-sm"
+         :class="active ? 'bg-gradient-to-br from-[#007F92] to-[#00497B] text-white border border-[#007F92]/50 shadow-[#007F92]/30' : 'bg-white text-[#86888C] group-hover:text-[#007F92] border border-white/80'">
+      <component :is="icon" class="w-5 h-5" :class="active ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'" />
     </div>
     
-    <div class="ml-3.5 relative z-10 flex-1 pr-1">
-      <span class="block text-sm tracking-tight transition-colors leading-snug"
-            :class="active ? 'text-slate-900 font-black' : 'text-slate-600 font-bold group-hover:text-slate-900'">
+    <div class="ml-4 relative z-10 flex-1 pr-1">
+      <span class="block text-[15px] tracking-tight transition-colors leading-snug"
+            :class="active ? 'text-[#00497B] font-black' : 'text-[#50535A] font-bold group-hover:text-[#00497B]'">
         {{ title }}
       </span>
     </div>
