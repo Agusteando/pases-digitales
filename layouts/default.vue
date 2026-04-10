@@ -1,3 +1,4 @@
+
 <template>
   <div class="min-h-[100dvh] flex flex-col md:flex-row bg-transparent relative">
     
@@ -26,6 +27,15 @@
           title="Historial"
         >
           <History class="w-6 h-6" />
+        </NuxtLink>
+        <NuxtLink 
+          to="/kardex" 
+          class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
+          active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
+          :class="$route.path === '/kardex' ? '' : 'text-slate-400 hover:bg-white hover:text-brand-600 shadow-sm'"
+          title="Kardex de Asistencia"
+        >
+          <CalendarDays class="w-6 h-6" />
         </NuxtLink>
         <NuxtLink 
           v-if="user?.is_admin"
@@ -84,13 +94,13 @@
         <History class="w-5 h-5" />
         <span class="text-[10px] font-bold">Historial</span>
       </NuxtLink>
+      <NuxtLink to="/kardex" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/kardex' ? '' : 'text-slate-400'">
+        <CalendarDays class="w-5 h-5" />
+        <span class="text-[10px] font-bold">Kardex</span>
+      </NuxtLink>
       <NuxtLink v-if="user?.is_admin" to="/routing" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/routing' ? '' : 'text-slate-400'">
         <BellRing class="w-5 h-5" />
         <span class="text-[10px] font-bold">Avisos</span>
-      </NuxtLink>
-      <NuxtLink v-if="user?.is_admin" to="/users" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/users' ? '' : 'text-slate-400'">
-        <Shield class="w-5 h-5" />
-        <span class="text-[10px] font-bold">Usuarios</span>
       </NuxtLink>
       <button @click="handleLogout" class="px-2 py-2 flex flex-col items-center gap-1.5 text-slate-400 transition-colors hover:text-red-600">
         <LogOut class="w-5 h-5" />
@@ -101,7 +111,7 @@
 </template>
 
 <script setup>
-import { Plus, BarChart2, History, BellRing, Shield, LogOut } from 'lucide-vue-next'
+import { Plus, BarChart2, History, BellRing, Shield, LogOut, CalendarDays } from 'lucide-vue-next'
 const { user, logout } = useAuth()
 
 const handleLogout = async () => {

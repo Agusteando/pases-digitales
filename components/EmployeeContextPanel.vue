@@ -1,5 +1,6 @@
+components/EmployeeContextPanel.vue
 <template>
-  <div class="flex flex-col h-full relative w-full bg-transparent">
+  <div class="flex flex-col h-full min-h-0 relative w-full bg-transparent">
     
     <!-- Top Information Card -->
     <div class="flex flex-col relative z-20 shrink-0 mb-4 p-4 sm:p-5 bg-white/70 backdrop-blur-2xl border border-white/80 shadow-sm rounded-[1.5rem]">
@@ -17,6 +18,9 @@
           </div>
           
           <div v-else class="mt-1 flex flex-wrap gap-2 items-center">
+            <span v-if="horarioEmpleado" class="text-[10px] font-black text-[#00497B] bg-[#00497B]/10 px-2 py-0.5 rounded-md border border-[#00497B]/20 flex items-center gap-1">
+              <Clock class="w-3 h-3 opacity-80" /> {{ horarioEmpleado }}
+            </span>
             <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white">
               <Building2 class="w-3 h-3 opacity-70" /> {{ displayPlantel }}
             </span>
@@ -29,16 +33,36 @@
       </div>
 
       <!-- KPI Summary -->
-      <div class="flex flex-wrap gap-x-6 gap-y-3 mt-4 pt-3 border-t border-[#86888C]/10 relative">
-        <div v-if="Object.keys(statCounters).length === 0" class="text-[10px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-1.5">
-          <CheckCircle2 class="w-3.5 h-3.5 text-[#8EC152]" /> Sin incidencias en el ciclo.
-        </div>
-        <template v-else>
-          <div v-for="(count, cat) in statCounters" :key="cat" class="flex items-center gap-1.5">
-            <span class="text-base font-black text-[#007F92] leading-none">{{ count }}</span>
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ getCategoryName(Number(cat)) }}</span>
+      <div class="flex flex-col mt-4 pt-3 border-t border-[#86888C]/10 relative gap-3">
+        
+        <div class="flex flex-wrap gap-x-6 gap-y-3">
+          <div v-if="Object.keys(statCounters).length === 0" class="text-[10px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-1.5">
+            <CheckCircle2 class="w-3.5 h-3.5 text-[#8EC152]" /> Sin pases registrados.
           </div>
-        </template>
+          <template v-else>
+            <div v-for="(count, cat) in statCounters" :key="cat" class="flex items-center gap-1.5">
+              <span class="text-base font-black text-[#007F92] leading-none">{{ count }}</span>
+              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ getCategoryName(Number(cat)) }}</span>
+            </div>
+          </template>
+        </div>
+
+        <!-- Kardex KPIs (Only display if available) -->
+        <div v-if="kardexRecords.length > 0" class="flex flex-wrap gap-x-6 gap-y-3 pt-3 border-t border-[#86888C]/10 border-dashed">
+          <div class="flex items-center gap-1.5" title="Retardos en Asistencia">
+            <span class="text-base font-black text-[#F49A6D] leading-none">{{ kardexKpis.retardos }}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Retardos</span>
+          </div>
+          <div class="flex items-center gap-1.5" title="Faltas en Asistencia">
+            <span class="text-base font-black text-[#E83F4B] leading-none">{{ kardexKpis.faltas }}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Faltas</span>
+          </div>
+          <div class="flex items-center gap-1.5" title="Total Horas a Descontar">
+            <span class="text-base font-black text-[#50535A] leading-none">{{ kardexKpis.strDescontar }}</span>
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">A Descontar</span>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -60,114 +84,169 @@
       </div>
     </transition>
 
-    <!-- Flowing Timeline Panel (Desacoplado del scroll interno para permitir stack múltiple) -->
-    <div class="flex-1 px-1 sm:px-2 pb-6 relative z-10">
+    <!-- Flowing Timeline Panel -->
+    <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-1 sm:px-2 pb-6 relative z-10">
       
       <!-- Sticky Header -->
-      <div class="sticky top-0 z-30 pt-3 pb-3 mb-5 bg-white/80 backdrop-blur-xl border-b border-[#86888C]/15 flex items-center justify-between gap-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-b-2xl shadow-sm">
-        <div class="flex flex-col">
-          <h3 class="text-lg font-black text-[#50535A] tracking-tight leading-none">Historial</h3>
-          <span class="text-[9px] font-bold text-[#86888C] uppercase tracking-widest mt-1" v-if="historyData?.cycle">Ciclo {{ historyData.cycle }}</span>
+      <div class="sticky top-0 z-30 pt-3 pb-3 mb-5 bg-white/80 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-b-2xl shadow-sm">
+        
+        <div class="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200">
+          <button @click="activeTab = 'pases'" class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all" :class="activeTab === 'pases' ? 'bg-white text-[#007F92] shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            Pases
+          </button>
+          <button @click="activeTab = 'kardex'" class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" :class="activeTab === 'kardex' ? 'bg-white text-[#007F92] shadow-sm' : 'text-slate-500 hover:text-slate-700'">
+            Asistencia <span v-if="kardexRecords.length > 0" class="bg-[#007F92]/10 text-[#007F92] px-1.5 py-0.5 rounded-md text-[8px]">{{ kardexRecords.length }}</span>
+          </button>
         </div>
-        <div class="relative group flex-1 max-w-[220px]">
+
+        <div v-if="activeTab === 'pases'" class="relative group flex-1 max-w-[220px] ml-auto">
            <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
               <Search class="w-3.5 h-3.5 text-[#86888C] group-focus-within:text-[#007F92] transition-colors" />
            </div>
-           <input type="text" v-model="searchQuery" placeholder="Buscar..." class="w-full pl-8 pr-3 py-2 bg-white/90 backdrop-blur-md border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/10 rounded-xl text-xs font-bold text-[#50535A] outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" />
+           <input type="text" v-model="searchQuery" placeholder="Buscar pase..." class="w-full pl-8 pr-3 py-2 bg-white/90 backdrop-blur-md border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/10 rounded-xl text-xs font-bold text-[#50535A] outline-none transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]" />
         </div>
       </div>
 
-      <div v-if="pendingHistory" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
-      
-      <div v-else-if="historyError" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
-        <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#E83F4B]/20">
-          <AlertTriangle class="w-5 h-5 text-[#E83F4B]" />
-        </div>
-        <p class="text-sm font-black text-[#50535A]">Error de conexión</p>
-      </div>
-
-      <div v-else-if="!filteredGroupedHistory.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
-        <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
-          <FileText class="w-5 h-5 text-[#86888C]/40" />
-        </div>
-        <p class="text-sm font-black text-[#50535A]">Sin incidencias</p>
-        <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">El colaborador no tiene registros.</p>
-      </div>
-
-      <div v-else class="relative mt-2">
-        <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-10 relative">
-          
-          <!-- Month Divider Header -->
-          <div class="flex items-center mb-6 pl-[3rem] sm:pl-[4rem]">
-             <span class="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black text-[#86888C] uppercase tracking-widest shadow-sm border border-white">
-               {{ group.month }}
-             </span>
+      <!-- Content: Pases Digitales -->
+      <div v-if="activeTab === 'pases'">
+        <div v-if="pendingHistory" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
+        
+        <div v-else-if="historyError" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+          <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#E83F4B]/20">
+            <AlertTriangle class="w-5 h-5 text-[#E83F4B]" />
           </div>
-          
-          <div class="relative w-full">
-            <!-- Continuous Rail -->
-            <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
+          <p class="text-sm font-black text-[#50535A]">Error de conexión</p>
+        </div>
 
-            <div class="space-y-6 relative z-10">
-              <NuxtLink v-for="(pass, index) in group.passes" :key="pass.id" :to="`/pass/${pass.id}`" class="group flex items-start w-full relative outline-none cursor-pointer" :style="{ animationDelay: `${index * 0.05}s` }">
-                
-                <!-- Date Left Column -->
-                <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4 transition-transform group-hover:-translate-x-1 duration-300">
-                  <div class="text-xl font-black text-[#50535A] leading-none">{{ formatDay(pass.date) }}</div>
-                  <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ formatMonth(pass.date) }}</div>
-                </div>
+        <div v-else-if="!filteredGroupedHistory.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+          <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
+            <FileText class="w-5 h-5 text-[#86888C]/40" />
+          </div>
+          <p class="text-sm font-black text-[#50535A]">Sin incidencias</p>
+          <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">El colaborador no tiene registros.</p>
+        </div>
 
-                <!-- Node Center Column -->
-                <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
+        <div v-else class="relative mt-2">
+          <div v-for="group in filteredGroupedHistory" :key="group.month" class="mb-10 relative">
+            
+            <div class="flex items-center mb-6 pl-[3rem] sm:pl-[4rem]">
+               <span class="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black text-[#86888C] uppercase tracking-widest shadow-sm border border-white">
+                 {{ group.month }}
+               </span>
+            </div>
+            
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
 
-                <!-- Floating Card Content -->
-                <div class="flex-1 pl-4 relative z-10">
-                  <div class="bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] group-hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.25rem] p-4 sm:p-5 group-hover:bg-white/90 group-hover:-translate-y-0.5">
-                    
-                    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
-                      <div>
-                        <h5 class="text-sm font-black text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
-                          {{ getCategoryName(pass.category_id) }}
-                        </h5>
-                        <p v-if="pass.tipo_permiso" class="text-[10px] font-bold text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
+              <div class="space-y-6 relative z-10">
+                <NuxtLink v-for="(pass, index) in group.passes" :key="pass.id" :to="`/pass/${pass.id}`" class="group flex items-start w-full relative outline-none cursor-pointer" :style="{ animationDelay: `${index * 0.05}s` }">
+                  
+                  <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4 transition-transform group-hover:-translate-x-1 duration-300">
+                    <div class="text-xl font-black text-[#50535A] leading-none">{{ formatDay(pass.date) }}</div>
+                    <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ formatMonth(pass.date) }}</div>
+                  </div>
+
+                  <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10 transition-transform duration-300 group-hover:scale-[1.3] group-hover:shadow-md" :class="getCategoryConfig(pass.category_id).bg"></div>
+
+                  <div class="flex-1 pl-4 relative z-10">
+                    <div class="bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] group-hover:shadow-[0_8px_20px_-4px_rgba(0,0,0,0.08)] transition-all duration-300 rounded-[1.25rem] p-4 sm:p-5 group-hover:bg-white/90 group-hover:-translate-y-0.5">
+                      
+                      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                        <div>
+                          <h5 class="text-sm font-black text-[#50535A] group-hover:text-[#007F92] transition-colors duration-300 leading-tight">
+                            {{ getCategoryName(pass.category_id) }}
+                          </h5>
+                          <p v-if="pass.tipo_permiso" class="text-[10px] font-bold text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
+                        </div>
+                        
+                        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
+                          <div class="w-1.5 h-1.5 rounded-full" :class="getStatusConfig(pass.status).dot"></div>
+                          <span class="text-[8px] font-black uppercase tracking-widest">{{ pass.status }}</span>
+                        </div>
+                      </div>
+
+                      <div v-if="pass.comentarios" class="relative pl-3 border-l-2 py-0.5 my-3 transition-all duration-300 bg-white/40 rounded-r-lg p-2.5 border-white shadow-sm" :class="getCategoryConfig(pass.category_id).border">
+                        <p class="text-xs text-[#50535A] italic leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
+                          "{{ pass.comentarios }}"
+                        </p>
                       </div>
                       
-                      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
-                        <div class="w-1.5 h-1.5 rounded-full" :class="getStatusConfig(pass.status).dot"></div>
-                        <span class="text-[8px] font-black uppercase tracking-widest">{{ pass.status }}</span>
+                      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4 pt-3 border-t border-[#86888C]/10 text-[9px] font-black uppercase tracking-widest text-[#86888C]">
+                        <span class="group-hover:text-[#50535A] transition-colors bg-[#86888C]/5 px-2 py-1 rounded-md">ID: {{ String(pass.id).padStart(5, '0') }}</span>
+                        <span v-if="pass.authorized_by" class="flex items-center gap-1 group-hover:text-[#50535A] transition-colors">
+                          <span class="w-1 h-1 rounded-full bg-[#86888C]/40"></span>
+                          {{ pass.authorized_by.split(' ')[0] || 'Responsable' }}
+                        </span>
                       </div>
-                    </div>
 
-                    <div v-if="pass.comentarios" class="relative pl-3 border-l-2 py-0.5 my-3 transition-all duration-300 bg-white/40 rounded-r-lg p-2.5 border-white shadow-sm" :class="getCategoryConfig(pass.category_id).border">
-                      <p class="text-xs text-[#50535A] italic leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all">
-                        "{{ pass.comentarios }}"
-                      </p>
                     </div>
-                    
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-4 pt-3 border-t border-[#86888C]/10 text-[9px] font-black uppercase tracking-widest text-[#86888C]">
-                      <span class="group-hover:text-[#50535A] transition-colors bg-[#86888C]/5 px-2 py-1 rounded-md">ID: {{ String(pass.id).padStart(5, '0') }}</span>
-                      <span v-if="pass.authorized_by" class="flex items-center gap-1 group-hover:text-[#50535A] transition-colors">
-                        <span class="w-1 h-1 rounded-full bg-[#86888C]/40"></span>
-                        {{ pass.authorized_by.split(' ')[0] || 'Responsable' }}
-                      </span>
-                    </div>
-
                   </div>
-                </div>
-              </NuxtLink>
+                </NuxtLink>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Content: Kardex Asistencia -->
+      <div v-if="activeTab === 'kardex'">
+        <div v-if="pendingKardex" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
+        <div v-else-if="!filteredKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+          <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
+            <CalendarDays class="w-5 h-5 text-[#86888C]/40" />
+          </div>
+          <p class="text-sm font-black text-[#50535A]">Sin registros de asistencia</p>
+          <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">No hay datos sincronizados para mostrar.</p>
+        </div>
+        <div v-else class="relative mt-2">
+          <div class="space-y-4 relative z-10">
+            <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
+            
+            <div v-for="(rec, index) in filteredKardex" :key="index" class="group flex items-start w-full relative outline-none" :style="{ animationDelay: `${(index % 10) * 0.05}s` }">
+              
+              <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4">
+                <div class="text-xl font-black text-[#50535A] leading-none">{{ rec.fecha.split('/')[0] }}</div>
+                <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ getMonthName(rec.fecha.split('/')[1]) }}</div>
+              </div>
+
+              <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10" :class="getKardexColor(rec.incidencia).bg"></div>
+
+              <div class="flex-1 pl-4 relative z-10">
+                <div class="bg-white/70 backdrop-blur-md border border-white/80 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] rounded-[1.25rem] p-4 sm:p-5">
+                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
+                    <div>
+                      <h5 class="text-sm font-black text-[#50535A] leading-tight flex items-center gap-2">
+                        {{ rec.incidencia }}
+                      </h5>
+                      <p v-if="rec.registro_de_entrada || rec.registro_de_salida" class="text-[10px] font-bold text-[#86888C] mt-1">
+                        E: {{ rec.registro_de_entrada || '--:--' }} | S: {{ rec.registro_de_salida || '--:--' }}
+                      </p>
+                    </div>
+                    
+                    <div v-if="getPaseForKardexDate(rec.fecha)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border shadow-sm shrink-0 bg-[#007F92]/10 border-[#007F92]/30">
+                      <ShieldCheck class="w-3.5 h-3.5 text-[#007F92]" />
+                      <span class="text-[8px] font-black uppercase tracking-widest text-[#006575]">Pase Emitido</span>
+                    </div>
+                  </div>
+                  
+                  <div v-if="parseHorasDescontar(rec.horas_descontar) > 0" class="mt-2 inline-flex items-center gap-1 text-[9px] font-black text-[#E83F4B] bg-[#E83F4B]/10 px-2 py-1 rounded border border-[#E83F4B]/20 uppercase tracking-widest">
+                    <AlertTriangle class="w-3 h-3" /> A descontar: {{ rec.horas_descontar }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
-import { FileText, Loader2, Search, ArrowRight, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle } from 'lucide-vue-next'
+import { FileText, Loader2, Search, ArrowRight, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle, Clock, ShieldCheck, CalendarDays } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
-import KpiIndicator from '~/components/KpiIndicator.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 dayjs.locale('es')
@@ -175,6 +254,8 @@ dayjs.locale('es')
 const props = defineProps({ 
   employee: { type: Object, required: true } 
 })
+
+const activeTab = ref('pases')
 
 const getCategoryName = (id) => {
   const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
@@ -203,6 +284,11 @@ const getStatusConfig = (status) => {
 const formatDay = (dateStr) => dayjs(dateStr).format('DD')
 const formatMonth = (dateStr) => dayjs(dateStr).format('MMM').replace('.', '')
 
+const formatHorario = (h) => {
+  if (!h) return ''
+  return h.replace(/(\d{2})(\d{2})\s+a\s+(\d{2})(\d{2})/gi, '$1:$2 a $3:$4')
+}
+
 const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/enrich', {
   query: { 
     id: props.employee.id || undefined, 
@@ -213,6 +299,9 @@ const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/en
 const { data: historyData, pending: pendingHistory, error: historyError } = useFetch('/api/passes/employee', {
   query: { name: props.employee.name }
 })
+
+const numeroNomina = computed(() => enrichment.value?.numero_nomina || props.employee.numero_nomina || null)
+const { data: kardexData, pending: pendingKardex } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
 
 const displayPic = computed(() => enrichment.value?.picture || props.employee.picture || null)
 const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
@@ -287,4 +376,85 @@ const filteredGroupedHistory = computed(() => {
     }
   }).filter(group => group.passes.length > 0)
 })
+
+const kardexRecords = computed(() => Array.isArray(kardexData.value) ? kardexData.value : [])
+
+const horarioEmpleado = computed(() => {
+  if (kardexRecords.value.length > 0 && kardexRecords.value[0].horario) {
+    return formatHorario(kardexRecords.value[0].horario)
+  }
+  return null
+})
+
+function parseHorasDescontar(str) {
+  if (!str) return 0;
+  const match = str.match(/(?:(\d+)\s*Hrs?)?\s*(?:(\d+)\s*Min)?/i);
+  let mins = 0;
+  if (match) {
+    if (match[1]) mins += parseInt(match[1]) * 60;
+    if (match[2]) mins += parseInt(match[2]);
+  }
+  return mins;
+}
+
+function formatHorasDescontar(totalMins) {
+  if (totalMins === 0) return '0 Hrs 0 Min';
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return `${h} Hrs ${m} Min`;
+}
+
+const kardexKpis = computed(() => {
+  let retardos = 0;
+  let faltas = 0;
+  let minDescontar = 0;
+  
+  kardexRecords.value.forEach(r => {
+    const inc = (r.incidencia || '').toLowerCase()
+    if (inc.includes('retardo')) retardos++;
+    if (inc.includes('falta')) faltas++;
+    if (r.horas_descontar) minDescontar += parseHorasDescontar(r.horas_descontar);
+  });
+  
+  return {
+    retardos,
+    faltas,
+    minDescontar,
+    strDescontar: formatHorasDescontar(minDescontar)
+  }
+})
+
+const getMonthName = (mStr) => {
+  const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+  const idx = parseInt(mStr, 10) - 1
+  return months[idx] || mStr
+}
+
+const getKardexColor = (incidencia) => {
+  const inc = (incidencia || '').toLowerCase()
+  if (inc.includes('falta')) return { bg: 'bg-[#E83F4B]' }
+  if (inc.includes('retardo')) return { bg: 'bg-[#F49A6D]' }
+  if (inc.includes('asistencia')) return { bg: 'bg-[#8EC152]' }
+  if (inc.includes('descanso')) return { bg: 'bg-[#86888C]' }
+  if (inc.includes('vacaciones') || inc.includes('justificaci')) return { bg: 'bg-[#007F92]' }
+  return { bg: 'bg-[#FCBF2C]' }
+}
+
+const filteredKardex = computed(() => {
+  return [...kardexRecords.value].sort((a,b) => {
+    const [d1,m1,y1] = a.fecha.split('/')
+    const [d2,m2,y2] = b.fecha.split('/')
+    const date1 = new Date(y1, m1-1, d1)
+    const date2 = new Date(y2, m2-1, d2)
+    return date2 - date1
+  })
+})
+
+const getPaseForKardexDate = (fechaDDMMYYYY) => {
+  if (!fechaDDMMYYYY) return null
+  const parts = fechaDDMMYYYY.split('/')
+  if (parts.length !== 3) return null
+  const targetDate = `${parts[2]}-${parts[1]}-${parts[0]}`
+  return historyData.value?.history?.find(p => p.date.startsWith(targetDate) && p.status !== 'cancelado' && p.status !== 'rechazado')
+}
 </script>
