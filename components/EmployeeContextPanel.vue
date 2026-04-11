@@ -17,7 +17,7 @@
           </div>
           
           <div v-else class="mt-1 flex flex-wrap gap-2 items-center">
-            <span v-if="horarioEmpleado" class="text-[10px] font-black text-[#00497B] bg-[#00497B]/10 px-2 py-0.5 rounded-md border border-[#00497B]/20 flex items-center gap-1">
+            <span v-if="horarioEmpleado" class="text-[10px] font-black text-[#00497B] bg-[#00497B]/10 px-2 py-0.5 rounded-md border border-[#00497B]/20 flex items-center gap-1 shadow-sm">
               <Clock class="w-3 h-3 opacity-80" /> {{ horarioEmpleado }}
             </span>
             <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white shadow-sm">
@@ -29,73 +29,6 @@
             </span>
           </div>
         </div>
-      </div>
-
-      <!-- KPI Summary -->
-      <div class="flex flex-col mt-5 pt-4 border-t border-[#86888C]/15 relative gap-3">
-        
-        <div class="flex flex-wrap gap-x-6 gap-y-3">
-          <div v-if="Object.keys(statCounters).length === 0" class="text-[10px] font-bold uppercase tracking-widest text-[#86888C] flex items-center gap-1.5">
-            <CheckCircle2 class="w-3.5 h-3.5 text-[#8EC152]" /> Sin pases registrados.
-          </div>
-          <template v-else>
-            <div v-for="(count, cat) in statCounters" :key="cat" class="flex items-center gap-1.5">
-              <span class="text-base font-black text-[#007F92] leading-none">{{ count }}</span>
-              <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ getCategoryName(Number(cat)) }}</span>
-            </div>
-          </template>
-        </div>
-
-        <!-- Kardex Computed Analytics Dashboard -->
-        <div v-if="enrichedKardex.length > 0" class="grid grid-cols-3 gap-2 sm:gap-3 pt-4 mt-2 border-t border-[#86888C]/10 border-dashed">
-          
-          <div class="bg-white/60 backdrop-blur-md rounded-[1rem] sm:rounded-[1.25rem] p-3 sm:p-4 border border-white shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md">
-             <div class="text-[8px] sm:text-[9px] font-black text-[#86888C] uppercase tracking-widest mb-1 flex items-center gap-1">
-               <AlertTriangle class="w-3 h-3 hidden sm:block" /> Retardos
-             </div>
-             <div class="text-2xl sm:text-3xl font-black leading-none tracking-tighter my-1.5" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-[#86888C]/40'">
-               {{ kardexKpis.unjRetardos }}
-             </div>
-             <div class="text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-2" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-[#86888C]/40'">
-               Sin justificar
-             </div>
-             <div class="mt-auto text-[8px] sm:text-[9px] font-bold text-slate-400 bg-white px-1 sm:px-2 py-1 rounded-md shadow-sm border border-white w-full truncate">
-               {{ kardexKpis.rawRetardos }} total
-             </div>
-          </div>
-
-          <div class="bg-white/60 backdrop-blur-md rounded-[1rem] sm:rounded-[1.25rem] p-3 sm:p-4 border border-white shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md">
-             <div class="text-[8px] sm:text-[9px] font-black text-[#86888C] uppercase tracking-widest mb-1 flex items-center gap-1">
-               <XCircle class="w-3 h-3 hidden sm:block" /> Faltas
-             </div>
-             <div class="text-2xl sm:text-3xl font-black leading-none tracking-tighter my-1.5" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-[#86888C]/40'">
-               {{ kardexKpis.unjFaltas }}
-             </div>
-             <div class="text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-2" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-[#86888C]/40'">
-               Sin justificar
-             </div>
-             <div class="mt-auto text-[8px] sm:text-[9px] font-bold text-slate-400 bg-white px-1 sm:px-2 py-1 rounded-md shadow-sm border border-white w-full truncate">
-               {{ kardexKpis.rawFaltas }} total
-             </div>
-          </div>
-
-          <div class="bg-white/60 backdrop-blur-md rounded-[1rem] sm:rounded-[1.25rem] p-3 sm:p-4 border border-white shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md">
-             <div class="text-[8px] sm:text-[9px] font-black text-[#86888C] uppercase tracking-widest mb-1 flex items-center gap-1">
-               <Clock class="w-3 h-3 hidden sm:block" /> Descuento
-             </div>
-             <div class="text-lg sm:text-[1.35rem] font-black leading-none tracking-tight my-1.5 truncate w-full" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-[#86888C]/40'">
-               {{ kardexKpis.strUnjMins }}
-             </div>
-             <div class="text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-2" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-[#86888C]/40'">
-               Sin justificar
-             </div>
-             <div class="mt-auto text-[8px] sm:text-[9px] font-bold text-slate-400 bg-white px-1 sm:px-2 py-1 rounded-md shadow-sm border border-white w-full truncate">
-               {{ kardexKpis.strRawMins }} total
-             </div>
-          </div>
-
-        </div>
-
       </div>
     </div>
 
@@ -142,6 +75,15 @@
 
       <!-- Content: Pases Digitales -->
       <div v-if="activeTab === 'pases'">
+        
+        <!-- Pases Statistics Bar -->
+        <div v-if="Object.keys(statCounters).length > 0" class="flex flex-wrap gap-2 mb-6">
+          <div v-for="(count, cat) in statCounters" :key="cat" class="bg-white/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white shadow-sm flex items-center gap-2">
+            <span class="text-sm font-black text-[#007F92]">{{ count }}</span>
+            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{{ getCategoryName(Number(cat)) }}</span>
+          </div>
+        </div>
+
         <div v-if="pendingHistory" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
         
         <div v-else-if="historyError" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
@@ -224,6 +166,45 @@
 
       <!-- Content: Kardex Asistencia Reimagined Engine -->
       <div v-if="activeTab === 'kardex'">
+        
+        <!-- Kardex Computed Analytics Dashboard (Horizontal Strip) -->
+        <div v-if="enrichedKardex.length > 0" class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-6">
+          
+          <div class="bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-start mb-1">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><AlertTriangle class="w-3 h-3 text-[#F49A6D]" /> Retardos</span>
+              <span class="text-[9px] font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-white">De {{ kardexKpis.rawRetardos }}</span>
+            </div>
+            <div class="flex items-baseline gap-1.5 mt-2">
+              <span class="text-2xl font-black leading-none tracking-tighter" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-300'">{{ kardexKpis.unjRetardos }}</span>
+              <span class="text-[8px] font-black uppercase tracking-widest" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-400'">Sin justificar</span>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-start mb-1">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><XCircle class="w-3 h-3 text-[#E83F4B]" /> Faltas</span>
+              <span class="text-[9px] font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-white">De {{ kardexKpis.rawFaltas }}</span>
+            </div>
+            <div class="flex items-baseline gap-1.5 mt-2">
+              <span class="text-2xl font-black leading-none tracking-tighter" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-300'">{{ kardexKpis.unjFaltas }}</span>
+              <span class="text-[8px] font-black uppercase tracking-widest" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-400'">Sin justificar</span>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-start mb-1">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock class="w-3 h-3 text-[#50535A]" /> Descuento</span>
+              <span class="text-[9px] font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-white">De {{ kardexKpis.strRawMins }}</span>
+            </div>
+            <div class="flex items-baseline gap-1.5 mt-2">
+              <span class="text-xl font-black leading-none tracking-tight truncate" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-300'">{{ kardexKpis.strUnjMins }}</span>
+              <span class="text-[8px] font-black uppercase tracking-widest shrink-0" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-400'">Sin justificar</span>
+            </div>
+          </div>
+          
+        </div>
+
         <div v-if="pendingKardex" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
         <div v-else-if="!enrichedKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
           <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
@@ -250,27 +231,35 @@
               <div class="flex-1 pl-4 sm:pl-5 relative z-10">
                 <div class="py-2 transition-all duration-300">
                   
-                  <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 group-hover:bg-white/80">
+                  <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 group-hover:bg-white/80">
                      
                      <!-- Top row: Original Incidence & Pending Unauth Passes Warning -->
                      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                        <div>
-                          <h5 class="text-sm font-black text-[#50535A] leading-tight">{{ day.rec.incidencia }}</h5>
-                          <p class="text-[10px] font-bold text-[#86888C] mt-1 tracking-wide">
-                            E: <span :class="{'text-[#E83F4B]': day.missingE}">{{ day.rec.registro_de_entrada || '--:--' }}</span> &bull; 
-                            S: <span :class="{'text-[#E83F4B]': day.missingS}">{{ day.rec.registro_de_salida || '--:--' }}</span>
-                          </p>
-                        </div>
+                        <h5 class="text-sm font-black text-[#50535A] leading-tight">{{ day.rec.incidencia }}</h5>
                         
                         <div v-if="day.unauthorizedPasses.length > 0" class="shrink-0 bg-[#FCBF2C]/10 border border-[#FCBF2C]/30 text-[#6D5F24] px-2.5 py-1 rounded-md flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest h-fit">
                            <AlertCircle class="w-3 h-3" /> Pases sin autorizar
                         </div>
                      </div>
 
+                     <!-- Aesthetic Punch Cards -->
+                     <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-2">
+                        <div class="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-200/60 shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-[#E83F4B]/5': day.missingE}">
+                          <div class="w-1.5 h-1.5 rounded-full" :class="day.missingE ? 'bg-[#E83F4B]' : 'bg-[#8EC152]'"></div>
+                          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entrada</span>
+                          <span class="text-xs font-black font-mono" :class="day.missingE ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_entrada) || '--:--' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-200/60 shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-[#E83F4B]/5': day.missingS}">
+                          <div class="w-1.5 h-1.5 rounded-full" :class="day.missingS ? 'bg-[#E83F4B]' : 'bg-[#F49A6D]'"></div>
+                          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Salida</span>
+                          <span class="text-xs font-black font-mono" :class="day.missingS ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_salida) || '--:--' }}</span>
+                        </div>
+                     </div>
+
                      <!-- Stricter Engine Anomalies / Justifications Chips -->
                      <div v-if="day.anomalies.length > 0" class="flex flex-wrap gap-2 mt-1">
                         <div v-for="anom in day.anomalies" :key="anom.type" 
-                              class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
+                              class="px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
                               :class="anom.isJustified ? 'bg-[#8EC152]/10 text-[#00692F] border-[#8EC152]/30' : 'bg-[#E83F4B]/10 text-[#762728] border-[#E83F4B]/30'">
                            <ShieldCheck v-if="anom.isJustified" class="w-3.5 h-3.5" />
                            <AlertTriangle v-else class="w-3.5 h-3.5" />
@@ -279,14 +268,12 @@
                      </div>
 
                      <!-- Backed by Authorized Passes Linking -->
-                     <div v-if="day.authorizedPasses.length > 0" class="pt-3 mt-1 border-t border-[#86888C]/10 flex flex-col gap-2">
-                        <span class="text-[8px] font-black text-[#007F92] uppercase tracking-widest">Justificado por:</span>
-                        <div class="flex flex-wrap gap-2">
-                           <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1.5 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2.5 py-1.5 rounded-lg border border-[#007F92]/20 transition-colors shadow-sm outline-none">
-                              <ShieldCheck class="w-3.5 h-3.5" />
-                              Folio #{{ String(p.id).padStart(5,'0') }} - {{ getCategoryName(p.category_id) }}
-                           </NuxtLink>
-                        </div>
+                     <div v-if="day.authorizedPasses.length > 0" class="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-[#86888C]/10">
+                        <span class="text-[9px] font-black text-[#007F92] uppercase tracking-widest">Justificado:</span>
+                        <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2 py-1 rounded-md border border-[#007F92]/20 transition-colors shadow-sm outline-none">
+                           <ShieldCheck class="w-3 h-3" />
+                           #{{ String(p.id).padStart(5,'0') }} • {{ getCategoryName(p.category_id) }}
+                        </NuxtLink>
                      </div>
 
                   </div>
@@ -345,6 +332,12 @@ const formatMonth = (dateStr) => dayjs(dateStr).format('MMM').replace('.', '')
 const formatHorario = (h) => {
   if (!h) return ''
   return h.replace(/(\d{2})(\d{2})\s+a\s+(\d{2})(\d{2})/gi, '$1:$2 a $3:$4')
+}
+
+const extractTime = (str) => {
+  if (!str || str.trim() === '' || str.trim() === '--:--') return null;
+  const parts = str.split('-');
+  return parts.length > 1 ? parts[parts.length - 1].trim() : str.trim();
 }
 
 // Strictly fetch enrichment based on CURP
@@ -566,7 +559,7 @@ const enrichedKardex = computed(() => {
     if (hasRetardo) anomalies.push({ type: 'retardo', label: 'Retardo', isJustified: retardoJustified })
     if (missingE) anomalies.push({ type: 'omision_e', label: 'Omisión de Entrada', isJustified: entradaJustified })
     if (missingS) anomalies.push({ type: 'omision_s', label: 'Omisión de Salida', isJustified: salidaJustified })
-    if (mins > 0) anomalies.push({ type: 'mins', label: `Minutos a descontar: ${formatHorasDescontarShort(mins)}`, isJustified: minsJustified })
+    if (mins > 0) anomalies.push({ type: 'mins', label: `A descontar: ${formatHorasDescontarShort(mins)}`, isJustified: minsJustified })
 
     return {
       rec,
