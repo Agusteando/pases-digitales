@@ -1,5 +1,3 @@
-
-
 import { LRUCache } from 'lru-cache'
 
 const cache = new LRUCache<string, any[]>({ max: 5, ttl: 1000 * 60 * 30 }) 
@@ -43,7 +41,7 @@ function parseSoapXML(xmlString: string) {
       curp: getTag('CURP'),
       plantel: getTag('ClaveArea'), 
       email: getTag('Correo'),
-      ingressioId: getTag('ClaveNomina') 
+      ClaveUnica: getTag('ClaveUnica') 
     })
   }
   return employees
@@ -100,7 +98,7 @@ export async function getFastSoapEmployees() {
        plantel: cleanPlantelName(emp.plantel),
        email: emp.email,
        puesto: null, // Puesto is deferred to the Signia Enrichment lookup
-       ingressioId: emp.ingressioId
+       ClaveUnica: emp.ClaveUnica
        // Intentionally no picture field here
     }))
     cache.set('soap_list', finalData)

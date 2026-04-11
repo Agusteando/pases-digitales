@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   const dataset = await getFastSoapEmployees()
 
   // Returns ONLY search/identity fields. `picture` is strictly omitted from this layer.
-  // We guarantee ingressioId (ClaveNomina) is returned here for Kardex operations.
+  // We guarantee ClaveUnica is returned here for Kardex operations.
   const results = dataset
     .filter(emp => normalizeName(emp.name).includes(searchName))
     .slice(0, 15)
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
       email: emp.email,
       puesto: emp.puesto,
       curp: emp.curp,
-      ingressioId: emp.ingressioId
+      ClaveUnica: emp.ClaveUnica
     }))
 
   return results

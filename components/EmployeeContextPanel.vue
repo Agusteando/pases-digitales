@@ -387,9 +387,9 @@ const { data: historyData, pending: pendingHistory, error: historyError } = useF
   query: { name: props.employee.name }
 })
 
-// Strictly rely on SOAP ingressioId for Kardex API querying, removing Signia fallback.
-const numeroNomina = computed(() => props.employee.ingressioId || props.employee.numero_nomina || null)
-const { data: kardexData, pending: pendingKardex, refresh: refreshKardexData } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
+// Strictly rely on SOAP ClaveUnica for Kardex API querying.
+const claveUnica = computed(() => props.employee.ClaveUnica || null)
+const { data: kardexData, pending: pendingKardex, refresh: refreshKardexData } = useFetch(() => claveUnica.value ? `/api/kardex/${claveUnica.value}` : null)
 
 const isSyncingKardex = ref(false)
 const kardexSyncMessage = ref('')
@@ -517,7 +517,7 @@ const filteredGroupedHistory = computed(() => {
 
 const kardexRecords = computed(() => {
   if (!Array.isArray(kardexData.value)) return []
-  const targetNom = parseInt(numeroNomina.value, 10)
+  const targetClave = parseInt(claveUnica.value, 10)
   
   // CRITICAL: Strictly filter returned dataset locally to prevent API partial match leaks (e.g., API returning 39, 139, 390 for search 39)
   return kardexData.value.filter(r => {
@@ -527,13 +527,14 @@ const kardexRecords = computed(() => {
       r.numero_empleado, 
       r.numero_de_empleado, 
       r.nomina, 
-      r.id_empleado
+      r.id_empleado,
+      r.ClaveUnica
     ]
     
-    if (!isNaN(targetNom)) {
-      return ids.some(id => parseInt(id, 10) === targetNom)
+    if (!isNaN(targetClave)) {
+      return ids.some(id => parseInt(id, 10) === targetClave)
     } else {
-      const strTarget = String(numeroNomina.value).trim().toLowerCase()
+      const strTarget = String(claveUnica.value).trim().toLowerCase()
       return ids.some(id => String(id || '').trim().toLowerCase() === strTarget)
     }
   })
