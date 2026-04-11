@@ -42,7 +42,7 @@
               </div>
               
               <div class="flex flex-col gap-2.5">
-                <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white shadow-sm group hover:shadow-md transition-all">
+                <div v-for="emp in selectedEmployees" :key="getEmpKey(emp)" class="flex flex-col bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white shadow-sm group hover:shadow-md transition-all">
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                       <!-- Picture flows strictly from the enrichment API via the selected CURP -->
@@ -76,7 +76,7 @@
                         </div>
                       </div>
                     </div>
-                    <button @click="removeEmployee(emp.id)" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm border border-slate-100 transition-colors shrink-0 outline-none">
+                    <button @click="removeEmployee(getEmpKey(emp))" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm border border-slate-100 transition-colors shrink-0 outline-none">
                       <XIcon class="w-4 h-4" />
                     </button>
                   </div>
@@ -177,7 +177,7 @@
           <div class="bg-white/50 backdrop-blur-xl border-b border-white/80 p-4 sm:p-5 shrink-0 shadow-[inset_0_-2px_10px_rgba(0,0,0,0.02)] z-30 relative">
             <h3 class="text-[10px] font-black text-[#007F92] uppercase tracking-widest mb-3 block w-full px-1">Colaboradores incluidos ({{ (selectedEmployees || []).length }})</h3>
             <div class="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-1">
-              <div v-for="emp in selectedEmployees" :key="emp.id" class="flex items-center gap-3 bg-white/90 backdrop-blur-md p-2 pr-4 rounded-full border border-white shadow-sm shrink-0 transition-transform hover:-translate-y-0.5">
+              <div v-for="emp in selectedEmployees" :key="getEmpKey(emp)" class="flex items-center gap-3 bg-white/90 backdrop-blur-md p-2 pr-4 rounded-full border border-white shadow-sm shrink-0 transition-transform hover:-translate-y-0.5">
                 <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="w-8 h-8 ring-2 ring-white shadow-sm" />
                 <div class="flex flex-col">
                   <span class="text-xs font-black text-slate-800 leading-none">{{ emp.name.split(' ')[0] }} {{ emp.name.split(' ')[1] || '' }}</span>
@@ -506,6 +506,8 @@ const verifiedPlanteles = ref(new Set())
 
 const currentCoverageTask = computed(() => (coverageQueue.value || [])[0] || null)
 
+const getEmpKey = (e) => e.ClaveUnica || e.curp || e.name;
+
 const isAuthorizerForCurrent = computed(() => {
   if (!myProfile.value || !Array.isArray(myProfile.value.authorizedPlanteles) || (selectedEmployees.value || []).length === 0) return true;
   const targetPlantel = selectedEmployees.value[0]?.plantelActual || selectedEmployees.value[0]?.plantelBase;
@@ -619,7 +621,8 @@ function onSetupCancelled() {
 }
 
 async function addEmployee(emp) {
-  if (!(selectedEmployees.value || []).find(e => e.id === emp.id)) {
+  const empKey = getEmpKey(emp)
+  if (!(selectedEmployees.value || []).find(e => getEmpKey(e) === empKey)) {
     const tempEmp = { ...emp, _enriching: true, _editingActual: false }
     selectedEmployees.value.push(tempEmp)
 
@@ -628,14 +631,13 @@ async function addEmployee(emp) {
       enriched = await $fetch('/api/employees/enrich', { query: { curp: emp.curp } }).catch(() => ({}))
     }
     
-    const actualEmp = (selectedEmployees.value || []).find(e => e.id === emp.id)
+    const actualEmp = (selectedEmployees.value || []).find(e => getEmpKey(e) === empKey)
     if (actualEmp) {
       actualEmp.curp = emp.curp || null 
-      actualEmp.plantelBase = emp.plantel || null // STRICTLY SOAP
+      actualEmp.plantelBase = emp.plantel || null 
       actualEmp.plantelActual = actualEmp.plantelBase
-      actualEmp.puesto = enriched.puesto || null // STRICTLY Signia
-      actualEmp.picture = enriched.picture || null // STRICTLY Signia
-      // STRICTLY use SOAP ClaveUnica, never Signia.
+      actualEmp.puesto = enriched.puesto || null 
+      actualEmp.picture = enriched.picture || null 
       actualEmp.ClaveUnica = emp.ClaveUnica || null 
       actualEmp._editingActual = false
       actualEmp._enriching = false
@@ -645,8 +647,8 @@ async function addEmployee(emp) {
   }
 }
 
-function removeEmployee(id) {
-  selectedEmployees.value = (selectedEmployees.value || []).filter(e => e.id !== id)
+function removeEmployee(key) {
+  selectedEmployees.value = (selectedEmployees.value || []).filter(e => getEmpKey(e) !== key)
   if (selectedEmployees.value.length === 0) {
     activeScenario.value = null
     coverageQueue.value = []

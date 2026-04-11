@@ -34,8 +34,9 @@ function parseSoapXML(xmlString: string) {
 
     if (getTag('EsActivo') !== 'true') continue
 
+    // Strictly mapping purely SOAP-native fields.
+    // ID_Empleado (ingressioId) has been intentionally removed to prevent identity leaks.
     employees.push({
-      id: getTag('ID_Empleado'),
       name: getTag('NombreCompleto'),
       rfc: getTag('RFC'),
       curp: getTag('CURP'),
@@ -83,7 +84,7 @@ export async function getSigniaData() {
 }
 
 // STRICTLY SOAP. No Signia fetching or array merging here anymore.
-// Ensures `picture` is absolutely never injected at the search dataset level.
+// Ensures `id/ingressioId` and `picture/puesto` are absolutely never injected at the search dataset level.
 export async function getFastSoapEmployees() {
   if (cache.has('soap_list')) return cache.get('soap_list')!
 
@@ -91,15 +92,12 @@ export async function getFastSoapEmployees() {
   
   if (soapData && soapData.length > 0) {
     const finalData = soapData.map(emp => ({
-       id: emp.id,
        name: emp.name,
        rfc: emp.rfc,
        curp: emp.curp,
        plantel: cleanPlantelName(emp.plantel),
        email: emp.email,
-       puesto: null, // Puesto is deferred to the Signia Enrichment lookup
        ClaveUnica: emp.ClaveUnica
-       // Intentionally no picture field here
     }))
     cache.set('soap_list', finalData)
     return finalData

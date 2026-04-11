@@ -12,17 +12,15 @@ export default defineEventHandler(async (event) => {
   const searchName = normalizeName(q)
   const dataset = await getFastSoapEmployees()
 
-  // Returns ONLY search/identity fields. `picture` is strictly omitted from this layer.
-  // We guarantee ClaveUnica is returned here for Kardex operations.
+  // Returns ONLY pure SOAP search/identity fields. 
+  // 'id/ingressioId' and all Signia-related mock fields ('puesto') have been strictly removed.
   const results = dataset
     .filter(emp => normalizeName(emp.name).includes(searchName))
     .slice(0, 15)
     .map(emp => ({
-      id: emp.id,
       name: emp.name,
       plantel: emp.plantel,
       email: emp.email,
-      puesto: emp.puesto,
       curp: emp.curp,
       ClaveUnica: emp.ClaveUnica
     }))

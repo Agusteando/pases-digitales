@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="relative w-full">
     <div class="relative flex items-center group">
@@ -32,7 +30,7 @@
     <transition name="fade">
       <div v-if="showResults" class="mt-3 w-full bg-white/90 backdrop-blur-xl rounded-[1.5rem] shadow-sm border border-white/60 overflow-hidden relative">
         <div v-if="results.length > 0" class="max-h-[320px] overflow-y-auto py-2 custom-scrollbar">
-          <div v-for="(emp, idx) in results" :key="emp.id" 
+          <div v-for="(emp, idx) in results" :key="emp.ClaveUnica || emp.curp || idx" 
                @mousedown.prevent="selectEmployee(emp)" 
                @mouseenter="highlightedIndex = idx"
                class="px-5 py-4 cursor-pointer flex items-center gap-4 transition-all relative"
