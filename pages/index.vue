@@ -635,7 +635,8 @@ async function addEmployee(emp) {
       actualEmp.plantelActual = actualEmp.plantelBase
       actualEmp.puesto = enriched.puesto || emp.puesto || null
       actualEmp.picture = enriched.picture || emp.picture || null
-      actualEmp.numero_nomina = enriched.numero_nomina || emp.ingressioId || null
+      // STRICTLY use SOAP ingressioId, never Signia.
+      actualEmp.numero_nomina = emp.ingressioId || null 
       actualEmp._editingActual = false
       actualEmp._enriching = false
 

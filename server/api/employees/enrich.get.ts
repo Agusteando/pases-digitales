@@ -38,8 +38,7 @@ export default defineCachedEventHandler(async (event) => {
       email: null,
       plantel: null,
       isActive: false,
-      curp: curp,
-      numero_nomina: null
+      curp: curp
     }
   }
 
@@ -56,14 +55,14 @@ export default defineCachedEventHandler(async (event) => {
   }
 
   // Returns ONLY fields sourced from the Signia response.
+  // Signia ingressioId is strictly discarded here. Kardex strictly requires the SOAP ClaveNomina identity.
   return {
     picture: pictureUrl,
     puesto: enrichedData.puesto || null,
     email: enrichedData.email || null,
     plantel: plantelName || null,
     isActive: enrichedData.isActive !== false,
-    curp: enrichedData.curp || curp,
-    numero_nomina: enrichedData.ingressioId || null
+    curp: enrichedData.curp || curp
   }
 }, {
   maxAge: 60 * 60 * 12,

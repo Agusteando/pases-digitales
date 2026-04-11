@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="flex flex-col h-full min-h-0 relative w-full bg-transparent">
     
@@ -291,6 +289,7 @@ const formatHorario = (h) => {
   return h.replace(/(\d{2})(\d{2})\s+a\s+(\d{2})(\d{2})/gi, '$1:$2 a $3:$4')
 }
 
+// Strictly fetch enrichment based on CURP
 const curpVal = computed(() => props.employee.curp || undefined)
 const { data: enrichment, pending: pendingEnrich } = useFetch(
   () => props.employee.curp ? '/api/employees/enrich' : null, 
@@ -301,7 +300,8 @@ const { data: historyData, pending: pendingHistory, error: historyError } = useF
   query: { name: props.employee.name }
 })
 
-const numeroNomina = computed(() => enrichment.value?.numero_nomina || props.employee.numero_nomina || props.employee.ingressioId || null)
+// Strictly rely on SOAP ingressioId for Kardex API querying, removing Signia fallback.
+const numeroNomina = computed(() => props.employee.numero_nomina || props.employee.ingressioId || null)
 const { data: kardexData, pending: pendingKardex } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
 
 // Picture injection strictly stems from Signia API enrichment response via CURP
