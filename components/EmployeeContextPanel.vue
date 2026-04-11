@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-col h-full min-h-0 relative w-full bg-transparent">
     
-    <!-- Top Information Header (No background) -->
-    <div class="flex flex-col relative z-20 shrink-0 mb-6">
+    <!-- Top Information Header -->
+    <div class="flex flex-col relative z-20 shrink-0 mb-5">
       <div class="flex items-center gap-4">
         <PremiumAvatar :src="displayPic" :name="employee.name" size="md" class="shrink-0 shadow-sm border border-white" />
         
@@ -23,7 +23,6 @@
             <span v-if="displayPlantel" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white shadow-sm">
               <Building2 class="w-3 h-3 opacity-70" /> {{ displayPlantel }}
             </span>
-            <span v-if="displayPlantel && displayRole" class="text-[#86888C]/30 hidden sm:inline">•</span>
             <span v-if="displayRole" class="text-[#86888C] font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 bg-white/50 px-2 py-0.5 rounded-md border border-white shadow-sm">
               <Briefcase class="w-3 h-3 opacity-70" /> {{ displayRole }}
             </span>
@@ -34,7 +33,7 @@
 
     <!-- Active Open Pass Warning -->
     <transition name="fade">
-      <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-[#F49A6D]/10 to-transparent p-3 sm:p-4 flex items-center justify-between gap-4 border border-[#F49A6D]/20 shadow-sm rounded-2xl relative z-10 mb-4 backdrop-blur-md">
+      <div v-if="todayPasses.length > 0" class="shrink-0 bg-gradient-to-r from-[#F49A6D]/10 to-transparent p-3 flex items-center justify-between gap-4 border border-[#F49A6D]/20 shadow-sm rounded-2xl relative z-10 mb-4 backdrop-blur-md">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-[#F49A6D]/20">
             <AlertCircle class="w-4 h-4 text-[#F49A6D]" />
@@ -53,8 +52,8 @@
     <!-- Flowing Timeline Panel -->
     <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-1 sm:px-2 pb-6 relative z-10">
       
-      <!-- Sticky Header -->
-      <div class="sticky top-0 z-30 pt-3 pb-3 mb-5 bg-white/80 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-b-2xl shadow-sm">
+      <!-- Sticky Header Tabs -->
+      <div class="sticky top-0 z-30 pt-2 pb-3 mb-4 bg-white/80 backdrop-blur-xl border-b border-[#86888C]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-3 sm:px-4 -mx-1 sm:-mx-2 rounded-b-2xl shadow-sm">
         
         <div class="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200">
           <button @click="activeTab = 'pases'" class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all" :class="activeTab === 'pases' ? 'bg-white text-[#007F92] shadow-sm' : 'text-slate-500 hover:text-slate-700'">
@@ -73,7 +72,7 @@
         </div>
       </div>
 
-      <!-- Content: Pases Digitales -->
+      <!-- TAB: Pases Digitales -->
       <div v-if="activeTab === 'pases'">
         
         <!-- Pases Statistics Bar -->
@@ -164,11 +163,11 @@
         </div>
       </div>
 
-      <!-- Content: Kardex Asistencia Reimagined Engine -->
+      <!-- TAB: Kardex Asistencia Reimagined Engine -->
       <div v-if="activeTab === 'kardex'">
         
-        <!-- Syncing State -->
-        <div v-if="isSyncingKardex" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm mb-6">
+        <!-- Syncing State Indicator -->
+        <div v-if="isSyncingKardex" class="py-10 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm mb-6">
           <div class="relative mb-4">
              <div class="absolute inset-0 bg-[#007F92]/20 rounded-full animate-ping"></div>
              <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-white shadow-sm relative z-10">
@@ -180,53 +179,43 @@
         </div>
 
         <template v-else>
-          <!-- Kardex Computed Analytics Dashboard (Horizontal Strip) -->
-          <div v-if="enrichedKardex.length > 0" class="bg-white/80 backdrop-blur-xl border border-white shadow-sm rounded-2xl mb-6 overflow-hidden">
-            <div class="flex overflow-x-auto custom-scrollbar">
-              
-              <div class="flex-1 min-w-[140px] flex items-center gap-3 p-3 sm:p-4 transition-colors hover:bg-white/50 border-r border-white/80">
-                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#F49A6D]/10 flex items-center justify-center border border-[#F49A6D]/20 shrink-0">
-                     <AlertTriangle class="w-4 h-4 text-[#F49A6D]" />
-                 </div>
-                 <div class="flex flex-col min-w-0">
-                     <div class="flex items-baseline gap-1.5 truncate">
-                        <span class="text-base sm:text-lg font-black leading-none" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-400'">{{ kardexKpis.unjRetardos }}</span>
-                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-400'">Sin Justificar</span>
-                     </div>
-                     <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">De {{ kardexKpis.rawRetardos }} retardos</span>
-                 </div>
-              </div>
-
-              <div class="flex-1 min-w-[140px] flex items-center gap-3 p-3 sm:p-4 transition-colors hover:bg-white/50 border-r border-white/80">
-                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#E83F4B]/10 flex items-center justify-center border border-[#E83F4B]/20 shrink-0">
-                     <XCircle class="w-4 h-4 text-[#E83F4B]" />
-                 </div>
-                 <div class="flex flex-col min-w-0">
-                     <div class="flex items-baseline gap-1.5 truncate">
-                        <span class="text-base sm:text-lg font-black leading-none" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-400'">{{ kardexKpis.unjFaltas }}</span>
-                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-400'">Sin Justificar</span>
-                     </div>
-                     <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">De {{ kardexKpis.rawFaltas }} faltas</span>
-                 </div>
-              </div>
-
-              <div class="flex-1 min-w-[140px] flex items-center gap-3 p-3 sm:p-4 transition-colors hover:bg-white/50">
-                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#50535A]/10 flex items-center justify-center border border-[#50535A]/20 shrink-0">
-                     <Clock class="w-4 h-4 text-[#50535A]" />
-                 </div>
-                 <div class="flex flex-col min-w-0">
-                     <div class="flex items-baseline gap-1.5 truncate">
-                        <span class="text-base sm:text-lg font-black leading-none" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-400'">{{ kardexKpis.strUnjMins }}</span>
-                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate shrink-0" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-400'">Sin Just.</span>
-                     </div>
-                     <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">De {{ kardexKpis.strRawMins }} en total</span>
-                 </div>
-              </div>
-
+          <!-- Compact Sleek Horizontal KPI Dashboard -->
+          <div v-if="enrichedKardex.length > 0" class="flex bg-white/80 backdrop-blur-xl rounded-[1.25rem] border border-white shadow-sm mb-6 overflow-hidden">
+            
+            <div class="flex-1 flex items-center gap-3 p-3 transition-colors hover:bg-white/50 border-r border-white/80 min-w-0">
+               <div class="flex flex-col min-w-0 flex-1">
+                   <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Retardos</span>
+                   <div class="flex items-baseline gap-1.5 truncate">
+                      <span class="text-xl font-black leading-none tracking-tight" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-[#86888C]/60'">{{ kardexKpis.unjRetardos }}</span>
+                      <span class="text-[8px] font-bold text-slate-400 truncate">sin justificar de {{ kardexKpis.rawRetardos }}</span>
+                   </div>
+               </div>
             </div>
+
+            <div class="flex-1 flex items-center gap-3 p-3 transition-colors hover:bg-white/50 border-r border-white/80 min-w-0">
+               <div class="flex flex-col min-w-0 flex-1">
+                   <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Faltas</span>
+                   <div class="flex items-baseline gap-1.5 truncate">
+                      <span class="text-xl font-black leading-none tracking-tight" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-[#86888C]/60'">{{ kardexKpis.unjFaltas }}</span>
+                      <span class="text-[8px] font-bold text-slate-400 truncate">sin justificar de {{ kardexKpis.rawFaltas }}</span>
+                   </div>
+               </div>
+            </div>
+
+            <div class="flex-1 flex items-center gap-3 p-3 transition-colors hover:bg-white/50 min-w-0">
+               <div class="flex flex-col min-w-0 flex-1">
+                   <span class="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Descuento</span>
+                   <div class="flex items-baseline gap-1.5 truncate">
+                      <span class="text-xl font-black leading-none tracking-tight" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-[#86888C]/60'">{{ kardexKpis.strUnjMins }}</span>
+                      <span class="text-[8px] font-bold text-slate-400 truncate">sin just. de {{ kardexKpis.strRawMins }}</span>
+                   </div>
+               </div>
+            </div>
+
           </div>
 
           <div v-if="pendingKardex" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
+          
           <div v-else-if="!enrichedKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
             <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
               <CalendarDays class="w-5 h-5 text-[#86888C]/40" />
@@ -252,44 +241,52 @@
                 <div class="flex-1 pl-4 sm:pl-5 relative z-10">
                   <div class="py-2 transition-all duration-300">
                     
-                    <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 group-hover:bg-white/80">
+                    <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col group-hover:bg-white/80">
                        
-                       <!-- Top row: Original Incidence & Pending Unauth Passes Warning -->
-                       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                       <!-- Header: Incident Name -->
+                       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-2.5">
                           <h5 class="text-sm font-black text-[#50535A] leading-tight">{{ day.rec.incidencia }}</h5>
                           
-                          <div v-if="day.unauthorizedPasses.length > 0" class="shrink-0 bg-[#FCBF2C]/10 border border-[#FCBF2C]/30 text-[#6D5F24] px-2.5 py-1 rounded-md flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest h-fit">
+                          <div v-if="day.unauthorizedPasses.length > 0" class="shrink-0 bg-[#FCBF2C]/10 border border-[#FCBF2C]/30 text-[#6D5F24] px-2 py-0.5 rounded-md flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest h-fit">
                              <AlertCircle class="w-3 h-3" /> Pases sin autorizar
                           </div>
                        </div>
 
-                       <!-- Aesthetic Punch Cards -->
-                       <div class="flex flex-wrap items-center gap-3 mt-2 mb-3">
-                          <div class="flex items-center gap-3 bg-white/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-gradient-to-r from-[#E83F4B]/5 to-transparent': day.missingE}">
-                            <div class="flex items-center justify-center w-6 h-6 rounded-full shrink-0" :class="day.missingE ? 'bg-[#E83F4B]/10' : 'bg-[#8EC152]/10'">
+                       <!-- Aesthetic Compact Punch Cards -->
+                       <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-1">
+                          
+                          <!-- Entrada -->
+                          <div class="flex items-center gap-2.5 bg-white/80 backdrop-blur-md pl-1.5 pr-3 py-1.5 rounded-xl border transition-all shadow-sm" 
+                               :class="day.missingE ? 'border-[#E83F4B]/30 bg-gradient-to-r from-[#E83F4B]/5 to-transparent ring-1 ring-[#E83F4B]/20' : 'border-slate-200/60'">
+                            <div class="flex items-center justify-center w-6 h-6 rounded-lg shrink-0" 
+                                 :class="day.missingE ? 'bg-[#E83F4B]/10' : 'bg-[#8EC152]/10'">
                                <ArrowRight class="w-3.5 h-3.5" :class="day.missingE ? 'text-[#E83F4B]' : 'text-[#00692F]'" />
                             </div>
-                            <div class="flex flex-col leading-none">
-                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Entrada</span>
+                            <div class="flex items-baseline gap-1.5 leading-none pt-0.5">
+                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entrada</span>
                                <span class="text-sm font-black font-mono tracking-tight" :class="day.missingE ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_entrada) || '--:--' }}</span>
                             </div>
                           </div>
 
-                          <div class="flex items-center gap-3 bg-white/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-gradient-to-r from-[#E83F4B]/5 to-transparent': day.missingS}">
-                            <div class="flex items-center justify-center w-6 h-6 rounded-full shrink-0" :class="day.missingS ? 'bg-[#E83F4B]/10' : 'bg-[#F49A6D]/10'">
+                          <!-- Salida -->
+                          <div class="flex items-center gap-2.5 bg-white/80 backdrop-blur-md pl-1.5 pr-3 py-1.5 rounded-xl border transition-all shadow-sm" 
+                               :class="day.missingS ? 'border-[#E83F4B]/30 bg-gradient-to-r from-[#E83F4B]/5 to-transparent ring-1 ring-[#E83F4B]/20' : 'border-slate-200/60'">
+                            <div class="flex items-center justify-center w-6 h-6 rounded-lg shrink-0" 
+                                 :class="day.missingS ? 'bg-[#E83F4B]/10' : 'bg-[#F49A6D]/10'">
                                <ArrowLeft class="w-3.5 h-3.5" :class="day.missingS ? 'text-[#E83F4B]' : 'text-[#D97746]'" />
                             </div>
-                            <div class="flex flex-col leading-none">
-                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Salida</span>
+                            <div class="flex items-baseline gap-1.5 leading-none pt-0.5">
+                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Salida</span>
                                <span class="text-sm font-black font-mono tracking-tight" :class="day.missingS ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_salida) || '--:--' }}</span>
                             </div>
                           </div>
+
                        </div>
 
-                       <!-- Stricter Engine Anomalies / Justifications Chips -->
-                       <div v-if="day.anomalies.length > 0" class="flex flex-wrap gap-2 mt-1">
+                       <!-- Anomalies & Tags -->
+                       <div v-if="day.anomalies.length > 0" class="flex flex-wrap gap-2 mt-2">
                           <div v-for="anom in day.anomalies" :key="anom.type" 
-                                class="px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
+                                class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
                                 :class="anom.isJustified ? 'bg-[#8EC152]/10 text-[#00692F] border-[#8EC152]/30' : 'bg-[#E83F4B]/10 text-[#762728] border-[#E83F4B]/30'">
                              <ShieldCheck v-if="anom.isJustified" class="w-3.5 h-3.5" />
                              <AlertTriangle v-else class="w-3.5 h-3.5" />
@@ -297,13 +294,15 @@
                           </div>
                        </div>
 
-                       <!-- Backed by Authorized Passes Linking -->
-                       <div v-if="day.authorizedPasses.length > 0" class="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-[#86888C]/10">
+                       <!-- Justification Link -->
+                       <div v-if="day.authorizedPasses.length > 0" class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-[#86888C]/15">
                           <span class="text-[9px] font-black text-[#007F92] uppercase tracking-widest">Justificado por:</span>
-                          <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2 py-1 rounded-md border border-[#007F92]/20 transition-colors shadow-sm outline-none">
-                             <ShieldCheck class="w-3 h-3" />
-                             #{{ String(p.id).padStart(5,'0') }} • {{ getCategoryName(p.category_id) }}
-                          </NuxtLink>
+                          <div class="flex flex-wrap gap-2">
+                            <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1.5 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2.5 py-1 rounded-lg border border-[#007F92]/20 transition-colors shadow-sm outline-none">
+                               <ShieldCheck class="w-3 h-3" />
+                               #{{ String(p.id).padStart(5,'0') }} • {{ getCategoryName(p.category_id) }}
+                            </NuxtLink>
+                          </div>
                        </div>
 
                     </div>
@@ -369,6 +368,12 @@ const extractTime = (str) => {
   if (!str || str.trim() === '' || str.trim() === '--:--') return null;
   const match = str.match(/(\d{2}:\d{2})/);
   return match ? match[1] : str.trim();
+}
+
+const timeToMins = (t) => {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
 }
 
 // Strictly fetch enrichment based on CURP
@@ -510,11 +515,34 @@ const filteredGroupedHistory = computed(() => {
   }).filter(group => group.passes.length > 0)
 })
 
-const kardexRecords = computed(() => Array.isArray(kardexData.value) ? kardexData.value : [])
+const kardexRecords = computed(() => {
+  if (!Array.isArray(kardexData.value)) return []
+  const targetNom = parseInt(numeroNomina.value, 10)
+  
+  // CRITICAL: Strictly filter returned dataset locally to prevent API partial match leaks (e.g., API returning 39, 139, 390 for search 39)
+  return kardexData.value.filter(r => {
+    const ids = [
+      r.numero_nomina, 
+      r.numero_de_nomina, 
+      r.numero_empleado, 
+      r.numero_de_empleado, 
+      r.nomina, 
+      r.id_empleado
+    ]
+    
+    if (!isNaN(targetNom)) {
+      return ids.some(id => parseInt(id, 10) === targetNom)
+    } else {
+      const strTarget = String(numeroNomina.value).trim().toLowerCase()
+      return ids.some(id => String(id || '').trim().toLowerCase() === strTarget)
+    }
+  })
+})
 
 const horarioEmpleado = computed(() => {
-  if (kardexRecords.value.length > 0 && kardexRecords.value[0].horario) {
-    return formatHorario(kardexRecords.value[0].horario)
+  if (kardexRecords.value.length > 0) {
+    const valid = kardexRecords.value.find(r => r.horario && r.horario.trim() !== '')
+    if (valid) return formatHorario(valid.horario)
   }
   return null
 })
@@ -578,15 +606,16 @@ const groupedKardexRecords = computed(() => {
         existing.allIncidencias.push(rec.incidencia)
       }
       
-      if (!isMissing(rec.registro_de_entrada)) {
-        if (isMissing(existing.registro_de_entrada) || rec.registro_de_entrada < existing.registro_de_entrada) {
-          existing.registro_de_entrada = rec.registro_de_entrada;
-        }
+      const tIn = extractTime(rec.registro_de_entrada)
+      const exIn = extractTime(existing.registro_de_entrada)
+      if (tIn && (!exIn || timeToMins(tIn) < timeToMins(exIn))) {
+        existing.registro_de_entrada = rec.registro_de_entrada;
       }
-      if (!isMissing(rec.registro_de_salida)) {
-        if (isMissing(existing.registro_de_salida) || rec.registro_de_salida > existing.registro_de_salida) {
-          existing.registro_de_salida = rec.registro_de_salida;
-        }
+      
+      const tOut = extractTime(rec.registro_de_salida)
+      const exOut = extractTime(existing.registro_de_salida)
+      if (tOut && (!exOut || timeToMins(tOut) > timeToMins(exOut))) {
+        existing.registro_de_salida = rec.registro_de_salida;
       }
     }
   })
