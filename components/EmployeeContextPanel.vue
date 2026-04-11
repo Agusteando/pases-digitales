@@ -167,121 +167,152 @@
       <!-- Content: Kardex Asistencia Reimagined Engine -->
       <div v-if="activeTab === 'kardex'">
         
-        <!-- Kardex Computed Analytics Dashboard (Horizontal Strip) -->
-        <div v-if="enrichedKardex.length > 0" class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-6">
-          
-          <div class="bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white shadow-sm flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-1">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><AlertTriangle class="w-3 h-3 text-[#F49A6D]" /> Retardos</span>
-              <span class="text-[9px] font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-white">De {{ kardexKpis.rawRetardos }}</span>
-            </div>
-            <div class="flex items-baseline gap-1.5 mt-2">
-              <span class="text-2xl font-black leading-none tracking-tighter" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-300'">{{ kardexKpis.unjRetardos }}</span>
-              <span class="text-[8px] font-black uppercase tracking-widest" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-400'">Sin justificar</span>
-            </div>
+        <!-- Syncing State -->
+        <div v-if="isSyncingKardex" class="py-16 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm mb-6">
+          <div class="relative mb-4">
+             <div class="absolute inset-0 bg-[#007F92]/20 rounded-full animate-ping"></div>
+             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center border border-white shadow-sm relative z-10">
+                <RefreshCcw class="w-5 h-5 text-[#007F92] animate-spin" />
+             </div>
           </div>
-
-          <div class="bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white shadow-sm flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-1">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><XCircle class="w-3 h-3 text-[#E83F4B]" /> Faltas</span>
-              <span class="text-[9px] font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-white">De {{ kardexKpis.rawFaltas }}</span>
-            </div>
-            <div class="flex items-baseline gap-1.5 mt-2">
-              <span class="text-2xl font-black leading-none tracking-tighter" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-300'">{{ kardexKpis.unjFaltas }}</span>
-              <span class="text-[8px] font-black uppercase tracking-widest" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-400'">Sin justificar</span>
-            </div>
-          </div>
-
-          <div class="bg-gradient-to-br from-white/90 to-white/60 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-white shadow-sm flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-1">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Clock class="w-3 h-3 text-[#50535A]" /> Descuento</span>
-              <span class="text-[9px] font-bold text-slate-400 bg-white/60 px-1.5 py-0.5 rounded shadow-sm border border-white">De {{ kardexKpis.strRawMins }}</span>
-            </div>
-            <div class="flex items-baseline gap-1.5 mt-2">
-              <span class="text-xl font-black leading-none tracking-tight truncate" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-300'">{{ kardexKpis.strUnjMins }}</span>
-              <span class="text-[8px] font-black uppercase tracking-widest shrink-0" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-400'">Sin justificar</span>
-            </div>
-          </div>
-          
+          <p class="text-sm font-black text-[#50535A]">{{ kardexSyncMessage }}</p>
+          <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">Garantizando la información operativa más reciente.</p>
         </div>
 
-        <div v-if="pendingKardex" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
-        <div v-else-if="!enrichedKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
-          <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
-            <CalendarDays class="w-5 h-5 text-[#86888C]/40" />
-          </div>
-          <p class="text-sm font-black text-[#50535A]">Sin registros de asistencia</p>
-          <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">No hay datos sincronizados para mostrar.</p>
-        </div>
-        
-        <div v-else class="relative mt-2">
-          <div class="space-y-4 relative z-10">
-            <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
-            
-            <div v-for="(day, index) in enrichedKardex" :key="index" class="group flex items-start w-full relative outline-none" :style="{ animationDelay: `${(index % 10) * 0.05}s` }">
+        <template v-else>
+          <!-- Kardex Computed Analytics Dashboard (Horizontal Strip) -->
+          <div v-if="enrichedKardex.length > 0" class="bg-white/80 backdrop-blur-xl border border-white shadow-sm rounded-2xl mb-6 overflow-hidden">
+            <div class="flex overflow-x-auto custom-scrollbar">
               
-              <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4">
-                <div class="text-xl font-black text-[#50535A] leading-none">{{ day.rec.fecha.split('/')[0] }}</div>
-                <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ getMonthName(day.rec.fecha.split('/')[1]) }}</div>
+              <div class="flex-1 min-w-[140px] flex items-center gap-3 p-3 sm:p-4 transition-colors hover:bg-white/50 border-r border-white/80">
+                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#F49A6D]/10 flex items-center justify-center border border-[#F49A6D]/20 shrink-0">
+                     <AlertTriangle class="w-4 h-4 text-[#F49A6D]" />
+                 </div>
+                 <div class="flex flex-col min-w-0">
+                     <div class="flex items-baseline gap-1.5 truncate">
+                        <span class="text-base sm:text-lg font-black leading-none" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-400'">{{ kardexKpis.unjRetardos }}</span>
+                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-slate-400'">Sin Justificar</span>
+                     </div>
+                     <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">De {{ kardexKpis.rawRetardos }} retardos</span>
+                 </div>
               </div>
 
-              <!-- Main Node Dot -->
-              <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10" :class="getKardexColor(day.rec.incidencia).bg"></div>
-
-              <div class="flex-1 pl-4 sm:pl-5 relative z-10">
-                <div class="py-2 transition-all duration-300">
-                  
-                  <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 group-hover:bg-white/80">
-                     
-                     <!-- Top row: Original Incidence & Pending Unauth Passes Warning -->
-                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                        <h5 class="text-sm font-black text-[#50535A] leading-tight">{{ day.rec.incidencia }}</h5>
-                        
-                        <div v-if="day.unauthorizedPasses.length > 0" class="shrink-0 bg-[#FCBF2C]/10 border border-[#FCBF2C]/30 text-[#6D5F24] px-2.5 py-1 rounded-md flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest h-fit">
-                           <AlertCircle class="w-3 h-3" /> Pases sin autorizar
-                        </div>
+              <div class="flex-1 min-w-[140px] flex items-center gap-3 p-3 sm:p-4 transition-colors hover:bg-white/50 border-r border-white/80">
+                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#E83F4B]/10 flex items-center justify-center border border-[#E83F4B]/20 shrink-0">
+                     <XCircle class="w-4 h-4 text-[#E83F4B]" />
+                 </div>
+                 <div class="flex flex-col min-w-0">
+                     <div class="flex items-baseline gap-1.5 truncate">
+                        <span class="text-base sm:text-lg font-black leading-none" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-400'">{{ kardexKpis.unjFaltas }}</span>
+                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-slate-400'">Sin Justificar</span>
                      </div>
+                     <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">De {{ kardexKpis.rawFaltas }} faltas</span>
+                 </div>
+              </div>
 
-                     <!-- Aesthetic Punch Cards -->
-                     <div class="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5 mb-2">
-                        <div class="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-200/60 shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-[#E83F4B]/5': day.missingE}">
-                          <div class="w-1.5 h-1.5 rounded-full" :class="day.missingE ? 'bg-[#E83F4B]' : 'bg-[#8EC152]'"></div>
-                          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entrada</span>
-                          <span class="text-xs font-black font-mono" :class="day.missingE ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_entrada) || '--:--' }}</span>
-                        </div>
-                        <div class="flex items-center gap-2 bg-white/60 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-200/60 shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-[#E83F4B]/5': day.missingS}">
-                          <div class="w-1.5 h-1.5 rounded-full" :class="day.missingS ? 'bg-[#E83F4B]' : 'bg-[#F49A6D]'"></div>
-                          <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Salida</span>
-                          <span class="text-xs font-black font-mono" :class="day.missingS ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_salida) || '--:--' }}</span>
-                        </div>
+              <div class="flex-1 min-w-[140px] flex items-center gap-3 p-3 sm:p-4 transition-colors hover:bg-white/50">
+                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#50535A]/10 flex items-center justify-center border border-[#50535A]/20 shrink-0">
+                     <Clock class="w-4 h-4 text-[#50535A]" />
+                 </div>
+                 <div class="flex flex-col min-w-0">
+                     <div class="flex items-baseline gap-1.5 truncate">
+                        <span class="text-base sm:text-lg font-black leading-none" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-400'">{{ kardexKpis.strUnjMins }}</span>
+                        <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-widest truncate shrink-0" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-slate-400'">Sin Just.</span>
                      </div>
+                     <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">De {{ kardexKpis.strRawMins }} en total</span>
+                 </div>
+              </div>
 
-                     <!-- Stricter Engine Anomalies / Justifications Chips -->
-                     <div v-if="day.anomalies.length > 0" class="flex flex-wrap gap-2 mt-1">
-                        <div v-for="anom in day.anomalies" :key="anom.type" 
-                              class="px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
-                              :class="anom.isJustified ? 'bg-[#8EC152]/10 text-[#00692F] border-[#8EC152]/30' : 'bg-[#E83F4B]/10 text-[#762728] border-[#E83F4B]/30'">
-                           <ShieldCheck v-if="anom.isJustified" class="w-3.5 h-3.5" />
-                           <AlertTriangle v-else class="w-3.5 h-3.5" />
-                           {{ anom.label }}
-                        </div>
-                     </div>
+            </div>
+          </div>
 
-                     <!-- Backed by Authorized Passes Linking -->
-                     <div v-if="day.authorizedPasses.length > 0" class="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-[#86888C]/10">
-                        <span class="text-[9px] font-black text-[#007F92] uppercase tracking-widest">Justificado:</span>
-                        <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2 py-1 rounded-md border border-[#007F92]/20 transition-colors shadow-sm outline-none">
-                           <ShieldCheck class="w-3 h-3" />
-                           #{{ String(p.id).padStart(5,'0') }} • {{ getCategoryName(p.category_id) }}
-                        </NuxtLink>
-                     </div>
+          <div v-if="pendingKardex" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
+          <div v-else-if="!enrichedKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+            <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
+              <CalendarDays class="w-5 h-5 text-[#86888C]/40" />
+            </div>
+            <p class="text-sm font-black text-[#50535A]">Sin registros de asistencia</p>
+            <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">No hay datos sincronizados para mostrar.</p>
+          </div>
+          
+          <div v-else class="relative mt-2">
+            <div class="space-y-4 relative z-10">
+              <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
+              
+              <div v-for="(day, index) in enrichedKardex" :key="index" class="group flex items-start w-full relative outline-none" :style="{ animationDelay: `${(index % 10) * 0.05}s` }">
+                
+                <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4">
+                  <div class="text-xl font-black text-[#50535A] leading-none">{{ day.rec.fecha.split('/')[0] }}</div>
+                  <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ getMonthName(day.rec.fecha.split('/')[1]) }}</div>
+                </div>
 
+                <!-- Main Node Dot -->
+                <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10" :class="getKardexColor(day.rec.incidencia).bg"></div>
+
+                <div class="flex-1 pl-4 sm:pl-5 relative z-10">
+                  <div class="py-2 transition-all duration-300">
+                    
+                    <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col gap-1 group-hover:bg-white/80">
+                       
+                       <!-- Top row: Original Incidence & Pending Unauth Passes Warning -->
+                       <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                          <h5 class="text-sm font-black text-[#50535A] leading-tight">{{ day.rec.incidencia }}</h5>
+                          
+                          <div v-if="day.unauthorizedPasses.length > 0" class="shrink-0 bg-[#FCBF2C]/10 border border-[#FCBF2C]/30 text-[#6D5F24] px-2.5 py-1 rounded-md flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest h-fit">
+                             <AlertCircle class="w-3 h-3" /> Pases sin autorizar
+                          </div>
+                       </div>
+
+                       <!-- Aesthetic Punch Cards -->
+                       <div class="flex flex-wrap items-center gap-3 mt-2 mb-3">
+                          <div class="flex items-center gap-3 bg-white/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-gradient-to-r from-[#E83F4B]/5 to-transparent': day.missingE}">
+                            <div class="flex items-center justify-center w-6 h-6 rounded-full shrink-0" :class="day.missingE ? 'bg-[#E83F4B]/10' : 'bg-[#8EC152]/10'">
+                               <ArrowRight class="w-3.5 h-3.5" :class="day.missingE ? 'text-[#E83F4B]' : 'text-[#00692F]'" />
+                            </div>
+                            <div class="flex flex-col leading-none">
+                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Entrada</span>
+                               <span class="text-sm font-black font-mono tracking-tight" :class="day.missingE ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_entrada) || '--:--' }}</span>
+                            </div>
+                          </div>
+
+                          <div class="flex items-center gap-3 bg-white/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white shadow-sm" :class="{'ring-1 ring-[#E83F4B]/30 bg-gradient-to-r from-[#E83F4B]/5 to-transparent': day.missingS}">
+                            <div class="flex items-center justify-center w-6 h-6 rounded-full shrink-0" :class="day.missingS ? 'bg-[#E83F4B]/10' : 'bg-[#F49A6D]/10'">
+                               <ArrowLeft class="w-3.5 h-3.5" :class="day.missingS ? 'text-[#E83F4B]' : 'text-[#D97746]'" />
+                            </div>
+                            <div class="flex flex-col leading-none">
+                               <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Salida</span>
+                               <span class="text-sm font-black font-mono tracking-tight" :class="day.missingS ? 'text-[#E83F4B]' : 'text-slate-700'">{{ extractTime(day.rec.registro_de_salida) || '--:--' }}</span>
+                            </div>
+                          </div>
+                       </div>
+
+                       <!-- Stricter Engine Anomalies / Justifications Chips -->
+                       <div v-if="day.anomalies.length > 0" class="flex flex-wrap gap-2 mt-1">
+                          <div v-for="anom in day.anomalies" :key="anom.type" 
+                                class="px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
+                                :class="anom.isJustified ? 'bg-[#8EC152]/10 text-[#00692F] border-[#8EC152]/30' : 'bg-[#E83F4B]/10 text-[#762728] border-[#E83F4B]/30'">
+                             <ShieldCheck v-if="anom.isJustified" class="w-3.5 h-3.5" />
+                             <AlertTriangle v-else class="w-3.5 h-3.5" />
+                             {{ anom.label }}
+                          </div>
+                       </div>
+
+                       <!-- Backed by Authorized Passes Linking -->
+                       <div v-if="day.authorizedPasses.length > 0" class="flex flex-wrap items-center gap-2 mt-2 pt-3 border-t border-[#86888C]/10">
+                          <span class="text-[9px] font-black text-[#007F92] uppercase tracking-widest">Justificado por:</span>
+                          <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2 py-1 rounded-md border border-[#007F92]/20 transition-colors shadow-sm outline-none">
+                             <ShieldCheck class="w-3 h-3" />
+                             #{{ String(p.id).padStart(5,'0') }} • {{ getCategoryName(p.category_id) }}
+                          </NuxtLink>
+                       </div>
+
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </template>
       </div>
 
     </div>
@@ -289,8 +320,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { FileText, Loader2, Search, ArrowRight, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle, Clock, ShieldCheck, CalendarDays, XCircle } from 'lucide-vue-next'
+import { computed, ref, watch } from 'vue'
+import { FileText, Loader2, Search, ArrowRight, ArrowLeft, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle, Clock, ShieldCheck, CalendarDays, XCircle, RefreshCcw } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -336,8 +367,8 @@ const formatHorario = (h) => {
 
 const extractTime = (str) => {
   if (!str || str.trim() === '' || str.trim() === '--:--') return null;
-  const parts = str.split('-');
-  return parts.length > 1 ? parts[parts.length - 1].trim() : str.trim();
+  const match = str.match(/(\d{2}:\d{2})/);
+  return match ? match[1] : str.trim();
 }
 
 // Strictly fetch enrichment based on CURP
@@ -353,7 +384,52 @@ const { data: historyData, pending: pendingHistory, error: historyError } = useF
 
 // Strictly rely on SOAP ingressioId for Kardex API querying, removing Signia fallback.
 const numeroNomina = computed(() => props.employee.ingressioId || props.employee.numero_nomina || null)
-const { data: kardexData, pending: pendingKardex } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
+const { data: kardexData, pending: pendingKardex, refresh: refreshKardexData } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
+
+const isSyncingKardex = ref(false)
+const kardexSyncMessage = ref('')
+let kardexSyncedThisSession = false
+
+watch(activeTab, async (newVal) => {
+  if (newVal === 'kardex') {
+    if (!kardexSyncedThisSession) {
+      kardexSyncedThisSession = true;
+      isSyncingKardex.value = true;
+      kardexSyncMessage.value = 'Verificando servicio...';
+      
+      try {
+        await $fetch('/api/kardex/sync-trigger', { method: 'POST' });
+        
+        let attempts = 0;
+        while (attempts < 15) {
+           kardexSyncMessage.value = 'Sincronizando reloj checador...';
+           const st = await $fetch('/api/kardex/status').catch(() => null);
+           
+           const isUpdating = st && (
+              st.status === 'updating' || 
+              st.actualizando === true || 
+              st.is_updating === true || 
+              st.estado === 'actualizando' ||
+              (st.mensaje && st.mensaje.toLowerCase().includes('actualizando'))
+           );
+           
+           if (!isUpdating) break;
+           
+           await new Promise(r => setTimeout(r, 2000));
+           attempts++;
+        }
+      } catch (e) {
+        console.warn('Kardex sync trigger failed', e);
+      } finally {
+        kardexSyncMessage.value = 'Cargando datos...';
+        await refreshKardexData();
+        isSyncingKardex.value = false;
+      }
+    } else {
+      await refreshKardexData();
+    }
+  }
+})
 
 // Picture injection strictly stems from Signia API enrichment response via CURP
 const displayPic = computed(() => enrichment.value?.picture || null)
