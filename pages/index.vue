@@ -1,4 +1,3 @@
-pages/index.vue
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     
@@ -35,7 +34,7 @@ pages/index.vue
           
           <!-- Selected Employees List -->
           <div>
-            <div v-if="selectedEmployees.length > 0" class="flex flex-col gap-3">
+            <div v-if="(selectedEmployees || []).length > 0" class="flex flex-col gap-3">
               
               <div class="flex items-center justify-between pb-2 border-b border-white/60 px-1 mt-2">
                 <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest">Lista seleccionada ({{ selectedEmployees.length }})</h3>
@@ -46,7 +45,8 @@ pages/index.vue
                 <div v-for="emp in selectedEmployees" :key="emp.id" class="flex flex-col bg-white/80 backdrop-blur-md p-3 sm:p-4 rounded-2xl border border-white shadow-sm group hover:shadow-md transition-all">
                   <div class="flex items-center justify-between gap-3">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                      <PremiumAvatar :src="emp.picture || null" :name="emp.name" size="sm" class="w-10 h-10 ring-2 ring-white shadow-sm shrink-0" />
+                      <!-- Picture flows strictly from the enrichment API via the selected CURP -->
+                      <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="w-10 h-10 ring-2 ring-white shadow-sm shrink-0" />
                       <div class="flex flex-col min-w-0 flex-1">
                         <div class="flex items-center gap-2">
                           <span class="text-sm font-black text-slate-900 truncate">{{ emp.name }}</span>
@@ -84,7 +84,7 @@ pages/index.vue
                   <!-- Edit Plantel Actual inline -->
                   <div v-if="emp._editingActual" class="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
                     <select v-model="emp.plantelActual" @change="onPlantelActualSelected(emp)" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white focus:ring-2 focus:ring-[#007F92]/20 focus:border-[#007F92] outline-none cursor-pointer shadow-sm">
-                      <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+                      <option v-for="p in (plantelesList || [])" :key="p" :value="p">{{ p }}</option>
                     </select>
                     <button @click="emp._editingActual = false" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-white rounded-xl shadow-sm border border-slate-200 outline-none shrink-0">
                       <XIcon class="w-4 h-4" />
@@ -107,7 +107,7 @@ pages/index.vue
              <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
           </div>
           
-          <div v-else-if="!currentCoverageTask && selectedEmployees.length > 0" class="mt-6 pt-6 border-t border-white/60 flex flex-col">
+          <div v-else-if="!currentCoverageTask && (selectedEmployees || []).length > 0" class="mt-6 pt-6 border-t border-white/60 flex flex-col">
             <div class="flex items-center gap-4 mb-5">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
                 2
@@ -154,7 +154,7 @@ pages/index.vue
                 <div>
                   <h2 class="text-base font-black text-slate-900 tracking-tight leading-none">{{ activeScenario.title }}</h2>
                   <p class="text-[11px] font-bold text-slate-500 mt-1">
-                    {{ selectedEmployees.length > 1 ? `Solicitud Múltiple (${selectedEmployees.length} personas)` : 'Completar detalles de solicitud' }}
+                    {{ (selectedEmployees || []).length > 1 ? `Solicitud Múltiple (${selectedEmployees.length} personas)` : 'Completar detalles de solicitud' }}
                   </p>
                 </div>
               </div>
@@ -175,7 +175,7 @@ pages/index.vue
 
           <!-- Horizontal Review Strip (Persistencia de Contexto) -->
           <div class="bg-white/50 backdrop-blur-xl border-b border-white/80 p-4 sm:p-5 shrink-0 shadow-[inset_0_-2px_10px_rgba(0,0,0,0.02)] z-30 relative">
-            <h3 class="text-[10px] font-black text-[#007F92] uppercase tracking-widest mb-3 block w-full px-1">Colaboradores incluidos ({{ selectedEmployees.length }})</h3>
+            <h3 class="text-[10px] font-black text-[#007F92] uppercase tracking-widest mb-3 block w-full px-1">Colaboradores incluidos ({{ (selectedEmployees || []).length }})</h3>
             <div class="flex gap-3 overflow-x-auto custom-scrollbar pb-2 px-1">
               <div v-for="emp in selectedEmployees" :key="emp.id" class="flex items-center gap-3 bg-white/90 backdrop-blur-md p-2 pr-4 rounded-full border border-white shadow-sm shrink-0 transition-transform hover:-translate-y-0.5">
                 <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="w-8 h-8 ring-2 ring-white shadow-sm" />
@@ -330,7 +330,7 @@ pages/index.vue
                     <label class="block text-[10px] font-black text-[#007F92] uppercase tracking-widest mb-2 px-1">Plantel de destino</label>
                     <select v-model="form.destino" class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 bg-white/80 cursor-pointer transition-all pr-8 shadow-sm">
                       <option value="">Seleccione un plantel...</option>
-                      <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+                      <option v-for="p in (plantelesList || [])" :key="p" :value="p">{{ p }}</option>
                     </select>
                   </div>
                 </div>
@@ -373,7 +373,7 @@ pages/index.vue
               </div>
 
               <!-- Opt-In Authorizer -->
-              <div v-if="!isAuthorizerForCurrent && selectedEmployees.length > 0" class="p-5 sm:p-6 bg-white/80 backdrop-blur-md rounded-[1.5rem] border border-white shadow-sm transition-all animate-in fade-in mt-2">
+              <div v-if="!isAuthorizerForCurrent && (selectedEmployees || []).length > 0" class="p-5 sm:p-6 bg-white/80 backdrop-blur-md rounded-[1.5rem] border border-white shadow-sm transition-all animate-in fade-in mt-2">
                 <div class="flex items-start gap-3">
                   <input type="checkbox" id="optInAuth" v-model="form.optInAuthorizer" class="mt-[3px] w-5 h-5 rounded text-[#007F92] focus:ring-[#007F92] border-slate-300 cursor-pointer bg-white" />
                   <label for="optInAuth" class="cursor-pointer select-none">
@@ -444,7 +444,7 @@ pages/index.vue
       :class="activeScenario ? 'hidden xl:flex' : 'flex'"
     >
       <div class="w-full max-w-4xl mx-auto flex flex-col gap-6 flex-1 min-h-0 relative p-5 md:p-8 pb-20">
-        <template v-if="selectedEmployees.length > 0">
+        <template v-if="(selectedEmployees || []).length > 0">
           <div v-for="(emp, idx) in selectedEmployees" :key="emp.id" class="flex-1 min-h-[450px] max-h-[700px] shrink-0 animate-in fade-in slide-in-from-right-8 duration-500 relative flex flex-col" :style="{ animationDelay: `${idx * 0.1}s` }">
              <EmployeeContextPanel :employee="emp" class="flex-1 h-full" />
           </div>
@@ -504,16 +504,16 @@ const checkingCoverage = ref(false)
 const coverageQueue = ref([])
 const verifiedPlanteles = ref(new Set())
 
-const currentCoverageTask = computed(() => coverageQueue.value[0] || null)
+const currentCoverageTask = computed(() => (coverageQueue.value || [])[0] || null)
 
 const isAuthorizerForCurrent = computed(() => {
-  if (!myProfile.value || selectedEmployees.value.length === 0) return true;
+  if (!myProfile.value || !Array.isArray(myProfile.value.authorizedPlanteles) || (selectedEmployees.value || []).length === 0) return true;
   const targetPlantel = selectedEmployees.value[0]?.plantelActual || selectedEmployees.value[0]?.plantelBase;
   return myProfile.value.authorizedPlanteles.includes(targetPlantel);
 })
 
 const hasSelfPass = computed(() => {
-  return myProfile.value && selectedEmployees.value.some(e => e.name === myProfile.value.name)
+  return myProfile.value && (selectedEmployees.value || []).some(e => e.name === myProfile.value.name)
 })
 
 const isFormComplete = computed(() => {
@@ -571,7 +571,7 @@ async function checkCoverageQueue(emp) {
   if (!plantel || plantel === 'N/A') return
   
   if (verifiedPlanteles.value.has(plantel)) return
-  if (coverageQueue.value.find(c => c.plantel === plantel)) return
+  if ((coverageQueue.value || []).find(c => c.plantel === plantel)) return
 
   checkingCoverage.value = true
   try {
@@ -604,7 +604,7 @@ function onSetupCancelled() {
     const plantel = currentCoverageTask.value.plantel
     coverageQueue.value.shift()
     
-    selectedEmployees.value = selectedEmployees.value.filter(e => {
+    selectedEmployees.value = (selectedEmployees.value || []).filter(e => {
        if (e.plantelActual === plantel && e.plantelBase !== plantel) {
           e.plantelActual = e.plantelBase; 
           return true;
@@ -619,20 +619,23 @@ function onSetupCancelled() {
 }
 
 async function addEmployee(emp) {
-  if (!selectedEmployees.value.find(e => e.id === emp.id)) {
+  if (!(selectedEmployees.value || []).find(e => e.id === emp.id)) {
     const tempEmp = { ...emp, _enriching: true, _editingActual: false }
     selectedEmployees.value.push(tempEmp)
 
-    const queryParams = emp.id ? { id: emp.id } : { name: emp.name }
-    const enriched = await $fetch('/api/employees/enrich', { query: queryParams }).catch(() => ({}))
+    let enriched = {}
+    if (emp.curp) {
+      enriched = await $fetch('/api/employees/enrich', { query: { curp: emp.curp } }).catch(() => ({}))
+    }
     
-    const actualEmp = selectedEmployees.value.find(e => e.id === emp.id)
+    const actualEmp = (selectedEmployees.value || []).find(e => e.id === emp.id)
     if (actualEmp) {
-      actualEmp.curp = enriched.curp || emp.curp || null
+      actualEmp.curp = emp.curp || null 
       actualEmp.plantelBase = enriched.plantel || emp.plantel || null
       actualEmp.plantelActual = actualEmp.plantelBase
       actualEmp.puesto = enriched.puesto || emp.puesto || null
       actualEmp.picture = enriched.picture || emp.picture || null
+      actualEmp.numero_nomina = enriched.numero_nomina || emp.ingressioId || null
       actualEmp._editingActual = false
       actualEmp._enriching = false
 
@@ -642,7 +645,7 @@ async function addEmployee(emp) {
 }
 
 function removeEmployee(id) {
-  selectedEmployees.value = selectedEmployees.value.filter(e => e.id !== id)
+  selectedEmployees.value = (selectedEmployees.value || []).filter(e => e.id !== id)
   if (selectedEmployees.value.length === 0) {
     activeScenario.value = null
     coverageQueue.value = []
@@ -740,9 +743,11 @@ function selectScenario(scenario) {
 }
 
 function isBirthday(emp) {
-  if (!emp || !emp.curp || emp.curp.length < 10) return false;
-  const mm = emp.curp.substring(6, 8);
-  const dd = emp.curp.substring(8, 10);
+  if (!emp || !emp.curp) return false;
+  const curpStr = String(emp.curp);
+  if (curpStr.length < 10) return false;
+  const mm = curpStr.substring(6, 8);
+  const dd = curpStr.substring(8, 10);
   const today = new Date();
   const bMonth = parseInt(mm) - 1;
   const bDay = parseInt(dd);
@@ -750,7 +755,7 @@ function isBirthday(emp) {
 }
 
 function hasBirthday() {
-  return selectedEmployees.value.some(emp => isBirthday(emp))
+  return (selectedEmployees.value || []).some(emp => isBirthday(emp))
 }
 
 function applyPreset(type) {
@@ -768,12 +773,15 @@ function applyPreset(type) {
     form.date = todayDate
     form.endDate = todayDate
     form.time = '14:00'
-    const emp = selectedEmployees.value.find(e => isBirthday(e))
+    const emp = (selectedEmployees.value || []).find(e => isBirthday(e))
     let birthdayStr = ''
-    if (emp && emp.curp && emp.curp.length >= 10) {
-      const dd = emp.curp.substring(8, 10)
-      const mm = emp.curp.substring(6, 8)
-      birthdayStr = ` (Nacimiento: ${dd}/${mm})`
+    if (emp && emp.curp) {
+      const curpStr = String(emp.curp);
+      if (curpStr.length >= 10) {
+        const dd = curpStr.substring(8, 10)
+        const mm = curpStr.substring(6, 8)
+        birthdayStr = ` (Nacimiento: ${dd}/${mm})`
+      }
     }
     form.comentarios = `Pase de salida anticipada con motivo de celebración de cumpleaños del colaborador${birthdayStr}.`
     showDestino.value = false
@@ -823,7 +831,7 @@ async function submitPass(autoAuthorize = false) {
   }
 
   try {
-    if (form.optInAuthorizer && selectedEmployees.value.length > 0) {
+    if (form.optInAuthorizer && (selectedEmployees.value || []).length > 0) {
       const targetPlantel = selectedEmployees.value[0].plantelActual || selectedEmployees.value[0].plantelBase;
       if (targetPlantel && myProfile.value?.email) {
         await $fetch('/api/directory', {
@@ -841,7 +849,7 @@ async function submitPass(autoAuthorize = false) {
       }
     }
 
-    await Promise.all(selectedEmployees.value.map(emp => 
+    await Promise.all((selectedEmployees.value || []).map(emp => 
       $fetch('/api/passes', {
         method: 'POST',
         body: { 

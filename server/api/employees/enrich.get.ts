@@ -1,51 +1,73 @@
-
-import { getFastSoapEmployees, getSigniaEnrichment, cleanPlantelName } from '~/server/utils/employee-engine'
-import { defineCachedEventHandler, getQuery } from '#imports'
+import { defineCachedEventHandler, getQuery, createError, useRuntimeConfig } from '#imports'
 
 export default defineCachedEventHandler(async (event) => {
   const query = getQuery(event)
-  const id = query.id as string
-  const name = query.name as string
+  const curp = query.curp as string
 
-  const hasId = id && id !== 'undefined' && id !== 'null';
-  const hasName = !hasId && name && name !== 'undefined' && name !== 'null';
+  if (!curp || curp === 'undefined' || curp === 'null') {
+    throw createError({ statusCode: 400, message: 'CURP is required for deterministic enrichment' })
+  }
 
-  if (!hasId && !hasName) return {}
+  const config = useRuntimeConfig()
+  let enrichedData: any = null
 
-  const dataset = await getFastSoapEmployees()
-  
-  const empMatch = dataset.find(e => 
-    (hasId && String(e.id) === String(id)) || 
-    (hasName && e.name === name)
-  )
+  try {
+    // Pure Signia Export API fetch using ONLY the exact CURP.
+    // Zero SOAP/local data is loaded, merged, or referenced here.
+    const response: any = await $fetch(config.signiaApiUrl, {
+      query: { curp: curp.trim() },
+      timeout: 8000
+    })
 
-  const localRfc: string | undefined = empMatch?.rfc
-  const localCurp: string | undefined = empMatch?.curp
-  const localIngressio: string | undefined = empMatch?.ingressioId
+    if (Array.isArray(response) && response.length > 0) {
+      enrichedData = response.find((e: any) => e.curp && String(e.curp).toLowerCase() === curp.trim().toLowerCase()) || response[0]
+    } else if (response && !Array.isArray(response) && response.curp) {
+      enrichedData = response
+    }
+  } catch (err) {
+    console.error('Direct Signia Export API enrichment error:', err)
+  }
 
-  const searchName = empMatch ? empMatch.name : (hasName ? name : '');
-  const enriched = await getSigniaEnrichment(searchName, localRfc, localCurp, localIngressio)
+  // Explicit fail / miss response:
+  // If Signia has no record of this CURP, return a strict miss payload.
+  // NO fallback to local DB or SOAP fields is allowed.
+  if (!enrichedData) {
+    return {
+      picture: null,
+      puesto: null,
+      email: null,
+      plantel: null,
+      isActive: false,
+      curp: curp,
+      numero_nomina: null
+    }
+  }
 
-  const soapPlantel = cleanPlantelName(empMatch?.plantel)
-  const finalPlantel = soapPlantel || enriched.plantelName || null
+  let pictureUrl = enrichedData.picture || null
+  if (pictureUrl && !pictureUrl.startsWith('http')) {
+    pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`
+  }
 
+  let plantelName = null
+  if (enrichedData.plantel && typeof enrichedData.plantel === 'object' && enrichedData.plantel.name) {
+    plantelName = String(enrichedData.plantel.name).trim()
+  } else if (enrichedData.plantelName) {
+    plantelName = String(enrichedData.plantelName).trim()
+  }
+
+  // Returns ONLY fields sourced from the Signia response.
   return {
-    picture: enriched.picture || null,
-    puesto: enriched.puesto || null,
-    email: enriched.email || empMatch?.email || null,
-    plantel: finalPlantel,
-    isActive: enriched.isActive !== false,
-    curp: enriched.curp || empMatch?.curp || null,
-    numero_nomina: localIngressio || enriched.ingressioId || null
+    picture: pictureUrl,
+    puesto: enrichedData.puesto || null,
+    email: enrichedData.email || null,
+    plantel: plantelName || null,
+    isActive: enrichedData.isActive !== false,
+    curp: enrichedData.curp || curp,
+    numero_nomina: enrichedData.ingressioId || null
   }
 }, {
   maxAge: 60 * 60 * 12,
   swr: true,
-  name: 'enrichment-cache',
-  getKey: (event) => {
-    const q = getQuery(event)
-    const hasId = q.id && q.id !== 'undefined' && q.id !== 'null';
-    if (hasId) return `enrichment-id-${q.id}`
-    return `enrichment-name-${q.name || 'noname'}`
-  }
+  name: 'signia-export-curp-pure',
+  getKey: (event) => `curp-pure-${getQuery(event).curp || 'missing'}`
 })

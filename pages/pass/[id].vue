@@ -1,3 +1,5 @@
+
+
 <template>
   <div class="p-6 md:p-10 max-w-6xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
@@ -321,8 +323,8 @@ const passId = route.params.id
 const { data: pass, pending, error, refresh } = useFetch(`/api/passes/${passId}`)
 
 const { data: enrichment } = useAsyncData(`enrich-pass-${passId}`, async () => {
-  if (!pass.value?.employee_name) return {}
-  const res = await $fetch('/api/employees/enrich', { query: { name: pass.value.employee_name } })
+  if (!pass.value?.curp) return {}
+  const res = await $fetch('/api/employees/enrich', { query: { curp: pass.value.curp } })
   return res || {}
 }, { watch: [pass] })
 

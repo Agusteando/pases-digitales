@@ -1,3 +1,5 @@
+## pages/routing.vue
+
 <template>
   <div class="p-6 md:p-10 max-w-[1600px] mx-auto h-full flex flex-col relative z-10">
     
@@ -36,7 +38,7 @@
           <div class="my-3 border-t border-white/60 mx-4"></div>
           
           <button 
-            v-for="plantel in dynamicPlanteles" :key="plantel"
+            v-for="plantel in (dynamicPlanteles || [])" :key="plantel"
             @click="selectedPlantel = plantel"
             class="w-full text-left px-5 py-3.5 rounded-2xl font-bold text-sm transition-all outline-none flex items-center justify-between group"
             :class="selectedPlantel === plantel ? 'bg-white shadow-md text-brand-800 border-white' : 'text-slate-600 hover:bg-white/60 border border-transparent hover:shadow-sm'"
@@ -232,7 +234,7 @@
                 <button type="button" @click="selectPuesto('ALL')" class="w-full text-left px-4 py-3 rounded-xl text-sm font-black text-brand-600 hover:bg-brand-50 transition-colors">
                   Aplica a todos los puestos
                 </button>
-                <button type="button" v-for="p in filteredPuestos" :key="p" @click="selectPuesto(p)" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+                <button type="button" v-for="p in (filteredPuestos || [])" :key="p" @click="selectPuesto(p)" class="w-full text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors">
                   {{ p }}
                 </button>
                 <p v-if="!filteredPuestos.length" class="text-center text-xs text-slate-400 py-6 font-bold">Sin coincidencias.</p>
@@ -248,7 +250,7 @@
             <input v-model="gwSearchQuery" @input="searchGw" placeholder="Nombre o correo institucional..." class="w-full px-5 py-4 rounded-2xl border border-brand-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold shadow-sm transition-all bg-white" autocomplete="off" />
             
             <div v-if="gwResults.length" class="absolute top-full left-0 right-0 mt-3 bg-white/95 backdrop-blur-xl border border-white shadow-2xl rounded-[1.5rem] z-50 max-h-64 overflow-y-auto custom-scrollbar p-2">
-              <button type="button" v-for="res in gwResults" :key="res.email" @click="selectGw(res)" class="w-full text-left px-4 py-3 hover:bg-brand-50 rounded-xl flex items-center gap-4 transition-colors group">
+              <button type="button" v-for="res in (gwResults || [])" :key="res.email" @click="selectGw(res)" class="w-full text-left px-4 py-3 hover:bg-brand-50 rounded-xl flex items-center gap-4 transition-colors group">
                  <img v-if="res.photoUrl" :src="res.photoUrl" class="w-10 h-10 rounded-full border border-white shadow-sm object-cover" />
                  <div v-else class="w-10 h-10 rounded-full bg-slate-100 border border-white shadow-sm flex items-center justify-center font-black text-slate-400 text-sm group-hover:bg-brand-100 group-hover:text-brand-600">{{ res.name.slice(0,2).toUpperCase() }}</div>
                  <div class="flex-1 min-w-0">

@@ -1,3 +1,5 @@
+## pages/history.vue
+
 <template>
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
@@ -27,7 +29,7 @@
         <div class="w-full sm:w-56">
           <select v-model="filters.plantel" @change="search" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-2xl text-sm font-bold outline-none transition-all shadow-sm appearance-none cursor-pointer">
             <option value="">Todos los planteles</option>
-            <option v-for="p in planteles" :key="p" :value="p">{{ p }}</option>
+            <option v-for="p in (planteles || [])" :key="p" :value="p">{{ p }}</option>
           </select>
         </div>
         
@@ -180,8 +182,6 @@ const search = async () => {
     passes.value = data || []
   } catch (error) {
     console.error('Search error:', error)
-    // DB connectivity failures are now gracefully silenced for the user.
-    // Preserves normal UX by safely defaulting to the empty state display.
     passes.value = []
   } finally {
     pending.value = false

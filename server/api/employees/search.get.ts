@@ -1,3 +1,5 @@
+
+
 import { getFastSoapEmployees, normalizeName } from '~/server/utils/employee-engine'
 import { defineEventHandler, getQuery } from '#imports'
 
@@ -12,6 +14,7 @@ export default defineEventHandler(async (event) => {
   const searchName = normalizeName(q)
   const dataset = await getFastSoapEmployees()
 
+  // Returns ONLY search/identity fields. `picture` is strictly omitted from this layer.
   const results = dataset
     .filter(emp => normalizeName(emp.name).includes(searchName))
     .slice(0, 15)

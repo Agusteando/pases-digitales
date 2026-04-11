@@ -1,6 +1,8 @@
+
+
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser, sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
-import { getSigniaEnrichment, cleanPlantelName } from '~/server/utils/employee-engine'
+import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-engine'
 import { sendWhatsAppMessage } from '~/server/utils/whatsappModule'
 import { signRecipientToken } from '~/server/utils/token'
 import { useRuntimeConfig } from '#imports'
@@ -73,8 +75,22 @@ export async function dispatchNotificationsForPass(passId: number) {
   }
 
   // 2. Individual Target Resolution (Configurable Routing)
-  const empData = await getSigniaEnrichment(pass.employee_name)
-  const empPuesto = (empData.puesto || '').trim()
+  const soapData = await getFastSoapEmployees()
+  const soapEmp = soapData.find(e => e.name === pass.employee_name)
+  
+  let empPuesto = ''
+  if (soapEmp?.curp) {
+    try {
+      const res: any = await $fetch(config.signiaApiUrl, { query: { curp: soapEmp.curp.trim() } })
+      if (Array.isArray(res) && res.length > 0) {
+         const match = res.find(e => e.curp && String(e.curp).toLowerCase() === soapEmp.curp.toLowerCase()) || res[0]
+         empPuesto = (match.puesto || '').trim()
+      } else if (res && !Array.isArray(res)) {
+         empPuesto = (res.puesto || '').trim()
+      }
+    } catch (e) {}
+  }
+  
   const empPlantel = pass.plantel || ''
 
   const targets = new Map<string, { email: string, name: string, phone: string, channels: Set<string> }>()

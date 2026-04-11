@@ -1,3 +1,5 @@
+
+
 <template>
   <div class="flex flex-col h-full min-h-0 relative w-full bg-transparent">
     
@@ -289,21 +291,22 @@ const formatHorario = (h) => {
   return h.replace(/(\d{2})(\d{2})\s+a\s+(\d{2})(\d{2})/gi, '$1:$2 a $3:$4')
 }
 
-const { data: enrichment, pending: pendingEnrich } = useFetch('/api/employees/enrich', {
-  query: { 
-    id: props.employee.id || undefined, 
-    name: props.employee.id ? undefined : props.employee.name 
-  }
-})
+const curpVal = computed(() => props.employee.curp || undefined)
+const { data: enrichment, pending: pendingEnrich } = useFetch(
+  () => props.employee.curp ? '/api/employees/enrich' : null, 
+  { query: { curp: curpVal } }
+)
 
 const { data: historyData, pending: pendingHistory, error: historyError } = useFetch('/api/passes/employee', {
   query: { name: props.employee.name }
 })
 
-const numeroNomina = computed(() => enrichment.value?.numero_nomina || props.employee.numero_nomina || null)
+const numeroNomina = computed(() => enrichment.value?.numero_nomina || props.employee.numero_nomina || props.employee.ingressioId || null)
 const { data: kardexData, pending: pendingKardex } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
 
-const displayPic = computed(() => enrichment.value?.picture || props.employee.picture || null)
+// Picture injection strictly stems from Signia API enrichment response via CURP
+const displayPic = computed(() => enrichment.value?.picture || null)
+
 const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
 const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.plantelBase || props.employee.plantel || null)
 

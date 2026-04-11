@@ -1,3 +1,5 @@
+
+
 <template>
   <div class="relative w-full">
     <div class="relative flex items-center group">
@@ -38,7 +40,8 @@
             
             <div class="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full transition-colors" :class="highlightedIndex === idx ? 'bg-[#007F92]' : 'bg-transparent'"></div>
 
-            <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-white" :class="highlightedIndex === idx ? 'ring-2 ring-[#007F92] ring-offset-1 ring-offset-transparent' : ''" />
+            <!-- Avatar remains empty/initials during the search selection phase since pictures are fully deferred to the enrichment endpoint via CURP -->
+            <PremiumAvatar :src="null" :name="emp.name" size="sm" class="shrink-0 shadow-sm border border-white" :class="highlightedIndex === idx ? 'ring-2 ring-[#007F92] ring-offset-1 ring-offset-transparent' : ''" />
             
             <div class="flex-1 min-w-0">
               <p class="text-sm font-black text-slate-900 truncate" :class="{'text-[#006575]': highlightedIndex === idx}">{{ emp.name }}</p>
