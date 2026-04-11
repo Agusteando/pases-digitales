@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="p-6 md:p-10 max-w-6xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
@@ -197,7 +195,7 @@
                <div>
                  <p class="text-sm font-black text-slate-700">Edición bloqueada</p>
                  <p class="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">
-                   No es posible alterar o notificar un pase que ya ha sido resuelto.
+                   No es posible alterar o notificar un pase que ya ha sido resuelto o anulado.
                  </p>
                </div>
             </div>

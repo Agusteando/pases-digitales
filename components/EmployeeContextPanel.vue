@@ -46,20 +46,54 @@
           </template>
         </div>
 
-        <!-- Kardex KPIs (Only display if available) -->
-        <div v-if="kardexRecords.length > 0" class="flex flex-wrap gap-x-6 gap-y-3 pt-3 border-t border-[#86888C]/10 border-dashed">
-          <div class="flex items-center gap-1.5" title="Retardos en Asistencia">
-            <span class="text-base font-black text-[#F49A6D] leading-none">{{ kardexKpis.retardos }}</span>
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Retardos</span>
+        <!-- Kardex Computed Analytics Dashboard -->
+        <div v-if="enrichedKardex.length > 0" class="grid grid-cols-3 gap-2 sm:gap-3 pt-4 mt-2 border-t border-[#86888C]/10 border-dashed">
+          
+          <div class="bg-white/60 backdrop-blur-md rounded-[1rem] sm:rounded-[1.25rem] p-3 sm:p-4 border border-white shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md">
+             <div class="text-[8px] sm:text-[9px] font-black text-[#86888C] uppercase tracking-widest mb-1 flex items-center gap-1">
+               <AlertTriangle class="w-3 h-3 hidden sm:block" /> Retardos
+             </div>
+             <div class="text-2xl sm:text-3xl font-black leading-none tracking-tighter my-1.5" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-[#86888C]/40'">
+               {{ kardexKpis.unjRetardos }}
+             </div>
+             <div class="text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-2" :class="kardexKpis.unjRetardos > 0 ? 'text-[#F49A6D]' : 'text-[#86888C]/40'">
+               Sin justificar
+             </div>
+             <div class="mt-auto text-[8px] sm:text-[9px] font-bold text-slate-400 bg-white px-1 sm:px-2 py-1 rounded-md shadow-sm border border-white w-full truncate">
+               {{ kardexKpis.rawRetardos }} total
+             </div>
           </div>
-          <div class="flex items-center gap-1.5" title="Faltas en Asistencia">
-            <span class="text-base font-black text-[#E83F4B] leading-none">{{ kardexKpis.faltas }}</span>
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Faltas</span>
+
+          <div class="bg-white/60 backdrop-blur-md rounded-[1rem] sm:rounded-[1.25rem] p-3 sm:p-4 border border-white shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md">
+             <div class="text-[8px] sm:text-[9px] font-black text-[#86888C] uppercase tracking-widest mb-1 flex items-center gap-1">
+               <XCircle class="w-3 h-3 hidden sm:block" /> Faltas
+             </div>
+             <div class="text-2xl sm:text-3xl font-black leading-none tracking-tighter my-1.5" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-[#86888C]/40'">
+               {{ kardexKpis.unjFaltas }}
+             </div>
+             <div class="text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-2" :class="kardexKpis.unjFaltas > 0 ? 'text-[#E83F4B]' : 'text-[#86888C]/40'">
+               Sin justificar
+             </div>
+             <div class="mt-auto text-[8px] sm:text-[9px] font-bold text-slate-400 bg-white px-1 sm:px-2 py-1 rounded-md shadow-sm border border-white w-full truncate">
+               {{ kardexKpis.rawFaltas }} total
+             </div>
           </div>
-          <div class="flex items-center gap-1.5" title="Total Horas a Descontar">
-            <span class="text-base font-black text-[#50535A] leading-none">{{ kardexKpis.strDescontar }}</span>
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">A Descontar</span>
+
+          <div class="bg-white/60 backdrop-blur-md rounded-[1rem] sm:rounded-[1.25rem] p-3 sm:p-4 border border-white shadow-sm flex flex-col items-center text-center transition-all hover:shadow-md">
+             <div class="text-[8px] sm:text-[9px] font-black text-[#86888C] uppercase tracking-widest mb-1 flex items-center gap-1">
+               <Clock class="w-3 h-3 hidden sm:block" /> Descuento
+             </div>
+             <div class="text-lg sm:text-[1.35rem] font-black leading-none tracking-tight my-1.5 truncate w-full" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-[#86888C]/40'">
+               {{ kardexKpis.strUnjMins }}
+             </div>
+             <div class="text-[7px] sm:text-[8px] font-black uppercase tracking-widest mb-2" :class="kardexKpis.unjMins > 0 ? 'text-[#50535A]' : 'text-[#86888C]/40'">
+               Sin justificar
+             </div>
+             <div class="mt-auto text-[8px] sm:text-[9px] font-bold text-slate-400 bg-white px-1 sm:px-2 py-1 rounded-md shadow-sm border border-white w-full truncate">
+               {{ kardexKpis.strRawMins }} total
+             </div>
           </div>
+
         </div>
 
       </div>
@@ -94,7 +128,7 @@
             Pases
           </button>
           <button @click="activeTab = 'kardex'" class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" :class="activeTab === 'kardex' ? 'bg-white text-[#007F92] shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-            Asistencia <span v-if="kardexRecords.length > 0" class="bg-[#007F92]/10 text-[#007F92] px-1.5 py-0.5 rounded-md text-[8px]">{{ kardexRecords.length }}</span>
+            Asistencia <span v-if="filteredKardex.length > 0" class="bg-[#007F92]/10 text-[#007F92] px-1.5 py-0.5 rounded-md text-[8px]">{{ enrichedKardex.length }}</span>
           </button>
         </div>
 
@@ -188,49 +222,73 @@
         </div>
       </div>
 
-      <!-- Content: Kardex Asistencia -->
+      <!-- Content: Kardex Asistencia Reimagined Engine -->
       <div v-if="activeTab === 'kardex'">
         <div v-if="pendingKardex" class="py-12 flex justify-center"><Loader2 class="w-8 h-8 animate-spin text-[#007F92]" /></div>
-        <div v-else-if="!filteredKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
+        <div v-else-if="!enrichedKardex.length" class="py-12 flex flex-col items-center justify-center text-center bg-white/40 backdrop-blur-md rounded-[2rem] border border-white/60 shadow-sm">
           <div class="w-12 h-12 mb-3 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#86888C]/10">
             <CalendarDays class="w-5 h-5 text-[#86888C]/40" />
           </div>
           <p class="text-sm font-black text-[#50535A]">Sin registros de asistencia</p>
           <p class="text-[10px] font-bold text-[#86888C] uppercase tracking-widest mt-1">No hay datos sincronizados para mostrar.</p>
         </div>
+        
         <div v-else class="relative mt-2">
           <div class="space-y-4 relative z-10">
             <div class="absolute inset-y-0 left-[3rem] sm:left-[4rem] w-px bg-gradient-to-b from-[#86888C]/20 via-[#86888C]/20 to-transparent z-0 ml-[5px]"></div>
             
-            <div v-for="(rec, index) in filteredKardex" :key="index" class="group flex items-start w-full relative outline-none" :style="{ animationDelay: `${(index % 10) * 0.05}s` }">
+            <div v-for="(day, index) in enrichedKardex" :key="index" class="group flex items-start w-full relative outline-none" :style="{ animationDelay: `${(index % 10) * 0.05}s` }">
               
               <div class="w-[3rem] sm:w-[4rem] shrink-0 pt-3 text-right pr-4">
-                <div class="text-xl font-black text-[#50535A] leading-none">{{ rec.fecha.split('/')[0] }}</div>
-                <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ getMonthName(rec.fecha.split('/')[1]) }}</div>
+                <div class="text-xl font-black text-[#50535A] leading-none">{{ day.rec.fecha.split('/')[0] }}</div>
+                <div class="text-[9px] font-black text-[#86888C] uppercase tracking-widest mt-1">{{ getMonthName(day.rec.fecha.split('/')[1]) }}</div>
               </div>
 
-              <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10" :class="getKardexColor(rec.incidencia).bg"></div>
+              <!-- Main Node Dot -->
+              <div class="absolute left-[3rem] sm:left-[4rem] top-[1.1rem] w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm z-10" :class="getKardexColor(day.rec.incidencia).bg"></div>
 
               <div class="flex-1 pl-4 sm:pl-5 relative z-10">
                 <div class="py-2 transition-all duration-300">
-                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-2">
-                    <div>
-                      <h5 class="text-sm font-black text-[#50535A] leading-tight flex items-center gap-2">
-                        {{ rec.incidencia }}
-                      </h5>
-                      <p v-if="rec.registro_de_entrada || rec.registro_de_salida" class="text-[10px] font-bold text-[#86888C] mt-1">
-                        E: {{ rec.registro_de_entrada || '--:--' }} | S: {{ rec.registro_de_salida || '--:--' }}
-                      </p>
-                    </div>
-                    
-                    <div v-if="getPaseForKardexDate(rec.fecha)" class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border shadow-sm shrink-0 bg-[#007F92]/10 border-[#007F92]/30">
-                      <ShieldCheck class="w-3.5 h-3.5 text-[#007F92]" />
-                      <span class="text-[8px] font-black uppercase tracking-widest text-[#006575]">Pase Emitido</span>
-                    </div>
-                  </div>
                   
-                  <div v-if="parseHorasDescontar(rec.horas_descontar) > 0" class="mt-2 inline-flex items-center gap-1 text-[9px] font-black text-[#E83F4B] bg-[#E83F4B]/10 px-2 py-1 rounded border border-[#E83F4B]/20 uppercase tracking-widest">
-                    <AlertTriangle class="w-3 h-3" /> A descontar: {{ rec.horas_descontar }}
+                  <div class="bg-white/50 backdrop-blur-sm p-4 rounded-2xl border border-white shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 group-hover:bg-white/80">
+                     
+                     <!-- Top row: Original Incidence & Pending Unauth Passes Warning -->
+                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                        <div>
+                          <h5 class="text-sm font-black text-[#50535A] leading-tight">{{ day.rec.incidencia }}</h5>
+                          <p class="text-[10px] font-bold text-[#86888C] mt-1 tracking-wide">
+                            E: <span :class="{'text-[#E83F4B]': day.missingE}">{{ day.rec.registro_de_entrada || '--:--' }}</span> &bull; 
+                            S: <span :class="{'text-[#E83F4B]': day.missingS}">{{ day.rec.registro_de_salida || '--:--' }}</span>
+                          </p>
+                        </div>
+                        
+                        <div v-if="day.unauthorizedPasses.length > 0" class="shrink-0 bg-[#FCBF2C]/10 border border-[#FCBF2C]/30 text-[#6D5F24] px-2.5 py-1 rounded-md flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest h-fit">
+                           <AlertCircle class="w-3 h-3" /> Pases sin autorizar
+                        </div>
+                     </div>
+
+                     <!-- Stricter Engine Anomalies / Justifications Chips -->
+                     <div v-if="day.anomalies.length > 0" class="flex flex-wrap gap-2 mt-1">
+                        <div v-for="anom in day.anomalies" :key="anom.type" 
+                              class="px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-sm"
+                              :class="anom.isJustified ? 'bg-[#8EC152]/10 text-[#00692F] border-[#8EC152]/30' : 'bg-[#E83F4B]/10 text-[#762728] border-[#E83F4B]/30'">
+                           <ShieldCheck v-if="anom.isJustified" class="w-3.5 h-3.5" />
+                           <AlertTriangle v-else class="w-3.5 h-3.5" />
+                           {{ anom.label }}
+                        </div>
+                     </div>
+
+                     <!-- Backed by Authorized Passes Linking -->
+                     <div v-if="day.authorizedPasses.length > 0" class="pt-3 mt-1 border-t border-[#86888C]/10 flex flex-col gap-2">
+                        <span class="text-[8px] font-black text-[#007F92] uppercase tracking-widest">Justificado por:</span>
+                        <div class="flex flex-wrap gap-2">
+                           <NuxtLink v-for="p in day.authorizedPasses" :key="p.id" :to="`/pass/${p.id}`" class="text-[10px] font-black text-[#006575] hover:text-[#00497B] flex items-center gap-1.5 bg-[#007F92]/10 hover:bg-[#007F92]/20 px-2.5 py-1.5 rounded-lg border border-[#007F92]/20 transition-colors shadow-sm outline-none">
+                              <ShieldCheck class="w-3.5 h-3.5" />
+                              Folio #{{ String(p.id).padStart(5,'0') }} - {{ getCategoryName(p.category_id) }}
+                           </NuxtLink>
+                        </div>
+                     </div>
+
                   </div>
                 </div>
               </div>
@@ -245,7 +303,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { FileText, Loader2, Search, ArrowRight, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle, Clock, ShieldCheck, CalendarDays } from 'lucide-vue-next'
+import { FileText, Loader2, Search, ArrowRight, AlertTriangle, Building2, Briefcase, CheckCircle2, AlertCircle, Clock, ShieldCheck, CalendarDays, XCircle } from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
@@ -410,24 +468,135 @@ function formatHorasDescontar(totalMins) {
   return `${h} Hrs ${m} Min`;
 }
 
+function formatHorasDescontarShort(totalMins) {
+  if (totalMins === 0) return '0m';
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
+
+const filteredKardex = computed(() => {
+  return [...kardexRecords.value].sort((a,b) => {
+    const [d1,m1,y1] = a.fecha.split('/')
+    const [d2,m2,y2] = b.fecha.split('/')
+    const date1 = new Date(y1, m1-1, d1)
+    const date2 = new Date(y2, m2-1, d2)
+    return date2 - date1
+  })
+})
+
+const isMissing = (val) => !val || val.trim() === '' || val.trim() === '--:--'
+
+const groupedKardexRecords = computed(() => {
+  const map = new Map()
+  
+  filteredKardex.value.forEach(rec => {
+    const date = rec.fecha
+    if (!map.has(date)) {
+      map.set(date, { 
+        ...rec, 
+        rawMins: parseHorasDescontar(rec.horas_descontar), 
+        allIncidencias: rec.incidencia ? [rec.incidencia] : [] 
+      })
+    } else {
+      const existing = map.get(date)
+      existing.rawMins += parseHorasDescontar(rec.horas_descontar)
+      existing.horas_descontar = formatHorasDescontar(existing.rawMins)
+      
+      if (rec.incidencia && !existing.allIncidencias.includes(rec.incidencia)) {
+        existing.allIncidencias.push(rec.incidencia)
+      }
+      
+      if (!isMissing(rec.registro_de_entrada)) {
+        if (isMissing(existing.registro_de_entrada) || rec.registro_de_entrada < existing.registro_de_entrada) {
+          existing.registro_de_entrada = rec.registro_de_entrada;
+        }
+      }
+      if (!isMissing(rec.registro_de_salida)) {
+        if (isMissing(existing.registro_de_salida) || rec.registro_de_salida > existing.registro_de_salida) {
+          existing.registro_de_salida = rec.registro_de_salida;
+        }
+      }
+    }
+  })
+  
+  return Array.from(map.values()).map(existing => {
+    const nonAsistencia = existing.allIncidencias.filter(i => i.toLowerCase() !== 'asistencia' && i.toLowerCase() !== 'entrada normal')
+    existing.incidencia = nonAsistencia.length > 0 ? nonAsistencia.join(' + ') : 'Asistencia'
+    return existing
+  })
+})
+
+// REIMAGINED ATTENDANCE ENGINE: Precise cross-checking of incidents against exact pass scopes, handling grouped daily records.
+const enrichedKardex = computed(() => {
+  return groupedKardexRecords.value.map(rec => {
+    const parts = rec.fecha.split('/')
+    const targetDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : null
+    
+    const passesOnDay = targetDate 
+      ? (historyData.value?.history?.filter(p => p.date.startsWith(targetDate) && p.status !== 'cancelado') || []) 
+      : []
+    
+    const authorizedPasses = passesOnDay.filter(p => p.status === 'autorizado')
+    const unauthorizedPasses = passesOnDay.filter(p => p.status !== 'autorizado')
+
+    const inc = (rec.incidencia || '').toLowerCase()
+    // Identify valid workdays missing punches (excluding non-attendance states)
+    const isWorkday = !inc.includes('descanso') && !inc.includes('vacacion') && !inc.includes('festivo') && !inc.includes('incapacidad') && !inc.includes('permiso')
+    
+    const hasFalta = inc.includes('falta')
+    const hasRetardo = inc.includes('retardo')
+    const mins = rec.rawMins
+    
+    const missingE = isWorkday && !hasFalta && isMissing(rec.registro_de_entrada)
+    const missingS = isWorkday && !hasFalta && isMissing(rec.registro_de_salida)
+
+    // Strict evaluation rules engine matching pass types to actual real-world incidents.
+    // We enforce Number() to avoid type coercion bugs since category_id might be a string from the DB.
+    const faltaJustified = hasFalta && authorizedPasses.some(p => [3, 5].includes(Number(p.category_id)))
+    const retardoJustified = hasRetardo && authorizedPasses.some(p => [1, 4].includes(Number(p.category_id)))
+    const entradaJustified = missingE && authorizedPasses.some(p => [1, 3, 4].includes(Number(p.category_id)))
+    const salidaJustified = missingS && authorizedPasses.some(p => [2, 3, 4].includes(Number(p.category_id)))
+    const minsJustified = mins > 0 && authorizedPasses.some(p => [1, 2, 3, 4].includes(Number(p.category_id)))
+
+    const anomalies = []
+    if (hasFalta) anomalies.push({ type: 'falta', label: 'Falta', isJustified: faltaJustified })
+    if (hasRetardo) anomalies.push({ type: 'retardo', label: 'Retardo', isJustified: retardoJustified })
+    if (missingE) anomalies.push({ type: 'omision_e', label: 'Omisión de Entrada', isJustified: entradaJustified })
+    if (missingS) anomalies.push({ type: 'omision_s', label: 'Omisión de Salida', isJustified: salidaJustified })
+    if (mins > 0) anomalies.push({ type: 'mins', label: `Minutos a descontar: ${formatHorasDescontarShort(mins)}`, isJustified: minsJustified })
+
+    return {
+      rec,
+      authorizedPasses,
+      unauthorizedPasses,
+      hasFalta, hasRetardo, missingE, missingS, mins,
+      faltaJustified, retardoJustified, entradaJustified, salidaJustified, minsJustified,
+      anomalies
+    }
+  })
+})
+
 const kardexKpis = computed(() => {
-  let retardos = 0;
-  let faltas = 0;
-  let minDescontar = 0;
+  let rawRetardos = 0; let unjRetardos = 0;
+  let rawFaltas = 0; let unjFaltas = 0;
+  let rawMins = 0; let unjMins = 0;
   
-  kardexRecords.value.forEach(r => {
-    const inc = (r.incidencia || '').toLowerCase()
-    if (inc.includes('retardo')) retardos++;
-    if (inc.includes('falta')) faltas++;
-    if (r.horas_descontar) minDescontar += parseHorasDescontar(r.horas_descontar);
+  enrichedKardex.value.forEach(day => {
+    if (day.hasRetardo) { rawRetardos++; if (!day.retardoJustified) unjRetardos++; }
+    if (day.hasFalta) { rawFaltas++; if (!day.faltaJustified) unjFaltas++; }
+    if (day.mins > 0) { rawMins += day.mins; if (!day.minsJustified) unjMins += day.mins; }
   });
-  
+
   return {
-    retardos,
-    faltas,
-    minDescontar,
-    strDescontar: formatHorasDescontar(minDescontar)
-  }
+    rawRetardos, unjRetardos,
+    rawFaltas, unjFaltas,
+    rawMins, unjMins,
+    strRawMins: formatHorasDescontarShort(rawMins),
+    strUnjMins: formatHorasDescontarShort(unjMins)
+  };
 })
 
 const getMonthName = (mStr) => {
@@ -444,23 +613,5 @@ const getKardexColor = (incidencia) => {
   if (inc.includes('descanso')) return { bg: 'bg-[#86888C]' }
   if (inc.includes('vacaciones') || inc.includes('justificaci')) return { bg: 'bg-[#007F92]' }
   return { bg: 'bg-[#FCBF2C]' }
-}
-
-const filteredKardex = computed(() => {
-  return [...kardexRecords.value].sort((a,b) => {
-    const [d1,m1,y1] = a.fecha.split('/')
-    const [d2,m2,y2] = b.fecha.split('/')
-    const date1 = new Date(y1, m1-1, d1)
-    const date2 = new Date(y2, m2-1, d2)
-    return date2 - date1
-  })
-})
-
-const getPaseForKardexDate = (fechaDDMMYYYY) => {
-  if (!fechaDDMMYYYY) return null
-  const parts = fechaDDMMYYYY.split('/')
-  if (parts.length !== 3) return null
-  const targetDate = `${parts[2]}-${parts[1]}-${parts[0]}`
-  return historyData.value?.history?.find(p => p.date.startsWith(targetDate) && p.status !== 'cancelado' && p.status !== 'rechazado')
 }
 </script>

@@ -16,7 +16,7 @@
         <table class="w-full text-left border-collapse whitespace-nowrap">
           <thead class="bg-white/40 sticky top-0 z-10 backdrop-blur-xl">
             <tr class="border-b border-white/60 text-slate-500 text-[10px] uppercase tracking-widest font-black">
-              <th class="px-6 py-5 rounded-tl-[2.5rem]">Pase Operativo</th>
+              <th class="px-6 py-5 rounded-tl-[2.5rem]">Pase</th>
               <th class="px-6 py-5">Destinatario</th>
               <th class="px-6 py-5">Estado</th>
               <th class="px-6 py-5">Fecha y Hora</th>

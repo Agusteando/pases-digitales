@@ -4,7 +4,7 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
       <div>
         <h1 class="text-3xl font-black text-slate-900 tracking-tight">Historial</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Consulta y exportación de registros operativos.</p>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Consulta y exportación de registros.</p>
       </div>
       <button @click="$emit('export')" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-black rounded-xl shadow-sm hover:border-brand-300 hover:text-brand-600 hover:shadow transition-all flex items-center justify-center gap-2 outline-none">
         <Download class="w-4 h-4" />

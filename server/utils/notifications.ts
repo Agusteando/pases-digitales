@@ -1,5 +1,3 @@
-
-
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser, sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-engine'
@@ -144,7 +142,7 @@ export async function dispatchNotificationsForPass(passId: number) {
     emailSubject = `Pase Rechazado: #${paddedId} para ${pass.employee_name}`
   } else if (isCancelled) {
     headerTitle = `*Pase Anulado* 🚫`
-    actionPhrase = `esta solicitud ha sido anulada operativa o administrativamente. Puedes verificarlo aquí:`
+    actionPhrase = `esta solicitud ha sido anulada. Puedes verificarlo aquí:`
     emailTitle = `Pase Anulado`
     emailActionBtn = `Ver Expediente`
     emailSubject = `Pase Anulado: #${paddedId} para ${pass.employee_name}`

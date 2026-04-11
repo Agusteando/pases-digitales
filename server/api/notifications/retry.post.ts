@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
       emailActionBtn = `Ver Expediente`
     } else if (isCancelled) {
       headerTitle = `*Pase Anulado (Recordatorio)* 🚫`
-      actionPhrase = `esta solicitud ha sido anulada operativa o administrativamente. Puedes verificarlo aquí:`
+      actionPhrase = `esta solicitud ha sido anulada. Puedes verificarlo aquí:`
       emailSubject = `Recordatorio: Pase Anulado #${paddedId}`
       emailTitle = `Pase Anulado (Recordatorio)`
       emailActionBtn = `Ver Expediente`

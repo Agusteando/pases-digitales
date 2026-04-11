@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 403, message: 'Permisos insuficientes para reenviar notificaciones. Se requiere ser el creador del registro o un administrador.' })
       }
       if (pass.status !== 'pendiente') {
-         throw createError({ statusCode: 403, message: 'No se permite reenviar notificaciones de un pase que ya ha sido resuelto o anulado operativamente.' })
+         throw createError({ statusCode: 403, message: 'No se permite reenviar notificaciones de un pase que ya ha sido resuelto o anulado.' })
       }
       await db.execute(`UPDATE hr_entries SET sync_request = 0 WHERE id = ?`, [id])
       await dispatchNotificationsForPass(Number(id))
