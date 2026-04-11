@@ -29,16 +29,10 @@ export default defineCachedEventHandler(async (event) => {
   }
 
   // Explicit fail / miss response:
-  // If Signia has no record of this CURP, return a strict miss payload.
-  // NO fallback to local DB or SOAP fields is allowed.
   if (!enrichedData) {
     return {
       picture: null,
-      puesto: null,
-      email: null,
-      plantel: null,
-      isActive: false,
-      curp: curp
+      puesto: null
     }
   }
 
@@ -47,22 +41,12 @@ export default defineCachedEventHandler(async (event) => {
     pictureUrl = `https://signia.casitaapps.com/${pictureUrl.replace(/^\//, '')}`
   }
 
-  let plantelName = null
-  if (enrichedData.plantel && typeof enrichedData.plantel === 'object' && enrichedData.plantel.name) {
-    plantelName = String(enrichedData.plantel.name).trim()
-  } else if (enrichedData.plantelName) {
-    plantelName = String(enrichedData.plantelName).trim()
-  }
-
-  // Returns ONLY fields sourced from the Signia response.
-  // Signia ingressioId is strictly discarded here. Kardex strictly requires the SOAP ClaveNomina identity.
+  // Returns ONLY picture and puesto sourced from the Signia response.
+  // ALL other metadata (plantel, email, isActive, ClaveNomina, curp) is strictly omitted 
+  // to enforce the SOAP-as-Authoritative-Identity rule.
   return {
     picture: pictureUrl,
-    puesto: enrichedData.puesto || null,
-    email: enrichedData.email || null,
-    plantel: plantelName || null,
-    isActive: enrichedData.isActive !== false,
-    curp: enrichedData.curp || curp
+    puesto: enrichedData.puesto || null
   }
 }, {
   maxAge: 60 * 60 * 12,

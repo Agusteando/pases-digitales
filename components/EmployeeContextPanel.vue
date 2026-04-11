@@ -301,14 +301,17 @@ const { data: historyData, pending: pendingHistory, error: historyError } = useF
 })
 
 // Strictly rely on SOAP ingressioId for Kardex API querying, removing Signia fallback.
-const numeroNomina = computed(() => props.employee.numero_nomina || props.employee.ingressioId || null)
+const numeroNomina = computed(() => props.employee.ingressioId || props.employee.numero_nomina || null)
 const { data: kardexData, pending: pendingKardex } = useFetch(() => numeroNomina.value ? `/api/kardex/${numeroNomina.value}` : null)
 
 // Picture injection strictly stems from Signia API enrichment response via CURP
 const displayPic = computed(() => enrichment.value?.picture || null)
 
-const displayRole = computed(() => enrichment.value?.puesto || props.employee.puesto || null)
-const displayPlantel = computed(() => enrichment.value?.plantel || props.employee.plantelBase || props.employee.plantel || null)
+// Puesto strictly stems from Signia API enrichment response
+const displayRole = computed(() => enrichment.value?.puesto || null)
+
+// Plantel strictly stems from SOAP
+const displayPlantel = computed(() => props.employee.plantelBase || props.employee.plantel || null)
 
 const isToday = (dateStr) => {
   if (!dateStr) return false

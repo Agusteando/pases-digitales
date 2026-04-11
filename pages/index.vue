@@ -631,11 +631,12 @@ async function addEmployee(emp) {
     const actualEmp = (selectedEmployees.value || []).find(e => e.id === emp.id)
     if (actualEmp) {
       actualEmp.curp = emp.curp || null 
-      actualEmp.plantelBase = enriched.plantel || emp.plantel || null
+      actualEmp.plantelBase = emp.plantel || null // STRICTLY SOAP
       actualEmp.plantelActual = actualEmp.plantelBase
-      actualEmp.puesto = enriched.puesto || emp.puesto || null
-      actualEmp.picture = enriched.picture || emp.picture || null
+      actualEmp.puesto = enriched.puesto || null // STRICTLY Signia
+      actualEmp.picture = enriched.picture || null // STRICTLY Signia
       // STRICTLY use SOAP ingressioId, never Signia.
+      actualEmp.ingressioId = emp.ingressioId || null 
       actualEmp.numero_nomina = emp.ingressioId || null 
       actualEmp._editingActual = false
       actualEmp._enriching = false
