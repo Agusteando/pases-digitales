@@ -35,37 +35,42 @@
 
 
     <!-- ========================================================= -->
-    <!-- CAPA 2: AURA EMANANTE DESDE LOS BORDES DE LA SILUETA      -->
+    <!-- CAPA 2: AURA DEFINIDA Y ESTRUCTURADA (Main Event)         -->
     <!-- ========================================================= -->
     <!-- 
-      Este contenedor aloja la energía. Utiliza una máscara vertical 
-      (fade to top) para que las "llamas" y partículas se disuelvan 
-      orgánicamente antes de golpear el techo del contenedor del avatar.
+      Máscara lineal conservada para evitar cortes rectos arriba, 
+      pero calibrada al 85% para no devorar la silueta de los hombros/cabeza.
     -->
     <div 
       v-if="enhancedSrc && !isProcessing" 
-      class="absolute inset-0 z-[5] pointer-events-none animate-aura-fade-in"
-      style="mask-image: linear-gradient(to top, black 70%, transparent 100%); -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);"
+      class="absolute inset-0 z-[5] pointer-events-none animate-aura-fade-in aura-container"
     >
-      <!-- Base de Resplandor: Un clon apenas más grande para crear un ribete de luz perimetral permanente -->
+      <!-- Premium 1: Heat Shimmer (Vibración térmica perimetral) -->
       <img 
         :src="enhancedSrc" 
-        class="absolute inset-0 w-full h-full object-cover animate-edge-glow" 
-        style="object-position: center 15%; transform-origin: bottom center;" 
+        class="absolute inset-0 w-full h-full object-cover aura-shimmer" 
+        style="object-position: center 15%;" 
         aria-hidden="true" 
       />
 
-      <!-- Llamas (Wisps): Clones convertidos en luz blanca y coloreados con drop-shadow, viajando hacia arriba -->
-      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover wisp-layer wisp-teal" aria-hidden="true" />
-      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover wisp-layer wisp-green" aria-hidden="true" />
-      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover wisp-layer wisp-peach" aria-hidden="true" />
+      <!-- Premium 2: Fluid Trails (Llamas estructuradas que pelan la silueta) -->
+      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover aura-trail trail-teal" style="object-position: center 15%;" aria-hidden="true" />
+      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover aura-trail trail-peach" style="object-position: center 15%;" aria-hidden="true" />
+      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover aura-trail trail-green" style="object-position: center 15%;" aria-hidden="true" />
 
-      <!-- Micro-Partículas Térmicas: Diminutos puntos de luz que nacen de los hombros/laterales -->
+      <!-- Baseline 1: Core Edge (Línea de contorno sólida y nítida) -->
+      <img 
+        :src="enhancedSrc" 
+        class="absolute inset-0 w-full h-full object-cover aura-core" 
+        style="object-position: center 15%;" 
+        aria-hidden="true" 
+      />
+
+      <!-- Baseline 2: Sparse Embers (Partículas mínimas y de apoyo) -->
       <div class="absolute inset-0">
-        <div class="micro-particle p1" style="--drift: -4px;"></div>
-        <div class="micro-particle p2" style="--drift: 5px;"></div>
-        <div class="micro-particle p3" style="--drift: 3px;"></div>
-        <div class="micro-particle p4" style="--drift: -3px;"></div>
+        <div class="ember e1"></div>
+        <div class="ember e2"></div>
+        <div class="ember e3"></div>
       </div>
     </div>
 
@@ -73,7 +78,6 @@
     <!-- ========================================================= -->
     <!-- CAPA 3: IMAGEN PROCESADA PERFECTAMENTE LIMPIA             -->
     <!-- ========================================================= -->
-    <!-- Al estar en z-10 y escala 1, oculta el centro de las capas de aura, forzando a que la luz nazca sólo en los bordes. -->
     <img
       v-if="enhancedSrc"
       :src="enhancedSrc"
@@ -660,83 +664,109 @@ watch(() => props.src, (newSrc) => {
 </script>
 
 <style scoped>
-/* Transición general de entrada */
+/* Entrada rápida garantizada (<1s) */
 .animate-aura-fade-in {
-  animation: auraFadeIn 1s ease-out 0.2s forwards;
+  animation: auraFadeIn 0.8s ease-out 0.1s forwards;
   opacity: 0;
 }
 @keyframes auraFadeIn {
   to { opacity: 1; }
 }
 
-/* Edge Glow: Crea un delineado de luz blanca permanente y vibrante detrás del sujeto */
-.animate-edge-glow {
-  animation: edgeGlow 4s ease-in-out infinite alternate;
-  filter: brightness(0) invert(1) blur(2.5px) drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
-}
-@keyframes edgeGlow {
-  0% { transform: scale(1.02); opacity: 0.4; }
-  100% { transform: scale(1.04); opacity: 0.7; }
+/* 
+  Contención segura: Máscara lineal calibrada al 85% para desvanecer la punta,
+  permitiendo que la silueta y los hombros se vean completos al 100%. 
+*/
+.aura-container {
+  mask-image: linear-gradient(to top, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 85%, transparent 100%);
 }
 
-/* Base común para los Wisps (llamas) que viajan hacia arriba */
-.wisp-layer {
-  object-position: center 15%;
+/* =======================================================
+   BASELINE PRESERVADA (Límites y Visibilidad Clara)
+   ======================================================= */
+/* Línea de contorno sólida que ancla la visibilidad en fondos blancos */
+.aura-core {
+  filter: brightness(0) invert(1) blur(0.5px) drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
+  animation: core-breathe 2.5s infinite alternate ease-in-out;
   transform-origin: bottom center;
 }
-
-/* Wisp 1: Turquesa */
-.wisp-teal {
-  filter: brightness(0) invert(1) blur(3px) drop-shadow(0 0 4px rgba(0, 127, 146, 0.8));
-  animation: flameRise1 4.5s ease-in infinite;
-}
-@keyframes flameRise1 {
-  0% { transform: scale(1) translate(0, 0); opacity: 0; }
-  20% { opacity: 0.6; }
-  80% { opacity: 0.6; }
-  100% { transform: scale(1.12) translate(-2%, -10%); opacity: 0; }
+@keyframes core-breathe {
+  0% { transform: scale(1.015); opacity: 0.7; }
+  100% { transform: scale(1.03); opacity: 1; }
 }
 
-/* Wisp 2: Verde */
-.wisp-green {
-  filter: brightness(0) invert(1) blur(4px) drop-shadow(0 0 5px rgba(142, 193, 82, 0.7));
-  animation: flameRise2 5.5s ease-in infinite 1.5s;
-}
-@keyframes flameRise2 {
-  0% { transform: scale(1) translate(0, 0); opacity: 0; }
-  20% { opacity: 0.5; }
-  80% { opacity: 0.5; }
-  100% { transform: scale(1.15) translate(2%, -12%); opacity: 0; }
-}
-
-/* Wisp 3: Naranja/Peach */
-.wisp-peach {
-  filter: brightness(0) invert(1) blur(5px) drop-shadow(0 0 6px rgba(244, 154, 109, 0.6));
-  animation: flameRise3 6.5s ease-in infinite 3s;
-}
-@keyframes flameRise3 {
-  0% { transform: scale(1) translate(0, 0); opacity: 0; }
-  20% { opacity: 0.4; }
-  80% { opacity: 0.4; }
-  100% { transform: scale(1.1) translate(1%, -15%); opacity: 0; }
-}
-
-/* Micro-partículas: Nacen cerca de los hombros y viajan en línea recta con un ligero desvío (drift) */
-.micro-particle {
+/* Partículas mínimas y de apoyo (escasas, secundarias) */
+.ember {
   position: absolute;
   border-radius: 50%;
   opacity: 0;
 }
-.p1 { width: 2.5px; height: 2.5px; background: rgba(0, 127, 146, 0.9); left: 20%; top: 60%; animation: particleUp 3s ease-in infinite; box-shadow: 0 0 3px rgba(0, 127, 146, 0.7); }
-.p2 { width: 2px; height: 2px; background: rgba(142, 193, 82, 0.9); left: 80%; top: 50%; animation: particleUp 4s ease-in infinite 1s; box-shadow: 0 0 3px rgba(142, 193, 82, 0.7); }
-.p3 { width: 3px; height: 3px; background: rgba(244, 154, 109, 0.9); left: 25%; top: 70%; animation: particleUp 3.5s ease-in infinite 2s; box-shadow: 0 0 3px rgba(244, 154, 109, 0.7); }
-.p4 { width: 1.5px; height: 1.5px; background: #ffffff; left: 75%; top: 65%; animation: particleUp 2.5s ease-in infinite 0.5s; box-shadow: 0 0 2px #ffffff; }
+.e1 { width: 1.5px; height: 1.5px; background: #007F92; box-shadow: 0 0 2px #007F92; left: 25%; top: 75%; animation: ember-float 4s infinite ease-in; --dx: -10px; --dy: -20px; }
+.e2 { width: 2px; height: 2px; background: #8EC152; box-shadow: 0 0 3px #8EC152; left: 75%; top: 65%; animation: ember-float 5s infinite ease-in 1.5s; --dx: 12px; --dy: -25px; }
+.e3 { width: 2.5px; height: 2.5px; background: #F49A6D; box-shadow: 0 0 4px #F49A6D; left: 40%; top: 70%; animation: ember-float 4.5s infinite ease-in 2.5s; --dx: 5px; --dy: -18px; }
 
-@keyframes particleUp {
-  0% { transform: translateY(0) translateX(0); opacity: 0; }
+@keyframes ember-float {
+  0% { transform: translate(0, 0); opacity: 0; }
   20% { opacity: 0.8; }
-  80% { opacity: 0.8; }
-  100% { transform: translateY(-20px) translateX(var(--drift)); opacity: 0; }
+  80% { opacity: 0.6; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+
+/* =======================================================
+   CAPAS PREMIUM (Estructura, Forma y Movimiento Interno)
+   ======================================================= */
+
+/* 1. Heat Shimmer: Alta frecuencia, poco desenfoque, movimiento ajustado a la piel */
+.aura-shimmer {
+  filter: brightness(0) invert(1) blur(1px) drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+  animation: shimmer-wobble 1.2s infinite alternate ease-in-out;
+  transform-origin: center center;
+}
+@keyframes shimmer-wobble {
+  0% { transform: scale(1.02) skewX(0.5deg) translateY(0); opacity: 0.4; }
+  100% { transform: scale(1.025) skewX(-0.5deg) translateY(-1%); opacity: 0.65; }
+}
+
+/* 2. Fluid Trails (Silhouette Peeling) 
+   Adiós al blur extremo (ahora 1px-1.5px). Retienen la forma geométrica de la persona 
+   mientras se expanden asimétricamente y "pelan" la silueta original.
+*/
+.aura-trail {
+  transform-origin: bottom center;
+}
+.trail-teal {
+  filter: brightness(0) invert(1) blur(1px) drop-shadow(0 0 4px #007F92);
+  animation: peel-left 3s infinite cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.trail-peach {
+  filter: brightness(0) invert(1) blur(1px) drop-shadow(0 0 4px #F49A6D);
+  animation: peel-right 3.5s infinite cubic-bezier(0.25, 0.1, 0.25, 1) 0.8s;
+}
+.trail-green {
+  filter: brightness(0) invert(1) blur(1.5px) drop-shadow(0 0 4px #8EC152);
+  animation: peel-up 2.8s infinite cubic-bezier(0.25, 0.1, 0.25, 1) 1.6s;
+}
+
+/* Los trails nacen ocultos (scale 1), cobran fuerza rápido (opacity 0.85 al 15%) 
+   y se estiran físicamente hacia los costados/arriba, creando el efecto de flamas/ondas de contorno. */
+@keyframes peel-left {
+  0% { transform: scale(1) translate(0, 0); opacity: 0; }
+  15% { opacity: 0.85; }
+  80% { opacity: 0; }
+  100% { transform: scaleX(1.04) scaleY(1.08) translate(-3%, -5%); opacity: 0; }
+}
+@keyframes peel-right {
+  0% { transform: scale(1) translate(0, 0); opacity: 0; }
+  15% { opacity: 0.85; }
+  80% { opacity: 0; }
+  100% { transform: scaleX(1.04) scaleY(1.08) translate(3%, -5%); opacity: 0; }
+}
+@keyframes peel-up {
+  0% { transform: scale(1) translate(0, 0); opacity: 0; }
+  15% { opacity: 0.8; }
+  80% { opacity: 0; }
+  100% { transform: scaleX(1.02) scaleY(1.1) translate(0, -7%); opacity: 0; }
 }
 
 /* Materialización final del retrato nítido */
