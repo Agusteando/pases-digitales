@@ -1,135 +1,167 @@
 <template>
+  <!-- 
+    CONTENEDOR RAÍZ
+    Aislado y con OVERFLOW HIDDEN estricto. Absolutamente nada puede escapar 
+    de los límites físicos (círculo o rectángulo redondeado) del avatar.
+  -->
   <div
-    class="relative inline-flex items-center justify-center isolate group select-none"
+    class="relative inline-flex items-center justify-center isolate group select-none overflow-hidden"
     :class="[sizeClasses, $attrs.class]"
     ref="containerRef"
   >
-    <!-- Clipping wrapper: all layers live here -->
-    <div class="absolute inset-0 overflow-hidden rounded-[inherit] z-0 shadow-[inset_0_2px_4px_rgba(255,255,255,0.5)]">
-
-      <!-- Ambient shell -->
-      <div class="absolute inset-0 bg-white/80 backdrop-blur-md rounded-[inherit]"></div>
-
-      <!-- Living Aura: Abstract layered gradients providing energy -->
-      <div v-if="enhancedSrc || baseSrc" class="absolute inset-0 overflow-hidden rounded-[inherit] opacity-60">
-        <!-- Base derived from image itself -->
-        <img
-          :src="enhancedSrc || baseSrc"
-          class="absolute inset-0 w-full h-full object-cover blur-2xl scale-[1.3] mix-blend-multiply opacity-50"
-          aria-hidden="true"
-        />
-        <!-- Morphing, rotating energy blob -->
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] mix-blend-overlay">
-          <div class="w-full h-full bg-gradient-to-tr from-casita-green-light/40 via-white/20 to-iedis-teal/40 blur-xl animate-morph-blob"></div>
-        </div>
-      </div>
-
-      <!-- Base image: instant first paint, crossfades out once enhanced is ready -->
+    
+    <!-- ========================================================= -->
+    <!-- CAPA 1: FONDO BASE (El cristal suave detrás del retrato)  -->
+    <!-- ========================================================= -->
+    <div 
+      class="absolute inset-0 rounded-[inherit] z-0 bg-gradient-to-b from-white/50 to-white/10 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.06)] border border-white/60"
+    >
       <img
         v-if="baseSrc"
         :src="baseSrc"
-        class="absolute inset-0 w-full h-full object-cover rounded-[inherit] transition-opacity duration-700 ease-in-out"
-        :class="enhancedSrc ? 'opacity-0' : 'opacity-100'"
+        class="w-full h-full object-cover transition-all duration-1000 ease-in-out"
+        :class="enhancedSrc ? 'opacity-0 scale-105 filter blur-sm' : 'opacity-100 scale-100 filter blur-0'"
         style="object-position: center 15%;"
         :alt="name"
       />
-
-      <!-- Enhanced / processed image -->
-      <img
-        v-if="enhancedSrc"
-        :src="enhancedSrc"
-        class="relative z-10 w-full h-full object-cover rounded-[inherit] animate-in fade-in duration-700 ease-out"
-        :alt="name"
-      />
-
-      <!-- Initials fallback -->
       <div
-        v-else-if="!baseSrc && !isProcessing"
-        class="relative z-10 w-full h-full rounded-[inherit] bg-gradient-to-br from-casita-green-light/20 to-iedis-teal/20 flex items-center justify-center font-black text-iedis-blue-dark shadow-inner border border-white/80"
+        v-else-if="!isProcessing"
+        class="w-full h-full bg-gradient-to-br from-slate-50 to-slate-200/50 flex items-center justify-center font-black text-slate-400 shadow-[inset_0_2px_8px_rgba(255,255,255,0.8)]"
         :class="textClass"
       >
         {{ initials }}
       </div>
+    </div>
 
-      <!--
-        Iris follow layer.
-        Each patch is ONLY the iris disc — not the surrounding white of the eye.
-        The sclera and eyelids remain perfectly still in the layer below.
-        Only the iris moves, exactly replicating real ocular gaze rotation.
-      -->
-      <div
-        v-if="enhancedSrc && activeEyeData && !isProcessing"
-        class="absolute inset-0 z-[15] pointer-events-none rounded-[inherit] overflow-hidden"
-      >
-        <img
-          v-for="(eye, i) in activeEyeData"
-          :key="i"
-          :ref="el => setEyeRef(el)"
-          :src="eye.src"
-          class="absolute origin-center will-change-transform"
-          :style="{
-            left: eye.left,
-            top: eye.top,
-            width: eye.sizePercent,
-            height: eye.sizePercent,
-            transform: 'translate(-50%, -50%)'
-          }"
-          aria-hidden="true"
-        />
-      </div>
 
-      <!-- Inner glass / lighting ring — always topmost inside clip -->
-      <div class="absolute inset-0 z-20 rounded-[inherit] border-[1.5px] border-white/60 shadow-[inset_0_2px_8px_rgba(255,255,255,0.7),inset_0_-1px_3px_rgba(0,0,0,0.04)] pointer-events-none"></div>
+    <!-- ========================================================= -->
+    <!-- CAPA 2: AURA EMANANTE DESDE LOS BORDES DE LA SILUETA      -->
+    <!-- ========================================================= -->
+    <!-- 
+      Este contenedor aloja la energía. Utiliza una máscara vertical 
+      (fade to top) para que las "llamas" y partículas se disuelvan 
+      orgánicamente antes de golpear el techo del contenedor del avatar.
+    -->
+    <div 
+      v-if="enhancedSrc && !isProcessing" 
+      class="absolute inset-0 z-[5] pointer-events-none animate-aura-fade-in"
+      style="mask-image: linear-gradient(to top, black 70%, transparent 100%); -webkit-mask-image: linear-gradient(to top, black 70%, transparent 100%);"
+    >
+      <!-- Base de Resplandor: Un clon apenas más grande para crear un ribete de luz perimetral permanente -->
+      <img 
+        :src="enhancedSrc" 
+        class="absolute inset-0 w-full h-full object-cover animate-edge-glow" 
+        style="object-position: center 15%; transform-origin: bottom center;" 
+        aria-hidden="true" 
+      />
 
-      <!-- Debug overlays -->
-      <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none">
-        <div
-          v-if="debugInfo.faceRect"
-          class="absolute border border-red-500/80 bg-red-500/10"
-          :style="{ left: debugInfo.faceRect.left + '%', top: debugInfo.faceRect.top + '%', width: debugInfo.faceRect.width + '%', height: debugInfo.faceRect.height + '%' }"
-        />
-        <div
-          v-for="(eye, i) in debugInfo.eyeRects"
-          :key="'eyebox' + i"
-          class="absolute border border-yellow-400/80 bg-yellow-400/20"
-          :style="{ left: eye.left + '%', top: eye.top + '%', width: eye.width + '%', height: eye.height + '%' }"
-        />
-        <!-- Iris centre crosshairs -->
-        <div
-          v-for="(pt, i) in debugInfo.irisPoints"
-          :key="'iris' + i"
-          class="absolute w-1.5 h-1.5 rounded-full bg-cyan-400 border border-white/80 -translate-x-1/2 -translate-y-1/2"
-          :style="{ left: pt.left + '%', top: pt.top + '%' }"
-        />
+      <!-- Llamas (Wisps): Clones convertidos en luz blanca y coloreados con drop-shadow, viajando hacia arriba -->
+      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover wisp-layer wisp-teal" aria-hidden="true" />
+      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover wisp-layer wisp-green" aria-hidden="true" />
+      <img :src="enhancedSrc" class="absolute inset-0 w-full h-full object-cover wisp-layer wisp-peach" aria-hidden="true" />
+
+      <!-- Micro-Partículas Térmicas: Diminutos puntos de luz que nacen de los hombros/laterales -->
+      <div class="absolute inset-0">
+        <div class="micro-particle p1" style="--drift: -4px;"></div>
+        <div class="micro-particle p2" style="--drift: 5px;"></div>
+        <div class="micro-particle p3" style="--drift: 3px;"></div>
+        <div class="micro-particle p4" style="--drift: -3px;"></div>
       </div>
     </div>
 
-    <!-- Debug tooltip — sits outside the overflow clip so it can escape the avatar bounds -->
+
+    <!-- ========================================================= -->
+    <!-- CAPA 3: IMAGEN PROCESADA PERFECTAMENTE LIMPIA             -->
+    <!-- ========================================================= -->
+    <!-- Al estar en z-10 y escala 1, oculta el centro de las capas de aura, forzando a que la luz nazca sólo en los bordes. -->
+    <img
+      v-if="enhancedSrc"
+      :src="enhancedSrc"
+      class="relative z-10 w-full h-full object-cover rounded-[inherit] animate-avatar-materialize"
+      style="object-position: center 15%; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));"
+      :alt="name"
+    />
+
+    <!-- Capa de Seguimiento Ocular -->
+    <div
+      v-if="enhancedSrc && activeEyeData && !isProcessing"
+      class="absolute inset-0 z-[15] pointer-events-none rounded-[inherit] overflow-hidden"
+    >
+      <img
+        v-for="(eye, i) in activeEyeData"
+        :key="i"
+        :ref="el => setEyeRef(el)"
+        :src="eye.src"
+        class="absolute origin-center will-change-transform drop-shadow-[0_2px_3px_rgba(0,0,0,0.15)]"
+        :style="{
+          left: eye.left,
+          top: eye.top,
+          width: eye.sizePercent,
+          height: eye.sizePercent,
+          transform: 'translate(-50%, -50%)'
+        }"
+        aria-hidden="true"
+      />
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- CAPA 4: BISEL DE CRISTAL (ANCLA LA COMPOSICIÓN FÍSICA)    -->
+    <!-- ========================================================= -->
+    <div 
+      class="absolute inset-0 z-20 rounded-[inherit] border-[1.5px] border-white/70 shadow-[inset_0_2px_8px_rgba(255,255,255,0.8)] pointer-events-none mix-blend-overlay"
+    ></div>
+
+
+    <!-- ========================================================= -->
+    <!-- HERRAMIENTAS DE DEPURACIÓN (MANTENIDAS INTACTAS)          -->
+    <!-- ========================================================= -->
+    <div v-if="isDebug && !isProcessing" class="absolute inset-0 z-50 pointer-events-none rounded-[inherit] overflow-hidden">
+      <div
+        v-if="debugInfo.faceRect"
+        class="absolute border border-red-500/80 bg-red-500/10"
+        :style="{ left: debugInfo.faceRect.left + '%', top: debugInfo.faceRect.top + '%', width: debugInfo.faceRect.width + '%', height: debugInfo.faceRect.height + '%' }"
+      />
+      <div
+        v-for="(eye, i) in debugInfo.eyeRects"
+        :key="'eyebox' + i"
+        class="absolute border border-yellow-400/80 bg-yellow-400/20"
+        :style="{ left: eye.left + '%', top: eye.top + '%', width: eye.width + '%', height: eye.height + '%' }"
+      />
+      <div
+        v-for="(pt, i) in debugInfo.irisPoints"
+        :key="'iris' + i"
+        class="absolute w-1.5 h-1.5 rounded-full bg-cyan-400 border border-white/80 -translate-x-1/2 -translate-y-1/2"
+        :style="{ left: pt.left + '%', top: pt.top + '%' }"
+      />
+    </div>
+
+    <!-- Tooltip de depuración -->
     <div
       v-if="isDebug && !isProcessing"
       class="absolute top-full left-1/2 -translate-x-1/2 pt-3 z-[100] opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 scale-95 group-hover:scale-100 flex justify-center"
     >
-      <div class="w-56 bg-slate-900/95 backdrop-blur-md text-slate-200 text-xs font-mono p-4 rounded-2xl shadow-2xl select-text cursor-auto border border-slate-700/80">
+      <div class="w-64 bg-slate-900/95 backdrop-blur-md text-slate-200 text-xs font-mono p-4 rounded-2xl shadow-2xl select-text cursor-auto border border-slate-700/80">
         <div class="font-black text-brand-400 mb-3 uppercase tracking-widest text-[10px]">
-          Vision API Debug
+          Depuración de Visión
         </div>
         <div class="space-y-2">
           <div class="flex justify-between border-b border-slate-700/50 pb-1.5">
-            <span class="text-slate-400">Face</span>
+            <span class="text-slate-400">Rostro</span>
             <span :class="debugInfo.faceOK ? 'text-emerald-400' : 'text-red-400'">
-              {{ debugInfo.faceOK ? 'OK' : 'FAIL' }}
+              {{ debugInfo.faceOK ? 'OK' : 'FALLA' }}
               <span v-if="debugInfo.faceConf" class="text-[9px] opacity-70">({{ Math.round(debugInfo.faceConf * 100) }}%)</span>
             </span>
           </div>
           <div class="flex justify-between border-b border-slate-700/50 pb-1.5">
-            <span class="text-slate-400">Eyes</span>
+            <span class="text-slate-400">Ojos</span>
             <span :class="debugInfo.eyesOK ? 'text-emerald-400' : 'text-amber-400'">
-              {{ debugInfo.eyesOK ? 'OK' : 'SKIP' }}
+              {{ debugInfo.eyesOK ? 'OK' : 'OMITIR' }}
               <span v-if="debugInfo.eyeConf" class="text-[9px] opacity-70">({{ Math.round(debugInfo.eyeConf * 100) }}%)</span>
             </span>
           </div>
           <div class="flex flex-col border-b border-slate-700/50 pb-1.5">
-            <span class="text-slate-400 mb-1">Background</span>
+            <span class="text-slate-400 mb-1">Fondo</span>
             <span
               class="text-[10px] leading-relaxed break-words"
               :class="debugInfo.bgStatus.includes('REMOVED') ? 'text-emerald-400' : 'text-amber-400'"
@@ -138,14 +170,14 @@
             </span>
           </div>
           <div class="flex justify-between">
-            <span class="text-slate-400">Follow Fx</span>
+            <span class="text-slate-400">Efecto Seguimiento</span>
             <span :class="debugInfo.followActive ? 'text-emerald-400' : 'text-slate-500'">
-              {{ debugInfo.followActive ? 'ACTIVE' : 'OFF' }}
+              {{ debugInfo.followActive ? 'ACTIVO' : 'INACTIVO' }}
             </span>
           </div>
         </div>
         <div class="mt-3 pt-2 border-t border-slate-700/80 text-[9px] text-slate-500 text-center uppercase tracking-widest font-sans">
-          Select text to copy
+          Seleccione el texto para copiar
         </div>
       </div>
     </div>
@@ -158,7 +190,7 @@ import { useRuntimeConfig } from '#imports'
 
 const props = defineProps({
   src:  { type: String, default: null },
-  name: { type: String, default: 'User' },
+  name: { type: String, default: 'Usuario' },
   size: { type: String, default: 'lg' } // sm | md | lg
 })
 
@@ -166,9 +198,9 @@ const config  = useRuntimeConfig()
 const isDebug = computed(() => config.public?.debugFace === true)
 
 const sizeClasses = computed(() => {
-  if (props.size === 'sm') return 'w-10 h-10 rounded-full'
-  if (props.size === 'md') return 'w-14 h-14 rounded-2xl'
-  return 'w-20 h-20 rounded-[1.25rem] md:w-24 md:h-24 md:rounded-[1.5rem]'
+  if (props.size === 'sm') return 'w-12 h-12 rounded-full'
+  if (props.size === 'md') return 'w-16 h-16 rounded-[1rem]'
+  return 'w-24 h-24 md:w-28 md:h-28 rounded-[1.5rem] md:rounded-[1.75rem]'
 })
 
 const textClass = computed(() => {
@@ -410,7 +442,7 @@ async function processPremiumImage(url) {
     fullUrl = `https://signia.casitaapps.com/${url.replace(/^\//, '')}`
   }
 
-  // Instant first paint — always show the raw image immediately
+  // Carga inicial inmediata
   baseSrc.value       = fullUrl
   enhancedSrc.value   = null
   activeEyeData.value = null
@@ -451,7 +483,7 @@ async function processPremiumImage(url) {
     const canvas = document.createElement('canvas')
     const ctx    = canvas.getContext('2d', { willReadFrequently: true })
 
-    // ── Crop ──────────────────────────────────────────────────────────────────
+    // ── Recorte ──────────────────────────────────────────────────────────────────
     let sx = 0, sy = 0, sWidth = img.width, sHeight = img.height
     if (data.cropBox) {
       sx      = data.cropBox.xMin * img.width
@@ -481,7 +513,7 @@ async function processPremiumImage(url) {
       }
     }
 
-    // ── Background removal ────────────────────────────────────────────────────
+    // ── Remoción de Fondo ────────────────────────────────────────────────────
     if (data.maskAvailable && data.maskUrl) {
       const maskImg = await loadImage(data.maskUrl, true).catch(() => null)
       if (maskImg) {
@@ -513,20 +545,16 @@ async function processPremiumImage(url) {
         ctx.putImageData(mainData, 0, 0)
         debugInfo.value.bgStatus = 'REMOVED'
 
-        // ── 1. Safety Check (Alpha Transparency / Blank Canvas) ─────────────
-        // If the AI background mask completely wiped out the cropped area, 
-        // it means the cascade detector cropped to a false-positive in the background.
+        // ── 1. Safety Check (Lienzo vacío) ─────────────
         let visiblePixels = 0
         for (let i = 3; i < mainData.data.length; i += 4) {
-          if (mainData.data[i] > 15) visiblePixels++ // count non-transparent pixels
+          if (mainData.data[i] > 15) visiblePixels++ 
         }
         if (visiblePixels / (cW * cH) < 0.15) {
           throw new Error('SAFETY_CHECK_FAIL_EMPTY_CROP')
         }
 
-        // ── 2. Safety Check (Native Browser Face Detection) ─────────────────
-        // If the image isn't blank, double check if it actually resembles a face 
-        // using the browser's native capabilities (gracefully skips if unsupported).
+        // ── 2. Safety Check (Detección Nativa) ─────────────────
         if ('FaceDetector' in window) {
           debugInfo.value.bgStatus = 'VERIFYING_MASK'
           try {
@@ -536,7 +564,6 @@ async function processPremiumImage(url) {
             debugInfo.value.bgStatus = 'REMOVED_AND_VERIFIED'
           } catch (err) {
             if (err.message.includes('SAFETY_CHECK_FAIL')) throw err
-            // If FaceDetector throws internal unhandled exception, ignore and proceed
             debugInfo.value.bgStatus = 'REMOVED_UNVERIFIED'
           }
         } else {
@@ -548,7 +575,7 @@ async function processPremiumImage(url) {
       }
     }
 
-    // ── Iris extraction — the premium gaze illusion ────────────────────────────
+    // ── Extracción del Iris (Ilusión de Mirada Premium) ────────────────────
     let patches = null
 
     if (data.eyesDetected && Array.isArray(data.eyeBoxes) && data.eyeBoxes.length >= 2) {
@@ -603,13 +630,11 @@ async function processPremiumImage(url) {
     activeEyeData.value = patches
 
   } catch (e) {
-    // If our safety check tripped, log it to the debug UI but ensure we 
-    // fall back cleanly to the raw, uncropped image
     if (e.message.includes('SAFETY_CHECK_FAIL')) {
       debugInfo.value.bgStatus = e.message === 'SAFETY_CHECK_FAIL_EMPTY_CROP' 
         ? 'REJECTED_FALSE_CROP' 
         : 'REJECTED_FACE_LOST'
-      debugInfo.value.faceOK = true // Technically the backend originally passed it
+      debugInfo.value.faceOK = true 
     } else {
       debugInfo.value.faceOK   = false
       debugInfo.value.bgStatus = 'FAIL_FALLBACK'
@@ -622,7 +647,6 @@ async function processPremiumImage(url) {
       debugInfo: { ...debugInfo.value }
     })
 
-    // enhancedSrc left as null naturally defaults to the raw `baseSrc`
     enhancedSrc.value   = null
     activeEyeData.value = null
   } finally {
@@ -634,3 +658,93 @@ watch(() => props.src, (newSrc) => {
   processPremiumImage(newSrc)
 }, { immediate: true })
 </script>
+
+<style scoped>
+/* Transición general de entrada */
+.animate-aura-fade-in {
+  animation: auraFadeIn 1s ease-out 0.2s forwards;
+  opacity: 0;
+}
+@keyframes auraFadeIn {
+  to { opacity: 1; }
+}
+
+/* Edge Glow: Crea un delineado de luz blanca permanente y vibrante detrás del sujeto */
+.animate-edge-glow {
+  animation: edgeGlow 4s ease-in-out infinite alternate;
+  filter: brightness(0) invert(1) blur(2.5px) drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+}
+@keyframes edgeGlow {
+  0% { transform: scale(1.02); opacity: 0.4; }
+  100% { transform: scale(1.04); opacity: 0.7; }
+}
+
+/* Base común para los Wisps (llamas) que viajan hacia arriba */
+.wisp-layer {
+  object-position: center 15%;
+  transform-origin: bottom center;
+}
+
+/* Wisp 1: Turquesa */
+.wisp-teal {
+  filter: brightness(0) invert(1) blur(3px) drop-shadow(0 0 4px rgba(0, 127, 146, 0.8));
+  animation: flameRise1 4.5s ease-in infinite;
+}
+@keyframes flameRise1 {
+  0% { transform: scale(1) translate(0, 0); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: scale(1.12) translate(-2%, -10%); opacity: 0; }
+}
+
+/* Wisp 2: Verde */
+.wisp-green {
+  filter: brightness(0) invert(1) blur(4px) drop-shadow(0 0 5px rgba(142, 193, 82, 0.7));
+  animation: flameRise2 5.5s ease-in infinite 1.5s;
+}
+@keyframes flameRise2 {
+  0% { transform: scale(1) translate(0, 0); opacity: 0; }
+  20% { opacity: 0.5; }
+  80% { opacity: 0.5; }
+  100% { transform: scale(1.15) translate(2%, -12%); opacity: 0; }
+}
+
+/* Wisp 3: Naranja/Peach */
+.wisp-peach {
+  filter: brightness(0) invert(1) blur(5px) drop-shadow(0 0 6px rgba(244, 154, 109, 0.6));
+  animation: flameRise3 6.5s ease-in infinite 3s;
+}
+@keyframes flameRise3 {
+  0% { transform: scale(1) translate(0, 0); opacity: 0; }
+  20% { opacity: 0.4; }
+  80% { opacity: 0.4; }
+  100% { transform: scale(1.1) translate(1%, -15%); opacity: 0; }
+}
+
+/* Micro-partículas: Nacen cerca de los hombros y viajan en línea recta con un ligero desvío (drift) */
+.micro-particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+}
+.p1 { width: 2.5px; height: 2.5px; background: rgba(0, 127, 146, 0.9); left: 20%; top: 60%; animation: particleUp 3s ease-in infinite; box-shadow: 0 0 3px rgba(0, 127, 146, 0.7); }
+.p2 { width: 2px; height: 2px; background: rgba(142, 193, 82, 0.9); left: 80%; top: 50%; animation: particleUp 4s ease-in infinite 1s; box-shadow: 0 0 3px rgba(142, 193, 82, 0.7); }
+.p3 { width: 3px; height: 3px; background: rgba(244, 154, 109, 0.9); left: 25%; top: 70%; animation: particleUp 3.5s ease-in infinite 2s; box-shadow: 0 0 3px rgba(244, 154, 109, 0.7); }
+.p4 { width: 1.5px; height: 1.5px; background: #ffffff; left: 75%; top: 65%; animation: particleUp 2.5s ease-in infinite 0.5s; box-shadow: 0 0 2px #ffffff; }
+
+@keyframes particleUp {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translateY(-20px) translateX(var(--drift)); opacity: 0; }
+}
+
+/* Materialización final del retrato nítido */
+.animate-avatar-materialize {
+  animation: avatarMaterialize 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes avatarMaterialize {
+  0% { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+</style>
