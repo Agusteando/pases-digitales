@@ -857,6 +857,8 @@ async function submitPass(autoAuthorize = false) {
         method: 'POST',
         body: { 
           employeeName: emp.name, 
+          curp: emp.curp || null,
+          ingressioId: emp.ClaveUnica || null,
           plantel: emp.plantelActual || emp.plantelBase || 'N/A', 
           categoryId: activeScenario.value.categoryId, 
           date: form.date,

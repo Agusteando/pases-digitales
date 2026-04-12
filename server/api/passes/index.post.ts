@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   if (!actingUser) throw createError({ statusCode: 401, message: 'Sesión inválida' })
 
   const { 
-    employeeName, categoryId, date, endDate, time, comentarios, 
+    employeeName, curp, ingressioId, categoryId, date, endDate, time, comentarios, 
     plantel, regreso, horaRegreso, imss, tipoIncapacidad, tipoPermiso, autoAuthorize 
   } = body
 
@@ -55,14 +55,16 @@ export default defineEventHandler(async (event) => {
   
   const sql = `
     INSERT INTO hr_entries 
-    (user, employee_name, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, tipo_permiso, authorized_by, authorized_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
+    (user, employee_name, curp, ingressioId, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, tipo_permiso, authorized_by, authorized_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
   `
   
   try {
     const [result]: any = await db.execute(sql, [
       actingUser,
       employeeName, 
+      curp || null,
+      ingressioId || null,
       categoryId, 
       mysqlDate, 
       mysqlEndDate, 
