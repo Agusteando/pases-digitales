@@ -1,1 +1,0 @@
-git commit -m "fix: enforce strict CURP/RFC identity resolution and remove unsafe name-based matching fallbacks"

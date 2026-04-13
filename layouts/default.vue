@@ -27,18 +27,8 @@
         >
           <History class="w-6 h-6" />
         </NuxtLink>
-        <NuxtLink 
-          v-if="user?.is_admin"
-          to="/kardex" 
-          class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
-          active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
-          :class="$route.path === '/kardex' ? '' : 'text-slate-400 hover:bg-white hover:text-brand-600 shadow-sm'"
-          title="Kardex de Asistencia"
-        >
-          <CalendarDays class="w-6 h-6" />
-        </NuxtLink>
         
-        <!-- Nueva Sección: Reporte de Personal (R.P.) -->
+        <!-- Sección: Reporte de Personal (R.P.) -->
         <NuxtLink 
           v-if="hasReportsAccess"
           to="/reports" 
@@ -125,7 +115,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { Plus, BarChart2, History, BellRing, Shield, LogOut, CalendarDays, FileSpreadsheet } from 'lucide-vue-next'
+import { Plus, BarChart2, History, BellRing, Shield, LogOut, FileSpreadsheet } from 'lucide-vue-next'
 
 const { user, logout } = useAuth()
 const { data: profile } = useFetch('/api/auth/profile')
