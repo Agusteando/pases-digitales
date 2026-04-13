@@ -37,6 +37,19 @@
         >
           <CalendarDays class="w-6 h-6" />
         </NuxtLink>
+        
+        <!-- Nueva Sección: Reporte de Personal (R.P.) -->
+        <NuxtLink 
+          v-if="hasReportsAccess"
+          to="/reports" 
+          class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
+          active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
+          :class="$route.path === '/reports' ? '' : 'text-slate-400 hover:bg-white hover:text-brand-600 shadow-sm'"
+          title="Reportes de Personal (R.P.)"
+        >
+          <FileSpreadsheet class="w-6 h-6" />
+        </NuxtLink>
+
         <NuxtLink 
           v-if="user?.is_admin"
           to="/analytics" 
@@ -94,9 +107,9 @@
         <History class="w-5 h-5" />
         <span class="text-[10px] font-bold">Historial</span>
       </NuxtLink>
-      <NuxtLink v-if="user?.is_admin" to="/kardex" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/kardex' ? '' : 'text-slate-400'">
-        <CalendarDays class="w-5 h-5" />
-        <span class="text-[10px] font-bold">Kardex</span>
+      <NuxtLink v-if="hasReportsAccess" to="/reports" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/reports' ? '' : 'text-slate-400'">
+        <FileSpreadsheet class="w-5 h-5" />
+        <span class="text-[10px] font-bold">Reportes</span>
       </NuxtLink>
       <NuxtLink v-if="user?.is_admin" to="/routing" class="px-2 py-2 flex flex-col items-center gap-1.5 transition-colors" active-class="text-brand-600" :class="$route.path === '/routing' ? '' : 'text-slate-400'">
         <BellRing class="w-5 h-5" />
@@ -111,8 +124,15 @@
 </template>
 
 <script setup>
-import { Plus, BarChart2, History, BellRing, Shield, LogOut, CalendarDays } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { Plus, BarChart2, History, BellRing, Shield, LogOut, CalendarDays, FileSpreadsheet } from 'lucide-vue-next'
+
 const { user, logout } = useAuth()
+const { data: profile } = useFetch('/api/auth/profile')
+
+const hasReportsAccess = computed(() => {
+  return user.value?.is_admin || (profile.value?.authorizedPlanteles && profile.value.authorizedPlanteles.length > 0)
+})
 
 const handleLogout = async () => {
   await logout()
