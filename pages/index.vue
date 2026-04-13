@@ -345,7 +345,7 @@
                   <textarea v-model="form.comentarios" rows="3" placeholder="Describe brevemente la razón..." required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-medium text-slate-900 resize-none transition-all bg-white/70 backdrop-blur-sm shadow-sm"></textarea>
                 </div>
 
-                <div v-if="activeScenario.categoryId === 3" class="space-y-2 pt-2">
+                <div v-if="activeScenario.categoryId === 3 || activeScenario.categoryId === 5" class="space-y-2 pt-2">
                   <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1 flex items-center gap-1.5">
                     <Paperclip class="w-3.5 h-3.5" /> Evidencia Adjunta (Opcional)
                   </label>
