@@ -3,6 +3,19 @@ import { getFastSoapEmployees, normalizeName } from '~/server/utils/employee-eng
 import { defineEventHandler, getCookie, createError } from '#imports'
 import jwt from 'jsonwebtoken'
 
+// Helpers
+const tokenizeName = (name: string): string[] => {
+  if (!name) return []
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remueve acentos
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, ' ')    // Deja solo alfanuméricos y espacios
+    .trim()
+    .split(/\s+/)
+    .filter(t => t.length > 2)       // Ignora tokens muy cortos para evitar falsos positivos (ruido)
+}
+
 export default defineEventHandler(async (event) => {
   // 1. Auth & Admin Authorization Verification
   const token = getCookie(event, 'auth-token')
@@ -36,7 +49,7 @@ export default defineEventHandler(async (event) => {
       const startTime = performance.now()
 
       try {
-        writeLog('info', { message: 'Iniciando motor de sincronización masiva de identidades...' })
+        writeLog('info', { message: 'Iniciando motor de sincronización masiva de identidades (Dos Fases)...' })
 
         // 3. Query distinct names missing identities
         writeLog('info', { message: 'Consultando nombres únicos pendientes en la base de datos histórica...' })
@@ -64,77 +77,118 @@ export default defineEventHandler(async (event) => {
         writeLog('info', { message: 'Construyendo mapa de resolución estructurado en memoria...' })
         const soapMap = new Map<string, any[]>()
         
-        for (const emp of soapData) {
+        // Populate Map for Phase 1 and prepare Token sets for Phase 2
+        const soapDataWithTokens = soapData.map(emp => {
           const norm = normalizeName(emp.name)
           if (!soapMap.has(norm)) soapMap.set(norm, [])
           soapMap.get(norm)!.push(emp)
-        }
+          
+          return {
+            ...emp,
+            tokens: tokenizeName(emp.name)
+          }
+        })
 
-        // 5. Batch Execution per Distinct Name
+        // ==========================================
+        // FASE 1: Búsqueda Exacta
+        // ==========================================
         let totalRowsUpdated = 0
-        let matchesFound = 0
-        let matchesNotFound = 0
-        let ambiguousMatches = 0
+        const pass1Failures: string[] = []
 
-        writeLog('start_batch', { total: uniqueNames.length })
+        writeLog('start_phase1', { total: uniqueNames.length, message: 'Iniciando FASE 1: Resolución por Coincidencia Exacta.' })
 
         for (const targetName of uniqueNames) {
           const normTarget = normalizeName(targetName)
           const matches = soapMap.get(normTarget) || []
 
           if (matches.length === 0) {
-            matchesNotFound++
-            writeLog('process', { status: 'not_found', name: targetName, message: 'La identidad no existe en el catálogo SOAP actual.' })
+            pass1Failures.push(targetName)
+            writeLog('process1', { status: 'not_found', name: targetName, message: 'Identidad sin coincidencia exacta en SOAP.' })
             continue
           }
 
-          // Evaluate ambiguity: If a name appears multiple times, check if they are functionally the same person
-          // by deduplicating their primary identity keys (CURP & IngressioId).
           const uniqueIdentities = new Set(matches.map(m => `${m.curp || 'null'}|${m.ClaveUnica || 'null'}`))
           if (uniqueIdentities.size > 1) {
-            ambiguousMatches++
-            writeLog('process', { status: 'ambiguous', name: targetName, message: `Resolución ambigua. El nombre pertenece a ${uniqueIdentities.size} identidades distintas.` })
+            pass1Failures.push(targetName)
+            writeLog('process1', { status: 'ambiguous', name: targetName, message: `Ambigüedad exacta. Pertenece a ${uniqueIdentities.size} identidades distintas.` })
             continue
           }
 
-          // At this point, we either have exactly 1 record, or multiple identical records representing the same person.
           const authoritativeMatch = matches[0]
           const newCurp = authoritativeMatch.curp || null
           const newIngressioId = authoritativeMatch.ClaveUnica || null
 
           if (!newCurp && !newIngressioId) {
-             matchesNotFound++
-             writeLog('process', { status: 'missing_data', name: targetName, message: 'Identidad encontrada en SOAP, pero sus campos CURP y ClaveUnica están vacíos en origen.' })
+             pass1Failures.push(targetName)
+             writeLog('process1', { status: 'missing_data', name: targetName, message: 'Encontrado exacto, pero carece de CURP y ClaveUnica.' })
              continue
           }
 
-          // Execute a single mass UPDATE for ALL rows matching this specific name
+          // DB Update - Phase 1
           const [updateResult]: any = await db.execute(
-            `UPDATE hr_entries 
-             SET curp = ?, ingressioId = ? 
-             WHERE employee_name = ? 
-               AND (curp IS NULL OR curp = '' OR ingressioId IS NULL OR ingressioId = '')`,
+            `UPDATE hr_entries SET curp = ?, ingressioId = ? WHERE employee_name = ? AND (curp IS NULL OR curp = '' OR ingressioId IS NULL OR ingressioId = '')`,
             [newCurp, newIngressioId, targetName]
           )
-
           const affected = updateResult.affectedRows || 0
           totalRowsUpdated += affected
-          matchesFound++
 
-          writeLog('process', { status: 'success', name: targetName, affected, message: `Identidad resuelta. ${affected} filas históricas actualizadas exitosamente.` })
+          writeLog('process1', { status: 'success', name: targetName, affected, message: `Coincidencia exacta exitosa. ${affected} filas actualizadas.` })
+        }
+
+        // ==========================================
+        // FASE 2: Búsqueda por Contención de Tokens
+        // ==========================================
+        writeLog('info', { message: `Fase 1 finalizada. Iniciando FASE 2 (Fallback por Tokens) para ${pass1Failures.length} identidades no resueltas.` })
+        writeLog('start_phase2', { total: pass1Failures.length })
+
+        for (const targetName of pass1Failures) {
+          const targetTokens = tokenizeName(targetName)
+          
+          if (targetTokens.length === 0) {
+            writeLog('process2', { status: 'not_found', name: targetName, message: 'El nombre no contiene suficientes tokens válidos para búsqueda determinista.' })
+            continue
+          }
+
+          // Matching strategy: ALL tokens from the target name must be present in the SOAP name.
+          const matches = soapDataWithTokens.filter(soapEmp => {
+            return targetTokens.every(token => soapEmp.tokens.includes(token))
+          })
+
+          if (matches.length === 0) {
+            writeLog('process2', { status: 'not_found', name: targetName, message: `Ningún empleado en SOAP contiene los tokens: [${targetTokens.join(', ')}].` })
+            continue
+          }
+
+          const uniqueIdentities = new Set(matches.map(m => `${m.curp || 'null'}|${m.ClaveUnica || 'null'}`))
+          if (uniqueIdentities.size > 1) {
+            writeLog('process2', { status: 'ambiguous', name: targetName, message: `Ambigüedad de tokens. ${matches.length} empleados comparten estos tokens.` })
+            continue
+          }
+
+          const authoritativeMatch = matches[0]
+          const newCurp = authoritativeMatch.curp || null
+          const newIngressioId = authoritativeMatch.ClaveUnica || null
+
+          if (!newCurp && !newIngressioId) {
+             writeLog('process2', { status: 'missing_data', name: targetName, message: `Coincidencia por tokens encontrada en SOAP (${authoritativeMatch.name}), pero carece de CURP y ClaveUnica.` })
+             continue
+          }
+
+          // DB Update - Phase 2
+          const [updateResult]: any = await db.execute(
+            `UPDATE hr_entries SET curp = ?, ingressioId = ? WHERE employee_name = ? AND (curp IS NULL OR curp = '' OR ingressioId IS NULL OR ingressioId = '')`,
+            [newCurp, newIngressioId, targetName]
+          )
+          const affected = updateResult.affectedRows || 0
+          totalRowsUpdated += affected
+
+          writeLog('process2', { status: 'success', name: targetName, affected, message: `Coincidencia por tokens (${authoritativeMatch.name}). ${affected} filas actualizadas.` })
         }
 
         const executionTimeMs = Math.round(performance.now() - startTime)
-        writeLog('info', { message: 'Lote procesado en su totalidad. Construyendo resumen de métricas...' })
+        writeLog('info', { message: 'Lote de Dos Fases procesado en su totalidad. Construyendo resumen...' })
         
-        writeLog('summary', {
-          uniqueNamesScanned: uniqueNames.length,
-          totalRowsUpdated,
-          matchesFound,
-          matchesNotFound,
-          ambiguousMatches,
-          executionTimeMs
-        })
+        writeLog('summary', { executionTimeMs })
 
       } catch (err: any) {
         writeLog('error', { message: `Interrupción crítica del proceso: ${err.message}` })
@@ -144,6 +198,5 @@ export default defineEventHandler(async (event) => {
     }
   })
 
-  // Return the standard ReadableStream; Nitro converts this directly to chunked transfer encoding implicitly.
   return stream
 })

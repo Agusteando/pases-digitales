@@ -132,8 +132,8 @@
             </div>
           </div>
 
-          <!-- Evidence / File Upload (Restricted to Ausencia Justificada) -->
-          <div v-if="form.categoryId === 3" class="space-y-2">
+          <!-- Evidence / File Upload (Ausencia Justificada e Incapacidad Médica) -->
+          <div v-if="[3, 5].includes(form.categoryId)" class="space-y-2">
             <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
               <Paperclip class="w-3.5 h-3.5" /> Evidencia / Justificante
             </label>
