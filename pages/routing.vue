@@ -1,5 +1,3 @@
-## pages/routing.vue
-
 <template>
   <div class="p-6 md:p-10 max-w-[1600px] mx-auto h-full flex flex-col relative z-10">
     
@@ -283,6 +281,7 @@
               <option value="Director">Director</option>
               <option value="Administrador">Administrador</option>
               <option value="Lead/Manager">Lead/Manager</option>
+              <option value="ADMON">ADMON (Reportes)</option>
             </select>
           </div>
 

@@ -30,4 +30,17 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (adminRoutes.some(r => to.path.startsWith(r)) && !user.value.is_admin) {
     return navigateTo('/', { replace: true })
   }
+
+  if (to.path.startsWith('/reports') && !user.value.is_admin) {
+    let hasAccess = false
+    try {
+      const headers = process.server ? useRequestHeaders(['cookie']) as Record<string, string> : undefined
+      const profile: any = await $fetch('/api/auth/profile', { headers })
+      if (profile?.is_admon) hasAccess = true
+    } catch (e) {}
+    
+    if (!hasAccess) {
+      return navigateTo('/', { replace: true })
+    }
+  }
 })

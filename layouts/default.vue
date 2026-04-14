@@ -121,7 +121,7 @@ const { user, logout } = useAuth()
 const { data: profile } = useFetch('/api/auth/profile')
 
 const hasReportsAccess = computed(() => {
-  return user.value?.is_admin || (profile.value?.authorizedPlanteles && profile.value.authorizedPlanteles.length > 0)
+  return user.value?.is_admin || profile.value?.is_admon
 })
 
 const handleLogout = async () => {

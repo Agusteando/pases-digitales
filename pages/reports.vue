@@ -134,7 +134,7 @@ const { data: profile } = useFetch('/api/auth/profile')
 const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
 
 const isAdmin = computed(() => user.value?.is_admin || false)
-const authPlanteles = computed(() => profile.value?.authorizedPlanteles || [])
+const authPlanteles = computed(() => profile.value?.admonPlanteles || [])
 
 const selectedPlantel = ref('')
 const fechaInicio = ref(dayjs().subtract(15, 'day').format('YYYY-MM-DD'))

@@ -27,11 +27,11 @@ export default defineEventHandler(async (event) => {
   const isAdmin = adminRows?.[0]?.is_admin === 1
 
   if (!isAdmin) {
-    const [dirRows]: any = await db.execute('SELECT plantel FROM hr_directory WHERE email = ?', [decoded.email])
+    const [dirRows]: any = await db.execute('SELECT plantel FROM hr_directory WHERE email = ? AND role = "ADMON"', [decoded.email])
     const planteles = dirRows.map((r: any) => r.plantel)
     
     if (!planteles.includes(plantel as string)) {
-      throw createError({ statusCode: 403, message: 'Acceso denegado. No cuentas con permisos operativos para consultar la información de este plantel.' })
+      throw createError({ statusCode: 403, message: 'Acceso denegado. No cuentas con permisos operativos (rol ADMON) para consultar la información de este plantel.' })
     }
   }
 

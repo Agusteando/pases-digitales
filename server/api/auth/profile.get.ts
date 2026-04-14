@@ -13,13 +13,15 @@ export default defineEventHandler(async (event) => {
 
     const gw = await getCachedWorkspaceUser(decoded.email)
     const db = useDB()
-    const [rows]: any = await db.execute('SELECT plantel FROM hr_directory WHERE email = ?', [decoded.email])
+    const [rows]: any = await db.execute('SELECT plantel, role FROM hr_directory WHERE email = ?', [decoded.email])
 
     return {
        email: decoded.email,
        name: decoded.name,
        phone: gw.phone ? gw.phone.replace(/\D/g, '').slice(-10) : '',
-       authorizedPlanteles: rows.map((r: any) => r.plantel)
+       authorizedPlanteles: rows.map((r: any) => r.plantel),
+       is_admon: rows.some((r: any) => r.role === 'ADMON'),
+       admonPlanteles: rows.filter((r: any) => r.role === 'ADMON').map((r: any) => r.plantel)
     }
   } catch (e) {
     console.error('Failed to fetch user profile:', e)

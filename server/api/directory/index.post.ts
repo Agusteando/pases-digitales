@@ -11,9 +11,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Datos incompletos. Faltan campos requeridos.' })
   }
 
-  const allowedRoles = ['Director', 'Administrador', 'Lead/Manager']
+  const allowedRoles = ['Director', 'Administrador', 'Lead/Manager', 'ADMON']
   if (!allowedRoles.includes(role)) {
-    throw createError({ statusCode: 400, message: 'Rol inválido. Opciones permitidas: Director, Administrador, Lead/Manager.' })
+    throw createError({ statusCode: 400, message: 'Rol inválido. Opciones permitidas: Director, Administrador, Lead/Manager, ADMON.' })
   }
 
   const resolvedChannel = channel || 'EMAIL'
