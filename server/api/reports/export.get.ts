@@ -35,14 +35,14 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 3. Proxy Binario hacia Kardex Externo
+  // 3. Proxy Binario hacia Kardex Externo (Report2)
   try {
-    const backendUrl = `https://kardex.casitaapps.com/api/rp/export/plantel/${encodeURIComponent(plantel as string)}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`
+    const backendUrl = `https://kardex.casitaapps.com/api/report2/export/plantel/${encodeURIComponent(plantel as string)}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`
     
     const response = await fetch(backendUrl)
     
     if (!response.ok) {
-      throw createError({ statusCode: response.status, message: 'El motor Kardex rechazó la solicitud de descarga o no encontró datos.' })
+      throw createError({ statusCode: response.status, message: 'El motor Kardex rechazó la solicitud de descarga o no encontró datos para generar la matriz.' })
     }
     
     // Traspasar los headers binarios originales del backend (FastAPI)
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     
   } catch (error: any) {
     if (error.statusCode) throw error
-    console.error('Error en Proxy Binario de Exportación RP', error)
-    throw createError({ statusCode: 502, message: 'Fallo de comunicación con el motor de reportes al solicitar el documento final.' })
+    console.error('Error en Proxy Binario de Exportación de Matriz', error)
+    throw createError({ statusCode: 502, message: 'Fallo de comunicación con el motor Kardex al solicitar el documento matricial final.' })
   }
 })

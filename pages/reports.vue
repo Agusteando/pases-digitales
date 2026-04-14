@@ -2,8 +2,8 @@
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full flex flex-col relative z-10">
     <header class="mb-8 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Reportes de Personal</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Cruce masivo de asistencia, omisiones y pases digitales (R.P.)</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Matriz de Asistencia Diaria</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Cruce y consolidación de asistencia, omisiones y justificaciones operativas.</p>
       </div>
     </header>
 
@@ -45,7 +45,7 @@
          <button @click="loadPreview" :disabled="!isFormValid || pendingPreview" class="w-full md:w-auto px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition-all outline-none flex items-center justify-center gap-2">
            <Loader2 v-if="pendingPreview" class="w-4 h-4 animate-spin text-white/80" />
            <Search v-else class="w-4 h-4 text-white/80" />
-           <span>Generar Vista</span>
+           <span>Vista Previa</span>
          </button>
       </div>
     </div>
@@ -57,13 +57,13 @@
        <div class="px-6 py-5 border-b border-white/60 bg-white/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
          <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
             <FileSpreadsheet class="w-4 h-4 text-brand-500" />
-            Vista Previa de Extracción
+            Población y Período Validado
          </h3>
          
          <button @click="exportReport" :disabled="!previewData || isExporting" class="px-6 py-3 bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all outline-none flex items-center justify-center gap-2">
            <Loader2 v-if="isExporting" class="w-4 h-4 animate-spin text-white/80" />
            <Download v-else class="w-4 h-4 text-white/80" />
-           <span>Descargar Reporte (Excel)</span>
+           <span>Descargar Matriz (Excel)</span>
          </button>
        </div>
 
@@ -72,7 +72,7 @@
          
          <div v-if="pendingPreview" class="flex flex-col items-center justify-center h-full py-20 text-slate-400">
            <Loader2 class="w-12 h-12 animate-spin mb-4 text-brand-500" />
-           <p class="text-sm font-black text-slate-700">Procesando registros en el motor Kardex externo...</p>
+           <p class="text-sm font-black text-slate-700">Procesando matriz en el motor Kardex externo...</p>
            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">Dependiendo del tamaño de la nómina, esto puede demorar unos segundos.</p>
          </div>
          
@@ -85,7 +85,7 @@
          <div v-else-if="previewData.empleados?.length === 0" class="flex flex-col items-center justify-center h-full py-20 text-slate-400">
             <FileX class="w-14 h-14 mb-4 opacity-20" />
             <p class="text-sm font-black text-slate-700">Sin hallazgos operativos</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">No se encontraron registros para este periodo en el plantel seleccionado.</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">No se encontraron registros de asistencia para este periodo en el plantel.</p>
          </div>
          
          <table v-else class="w-full text-left border-collapse whitespace-nowrap">
@@ -213,7 +213,7 @@ const exportReport = async () => {
     
     // Tratamos de respetar el nombre de archivo dictado por el backend FastAPI, 
     // de lo contrario caemos en el nombre estructurado por defecto.
-    let filename = `Reporte_RP_${selectedPlantel.value.replace(/\s+/g, '_')}_${fechaInicio.value}.xlsx`
+    let filename = `Reporte_Matricial_${selectedPlantel.value.replace(/\s+/g, '_')}_${fechaInicio.value}.xlsx`
     const disposition = response.headers.get('Content-Disposition')
     
     if (disposition && disposition.includes('filename=')) {
@@ -235,7 +235,7 @@ const exportReport = async () => {
     window.URL.revokeObjectURL(url)
     
   } catch (e) {
-    console.error('Error al exportar el documento', e)
+    console.error('Error al exportar la matriz de asistencia', e)
     alert(e.message || 'Fallo inesperado al descargar el archivo Excel.')
   } finally {
     isExporting.value = false

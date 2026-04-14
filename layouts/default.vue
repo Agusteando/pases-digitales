@@ -28,14 +28,14 @@
           <History class="w-6 h-6" />
         </NuxtLink>
         
-        <!-- Sección: Reporte de Personal (R.P.) -->
+        <!-- Sección: Matriz de Asistencia Diaria (Report2) -->
         <NuxtLink 
           v-if="hasReportsAccess"
           to="/reports" 
           class="p-3.5 w-full rounded-2xl flex justify-center transition-all group outline-none"
           active-class="bg-brand-600 text-white shadow-md shadow-brand-500/20"
           :class="$route.path === '/reports' ? '' : 'text-slate-400 hover:bg-white hover:text-brand-600 shadow-sm'"
-          title="Reportes de Personal (R.P.)"
+          title="Matriz de Asistencia Diaria"
         >
           <FileSpreadsheet class="w-6 h-6" />
         </NuxtLink>
