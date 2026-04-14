@@ -1,4 +1,4 @@
-import { defineEventHandler, getQuery, createError, getCookie, setHeader } from '#imports'
+import { defineEventHandler, getQuery, createError, getCookie, setResponseHeader } from '#imports'
 import jwt from 'jsonwebtoken'
 import { useDB } from '~/server/utils/db'
 
@@ -35,29 +35,37 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // 3. Proxy de Descarga hacia Kardex Externo
+  // 3. Proxy Binario hacia Kardex Externo
   try {
     const backendUrl = `https://kardex.casitaapps.com/api/rp/export/plantel/${encodeURIComponent(plantel as string)}?fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}`
     
-    // Stream del documento originado en Python (OpenPyXL / Pandas)
     const response = await fetch(backendUrl)
     
     if (!response.ok) {
-      throw new Error('El motor Kardex devolvió un error HTTP al intentar construir el archivo Excel.')
+      throw createError({ statusCode: response.status, message: 'El motor Kardex rechazó la solicitud de descarga o no encontró datos.' })
     }
     
-    const buffer = await response.arrayBuffer()
+    // Traspasar los headers binarios originales del backend (FastAPI)
+    const contentType = response.headers.get('content-type')
+    const contentDisposition = response.headers.get('content-disposition')
     
-    const safePlantelName = (plantel as string).replace(/\s+/g, '_')
-    const fileName = `Reporte_RP_${safePlantelName}_${fecha_inicio}.xlsx`
+    if (contentType) {
+      setResponseHeader(event, 'Content-Type', contentType)
+    } else {
+      setResponseHeader(event, 'Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    }
     
-    setHeader(event, 'Content-Disposition', `attachment; filename="${fileName}"`)
-    setHeader(event, 'Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    
-    return buffer
+    if (contentDisposition) {
+      setResponseHeader(event, 'Content-Disposition', contentDisposition)
+    }
+
+    // Retornar el ReadableStream original directamente evita la corrupción de ArrayBuffer en Nitro
+    // y transmite el archivo binario bit a bit sin cargarlo completo en memoria.
+    return response.body
     
   } catch (error: any) {
-    console.error('Error en Proxy de Exportación RP', error)
+    if (error.statusCode) throw error
+    console.error('Error en Proxy Binario de Exportación RP', error)
     throw createError({ statusCode: 502, message: 'Fallo de comunicación con el motor de reportes al solicitar el documento final.' })
   }
 })

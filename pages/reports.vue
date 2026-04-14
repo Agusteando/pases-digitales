@@ -201,6 +201,7 @@ const exportReport = async () => {
       fecha_fin: fechaFin.value
     })
     
+    // El fetch atrapa el archivo binario del proxy local
     const response = await fetch(`/api/reports/export?${queryParams.toString()}`)
     
     if (!response.ok) {
@@ -209,11 +210,24 @@ const exportReport = async () => {
     }
     
     const blob = await response.blob()
+    
+    // Tratamos de respetar el nombre de archivo dictado por el backend FastAPI, 
+    // de lo contrario caemos en el nombre estructurado por defecto.
+    let filename = `Reporte_RP_${selectedPlantel.value.replace(/\s+/g, '_')}_${fechaInicio.value}.xlsx`
+    const disposition = response.headers.get('Content-Disposition')
+    
+    if (disposition && disposition.includes('filename=')) {
+      const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition)
+      if (matches != null && matches[1]) {
+        filename = matches[1].replace(/['"]/g, '')
+      }
+    }
+    
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     
     link.href = url
-    link.download = `Reporte_RP_${selectedPlantel.value.replace(/\s+/g, '_')}_${fechaInicio.value}.xlsx`
+    link.download = filename
     
     document.body.appendChild(link)
     link.click()
