@@ -10,13 +10,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Faltan parámetros requeridos para actualizar.' })
   }
 
-  // Double layer of strict formatting safety before submitting to external identity provider
-  let finalPhone = phone.trim()
-  if (finalPhone && !finalPhone.includes('@c.us') && !finalPhone.includes('@g.us')) {
-    let digits = finalPhone.replace(/\D/g, '')
-    if (digits.length === 10) digits = '521' + digits
-    if (digits.length > 0) finalPhone = `${digits}@c.us`
-  }
+  // Store in standard 10-digit format
+  let finalPhone = String(phone || '').replace(/\D/g, '').substring(0, 10)
 
   try {
     await updateWorkspaceUserPhone(email, finalPhone)

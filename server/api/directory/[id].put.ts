@@ -16,11 +16,7 @@ export default defineEventHandler(async (event) => {
 
   let finalPhone = ''
   if (phone) {
-    let digits = phone.replace(/\D/g, '')
-    if (digits.length >= 10) {
-      digits = digits.slice(-10)
-      finalPhone = `521${digits}@c.us`
-    }
+    finalPhone = String(phone).replace(/\D/g, '').substring(0, 10)
   }
 
   try {

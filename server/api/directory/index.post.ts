@@ -27,11 +27,10 @@ export default defineEventHandler(async (event) => {
   // it as missing and endlessly re-prompt the user.
   if (phone) {
     try {
-      let digits = phone.replace(/\D/g, '')
-      if (digits.length === 10) digits = '521' + digits
-      let finalPhone = `${digits}@c.us`
-      
-      await updateWorkspaceUserPhone(email, finalPhone)
+      let finalPhone = String(phone).replace(/\D/g, '').substring(0, 10)
+      if (finalPhone.length > 0) {
+        await updateWorkspaceUserPhone(email, finalPhone)
+      }
     } catch (e) {
       console.warn(`Failed to sync phone for ${email}`, e)
       throw createError({ statusCode: 500, message: 'No se pudo sincronizar el teléfono con Google Workspace. El perfil corporativo debe estar habilitado.' })

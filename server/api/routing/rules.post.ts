@@ -18,7 +18,10 @@ export default defineEventHandler(async (event) => {
 
   if (resolvedChannel === 'WHATSAPP' && phone) {
     try {
-      await updateWorkspaceUserPhone(target_val, `521${phone}@c.us`)
+      let finalPhone = String(phone).replace(/\D/g, '').substring(0, 10)
+      if (finalPhone.length > 0) {
+        await updateWorkspaceUserPhone(target_val, finalPhone)
+      }
     } catch (e) {
       console.warn(`Failed to sync phone for ${target_val}`, e)
     }
