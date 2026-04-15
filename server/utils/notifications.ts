@@ -59,10 +59,17 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
 
   let tgTriggerAt: string | undefined = undefined;
   if (options.scheduleTg && isAuthorized) {
-    const passDateStr = typeof pass.date === 'string' ? pass.date.split('T')[0] : dayjs(pass.date).format('YYYY-MM-DD');
-    const passTimeStr = pass.time || '08:00:00';
-    const triggerDate = dayjs.tz(`${passDateStr} ${passTimeStr}`, 'America/Mexico_City');
-    if (triggerDate.isAfter(dayjs.tz('America/Mexico_City'))) {
+    // Database dates might be fetched as "YYYY-MM-DD HH:mm:ss". We strictly extract just the date part.
+    const passDateStr = typeof pass.date === 'string' ? pass.date.substring(0, 10) : dayjs(pass.date).format('YYYY-MM-DD');
+    let passTimeStr = pass.time ? String(pass.time).trim() : '08:00:00';
+    
+    // Normalize to proper ISO time component (HH:mm:ss)
+    if (passTimeStr.length === 5) passTimeStr += ':00';
+    
+    // Use proper ISO standard 'T' separator to prevent native engine parsing crashes
+    const triggerDate = dayjs.tz(`${passDateStr}T${passTimeStr}`, 'America/Mexico_City');
+    
+    if (triggerDate.isValid() && triggerDate.isAfter(dayjs().tz('America/Mexico_City'))) {
       tgTriggerAt = triggerDate.toISOString();
     }
   }
