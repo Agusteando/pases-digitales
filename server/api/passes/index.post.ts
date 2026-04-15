@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
   const { 
     employeeName, curp, ingressioId, categoryId, date, endDate, time, comentarios, 
-    plantel, regreso, horaRegreso, imss, tipoIncapacidad, tipoPermiso, autoAuthorize 
+    plantel, regreso, horaRegreso, imss, tipoIncapacidad, tipoPermiso, autoAuthorize, scheduleTg
   } = body
 
   // Anclaje de evaluación temporal a zona local para prevenir inserciones con saltos de día por UTC
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
       authorizedAt
     ])
 
-    await dispatchNotificationsForPass(result.insertId)
+    await dispatchNotificationsForPass(result.insertId, { scheduleTg })
 
     return { success: true, id: result.insertId, auth_token: authToken }
   } catch (error) {

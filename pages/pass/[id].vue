@@ -164,6 +164,23 @@
             <p class="text-xs text-casita-green-dark/70 font-bold mb-6 leading-relaxed">
               El aviso de autorización ya fue enviado. Como administrador o creador, puedes resolver la solicitud directamente desde aquí.
             </p>
+            
+            <div v-if="isFuture" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
+               <div class="flex items-center gap-3">
+                 <div class="w-8 h-8 rounded-lg bg-casita-green/10 flex items-center justify-center text-casita-green-dark shrink-0">
+                   <CalendarClock class="w-4 h-4" />
+                 </div>
+                 <div>
+                   <h4 class="text-[11px] font-black text-casita-green-dark leading-tight">Aviso Programado</h4>
+                   <p class="text-[9px] font-bold text-casita-green-dark/70 mt-0.5">Telegram se publicará a la hora del pase.</p>
+                 </div>
+               </div>
+               <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                 <input type="checkbox" v-model="scheduleTg" class="sr-only peer">
+                 <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-casita-green"></div>
+               </label>
+            </div>
+
             <div class="flex flex-col gap-3">
               <button @click="handleInAppAuth('authorize')" :disabled="isResolving" class="w-full relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white text-sm font-black rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
                 <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
@@ -307,7 +324,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
@@ -340,6 +357,15 @@ const isExpired = computed(() => {
   if (!pass.value) return true
   return dayjs().diff(dayjs(pass.value.date), 'hour') > 48
 })
+
+const isFuture = computed(() => {
+  if (!pass.value) return false
+  const dateStr = pass.value.date.split('T')[0]
+  const timeStr = pass.value.time || '08:00:00'
+  return dayjs(`${dateStr} ${timeStr}`).isAfter(dayjs())
+})
+
+const scheduleTg = ref(true)
 
 const handleResend = async () => {
   if (isResending.value || !pass.value) return
@@ -380,7 +406,7 @@ const handleInAppAuth = async (action) => {
   try {
      await $fetch(`/api/passes/${passId}/action`, {
        method: 'POST',
-       body: { action }
+       body: { action, scheduleTg: scheduleTg.value }
      });
      refresh();
   } catch(err) {

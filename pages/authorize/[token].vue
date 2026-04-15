@@ -97,23 +97,45 @@
         </div>
       </div>
 
-      <footer v-if="pass.status === 'pendiente'" class="flex flex-col sm:flex-row gap-4 relative z-10">
-        <button @click="doAction('reject')" :disabled="isProcessing" class="flex-1 relative group overflow-hidden bg-white hover:bg-slate-50 text-casita-red-dark font-black text-sm rounded-[1.25rem] transition-all border-2 border-casita-red/20 hover:border-casita-red/40 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none">
-          <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
-            <Loader2 v-if="isProcessing" class="w-5 h-5 animate-spin text-casita-red/50" />
-            <X v-else class="w-5 h-5 text-casita-red/70 group-hover:text-casita-red transition-colors" /> 
-            <span>Rechazar</span>
-          </div>
-        </button>
+      <footer v-if="pass.status === 'pendiente'" class="flex flex-col gap-4 relative z-10">
+        
+        <div v-if="isFuture" class="mb-2 bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200 shadow-sm w-full relative overflow-hidden group">
+           <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-iedis-teal"></div>
+           <div class="flex items-center justify-between gap-4">
+             <div class="flex items-center gap-4">
+               <div class="w-10 h-10 rounded-xl bg-iedis-teal/10 flex items-center justify-center border border-iedis-teal/20 text-iedis-teal-dark shrink-0">
+                 <CalendarClock class="w-5 h-5" />
+               </div>
+               <div class="text-left">
+                 <h4 class="text-sm font-black text-slate-800">Programar aviso en Telegram</h4>
+                 <p class="text-[10px] font-bold text-slate-500 mt-0.5">El registro se publicará al momento exacto del pase.</p>
+               </div>
+             </div>
+             <label class="relative inline-flex items-center cursor-pointer shrink-0">
+               <input type="checkbox" v-model="scheduleTg" class="sr-only peer">
+               <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-iedis-teal"></div>
+             </label>
+           </div>
+        </div>
 
-        <button @click="doAction('authorize')" :disabled="isProcessing" class="flex-1 relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white font-black text-sm rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
-          <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
-          <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
-            <Loader2 v-if="isProcessing" class="w-5 h-5 animate-spin text-white/80" />
-            <Check v-else class="w-5 h-5 text-white/90 group-hover:text-white transition-colors" /> 
-            <span class="tracking-wide">Autorizar</span>
-          </div>
-        </button>
+        <div class="flex flex-col sm:flex-row gap-4 w-full">
+          <button @click="doAction('reject')" :disabled="isProcessing" class="flex-1 relative group overflow-hidden bg-white hover:bg-slate-50 text-casita-red-dark font-black text-sm rounded-[1.25rem] transition-all border-2 border-casita-red/20 hover:border-casita-red/40 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none">
+            <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
+              <Loader2 v-if="isProcessing" class="w-5 h-5 animate-spin text-casita-red/50" />
+              <X v-else class="w-5 h-5 text-casita-red/70 group-hover:text-casita-red transition-colors" /> 
+              <span>Rechazar</span>
+            </div>
+          </button>
+
+          <button @click="doAction('authorize')" :disabled="isProcessing" class="flex-1 relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white font-black text-sm rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
+            <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
+            <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
+              <Loader2 v-if="isProcessing" class="w-5 h-5 animate-spin text-white/80" />
+              <Check v-else class="w-5 h-5 text-white/90 group-hover:text-white transition-colors" /> 
+              <span class="tracking-wide">Autorizar</span>
+            </div>
+          </button>
+        </div>
       </footer>
 
       <div class="mt-10 text-center relative z-10 flex flex-col items-center gap-4">
@@ -124,10 +146,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope, Paperclip, ExternalLink } from 'lucide-vue-next'
+import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
 
 definePageMeta({ layout: false })
 
@@ -139,6 +161,15 @@ const pass = ref(null)
 const errorMsg = ref('')
 const pending = ref(true)
 const isProcessing = ref(false)
+
+const isFuture = computed(() => {
+  if (!pass.value) return false
+  const dateStr = pass.value.date.split('T')[0]
+  const timeStr = pass.value.time || '08:00:00'
+  return dayjs(`${dateStr} ${timeStr}`).isAfter(dayjs())
+})
+
+const scheduleTg = ref(true)
 
 const fetchPass = async () => {
   try {
@@ -155,7 +186,10 @@ const doAction = async (actionStr) => {
   if (isProcessing.value) return
   isProcessing.value = true
   try {
-    const res = await $fetch(`/api/passes/authorize/${token}`, { method: 'POST', body: { action: actionStr, rToken } })
+    const res = await $fetch(`/api/passes/authorize/${token}`, { 
+      method: 'POST', 
+      body: { action: actionStr, rToken, scheduleTg: scheduleTg.value } 
+    })
     pass.value.status = res.status
     pass.value.authorized_by = pass.value._viewer || 'Responsable'
     pass.value.authorized_at = new Date().toISOString()

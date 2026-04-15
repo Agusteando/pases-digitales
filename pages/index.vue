@@ -397,6 +397,23 @@
                 <h3 class="text-sm font-black text-slate-800">Finalizar solicitud</h3>
                 <p class="text-[11px] font-bold text-slate-500 mt-1">Revisa la información antes de proceder</p>
               </div>
+
+              <!-- Telegram Schedule Option -->
+              <div v-if="isFuture" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-center justify-between gap-3 shadow-inner">
+                 <div class="flex items-center gap-3">
+                   <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-[#007F92] border border-slate-200 shrink-0">
+                     <CalendarClock class="w-4 h-4" />
+                   </div>
+                   <div class="text-left">
+                     <h4 class="text-[11px] font-black text-slate-700 leading-tight">Aviso en Telegram Programado</h4>
+                     <p class="text-[9px] font-bold text-slate-500 mt-0.5">Si se autoriza, se enviará a la hora del pase.</p>
+                   </div>
+                 </div>
+                 <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                   <input type="checkbox" v-model="form.scheduleTg" class="sr-only peer">
+                   <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#007F92]"></div>
+                 </label>
+              </div>
               
               <div class="flex flex-col gap-4">
                 <button 
@@ -473,7 +490,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -530,6 +547,14 @@ const isFormComplete = computed(() => {
      if (!form.shiftDate || !form.shiftStart || !form.shiftEnd) return false;
   }
   return true;
+})
+
+const isFuture = computed(() => {
+  if (!form.date) return false;
+  const dateStr = dayjs(form.date).format('YYYY-MM-DD');
+  const timeStr = form.time || '08:00';
+  const dt = dayjs(`${dateStr} ${timeStr}`);
+  return dt.isAfter(dayjs());
 })
 
 const getScenarioIcon = (iconName) => {
@@ -708,7 +733,8 @@ const form = reactive({
   tipoPermiso: '',
   shiftDate: '',
   shiftStart: '',
-  shiftEnd: ''
+  shiftEnd: '',
+  scheduleTg: true
 })
 
 watch([() => form.shiftDate, () => form.shiftStart, () => form.shiftEnd], ([d, s, e]) => {
@@ -737,7 +763,7 @@ function selectScenario(scenario) {
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
     imss: '', tipoIncapacidad: 'Enfermedad general',
     optInAuthorizer: false, authorizerPhone: '',
-    tipoPermiso: '', shiftDate: '', shiftStart: '', shiftEnd: ''
+    tipoPermiso: '', shiftDate: '', shiftStart: '', shiftEnd: '', scheduleTg: true
   })
   
   if (window.innerWidth < 1280) {
@@ -871,7 +897,8 @@ async function submitPass(autoAuthorize = false) {
           tipoIncapacidad: form.tipoIncapacidad,
           tipoPermiso: form.tipoPermiso,
           evidence: evidenceUrl,
-          autoAuthorize
+          autoAuthorize,
+          scheduleTg: form.scheduleTg
         }
       })
     ))

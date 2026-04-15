@@ -12,7 +12,7 @@ dayjs.extend(timezone)
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
-  const { action } = body
+  const { action, scheduleTg } = body
   
   if (!id || !action) {
     throw createError({ statusCode: 400, message: 'Faltan parámetros requeridos.' })
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
        const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
        
        await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = ? WHERE id = ?`, [newStatus, actingName, nowTzStr, id])
-       await dispatchNotificationsForPass(Number(id))
+       await dispatchNotificationsForPass(Number(id), { scheduleTg })
        return { success: true }
     }
 
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 403, message: 'No se permite reenviar notificaciones de un pase que ya ha sido resuelto o anulado.' })
       }
       await db.execute(`UPDATE hr_entries SET sync_request = 0 WHERE id = ?`, [id])
-      await dispatchNotificationsForPass(Number(id))
+      await dispatchNotificationsForPass(Number(id), { scheduleTg: false })
       return { success: true }
     } 
     
@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 403, message: 'Operación denegada. No se puede anular un pase que ya ha sido resuelto por los responsables.' })
       }
       await db.execute(`UPDATE hr_entries SET status = 'cancelado' WHERE id = ?`, [id])
-      await dispatchNotificationsForPass(Number(id))
+      await dispatchNotificationsForPass(Number(id), { scheduleTg: false })
       return { success: true }
     }
 

@@ -12,7 +12,7 @@ dayjs.extend(timezone)
 export default defineEventHandler(async (event) => {
   const tokenUrl = getRouterParam(event, 'token')
   const body = await readBody(event)
-  const { action, rToken } = body
+  const { action, rToken, scheduleTg } = body
 
   if (!tokenUrl || !['authorize', 'reject'].includes(action)) {
     throw createError({ statusCode: 400, message: 'Petición inválida.' })
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
     
     await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = ? WHERE id = ?`, [newStatus, actingUser, nowTzStr, pass.id])
-    await dispatchNotificationsForPass(pass.id)
+    await dispatchNotificationsForPass(pass.id, { scheduleTg })
     
     return { success: true, status: newStatus }
   } catch (error: any) {

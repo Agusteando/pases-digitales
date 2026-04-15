@@ -4,6 +4,12 @@ import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-
 import { sendWhatsAppMessage } from '~/server/utils/whatsappModule'
 import { signRecipientToken } from '~/server/utils/token'
 import { useRuntimeConfig } from '#imports'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 const toWhatsAppChatId = (phone: string) => {
   if (phone.includes('@')) return phone
@@ -12,7 +18,7 @@ const toWhatsAppChatId = (phone: string) => {
   return `${cleaned}@c.us`
 }
 
-export async function dispatchNotificationsForPass(passId: number) {
+export async function dispatchNotificationsForPass(passId: number, options: { scheduleTg?: boolean } = {}) {
   const db = useDB()
   const config = useRuntimeConfig()
 
@@ -51,20 +57,47 @@ export async function dispatchNotificationsForPass(passId: number) {
 
   const tgMessage = `${statusIcon} ${statusTitle}\n${categoryName} de *${pass.employee_name}*${tipoPermisoMsg}${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
 
+  let tgTriggerAt: string | undefined = undefined;
+  if (options.scheduleTg && isAuthorized) {
+    const passDateStr = typeof pass.date === 'string' ? pass.date.split('T')[0] : dayjs(pass.date).format('YYYY-MM-DD');
+    const passTimeStr = pass.time || '08:00:00';
+    const triggerDate = dayjs.tz(`${passDateStr} ${passTimeStr}`, 'America/Mexico_City');
+    if (triggerDate.isAfter(dayjs.tz('America/Mexico_City'))) {
+      tgTriggerAt = triggerDate.toISOString();
+    }
+  }
+
   try {
-    await $fetch('https://tgbot.casitaapps.com/sendMessages', {
-      method: 'POST',
-      body: {
-        chatId: [telegramGlobalId],
-        message: tgMessage,
-        parse_mode: 'Markdown',
-        disable_notification: false
-      }
-    })
-    await db.execute(
-      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
-      [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
-    )
+    if (tgTriggerAt) {
+      await $fetch('https://tgbot.casitaapps.com/scheduleMessage', {
+        method: 'POST',
+        body: {
+          chatId: [telegramGlobalId],
+          message: tgMessage,
+          triggerAt: tgTriggerAt,
+          parse_mode: 'Markdown',
+          disable_notification: false
+        }
+      })
+      await db.execute(
+        'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+        [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram (Programado para ${dayjs(tgTriggerAt).format('DD/MM/YY HH:mm')})`]
+      )
+    } else {
+      await $fetch('https://tgbot.casitaapps.com/sendMessages', {
+        method: 'POST',
+        body: {
+          chatId: [telegramGlobalId],
+          message: tgMessage,
+          parse_mode: 'Markdown',
+          disable_notification: false
+        }
+      })
+      await db.execute(
+        'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+        [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
+      )
+    }
   } catch (e: any) {
     await db.execute(
       'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
