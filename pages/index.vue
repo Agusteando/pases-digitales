@@ -484,13 +484,36 @@
       @cancel="onSetupCancelled"
       @completed="onSetupCompleted"
     />
+
+    <!-- Modal de Pase Duplicado -->
+    <div v-if="duplicatePassInfo" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+      <div class="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-300 border border-white/50 relative overflow-hidden text-center p-8">
+        <div class="w-16 h-16 bg-brand-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-5 border border-brand-100 shadow-sm">
+          <AlertCircle class="w-8 h-8 text-brand-600" />
+        </div>
+        <h3 class="text-xl font-black text-slate-900 tracking-tight mb-3">Aviso</h3>
+        <p class="text-sm font-bold text-slate-600 leading-relaxed mb-8">
+          Ya tienes un pase, si quieres reenviar la notificación haz click aquí:
+        </p>
+        <div class="flex flex-col gap-3">
+          <button @click="resendDuplicateNotification" :disabled="isResendingDuplicate" class="w-full py-3.5 bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white text-sm font-black rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 outline-none">
+            <Loader2 v-if="isResendingDuplicate" class="w-4 h-4 animate-spin" />
+            <Send v-else class="w-4 h-4" />
+            <span>Reenviar notificación</span>
+          </button>
+          <button @click="cancelDuplicate" class="w-full py-3.5 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 text-sm font-black rounded-xl transition-all shadow-sm hover:shadow-md outline-none">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import dayjs from 'dayjs'
-import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock, AlertCircle } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -516,6 +539,9 @@ const activeScenario = ref(null)
 const isSubmitting = ref(false)
 const showDestino = ref(false)
 const evidenceFile = ref(null)
+
+const duplicatePassInfo = ref(null)
+const isResendingDuplicate = ref(false)
 
 const checkingCoverage = ref(false)
 const coverageQueue = ref([])
@@ -878,8 +904,8 @@ async function submitPass(autoAuthorize = false) {
       }
     }
 
-    await Promise.all((selectedEmployees.value || []).map(emp => 
-      $fetch('/api/passes', {
+    for (const emp of (selectedEmployees.value || [])) {
+      await $fetch('/api/passes', {
         method: 'POST',
         body: { 
           employeeName: emp.name, 
@@ -901,7 +927,7 @@ async function submitPass(autoAuthorize = false) {
           scheduleTg: form.scheduleTg
         }
       })
-    ))
+    }
     
     resetFlow();
     clearEvidence();
@@ -909,9 +935,36 @@ async function submitPass(autoAuthorize = false) {
     refreshNuxtData() 
   } catch(e) {
     console.error('Error', e)
-    alert('Hubo un problema al registrar la solicitud.')
+    const msg = e.response?._data?.message || '';
+    if (e.response?.status === 409 && msg.startsWith('DUPLICATE_CONSECUTIVE:')) {
+       const existingPassId = msg.split(':')[1];
+       duplicatePassInfo.value = { passId: existingPassId };
+    } else {
+       alert('Hubo un problema al registrar la solicitud.')
+    }
   } finally {
     isSubmitting.value = false
   }
+}
+
+const resendDuplicateNotification = async () => {
+  if (!duplicatePassInfo.value) return;
+  isResendingDuplicate.value = true;
+  try {
+    await $fetch(`/api/passes/${duplicatePassInfo.value.passId}/notify`, { method: 'POST' });
+    alert('Notificación reenviada exitosamente.');
+    duplicatePassInfo.value = null;
+    resetFlow();
+    clearEvidence();
+    refreshNuxtData();
+  } catch(e) {
+    alert(e?.response?._data?.message || 'Error al reenviar notificación.');
+  } finally {
+    isResendingDuplicate.value = false;
+  }
+}
+
+const cancelDuplicate = () => {
+   duplicatePassInfo.value = null;
 }
 </script>

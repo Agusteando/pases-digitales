@@ -44,6 +44,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'No se permite registrar pases con fechas en el pasado.' })
   }
 
+  // Prevenir duplicación consecutiva por colaborador
+  const [lastGlobal]: any = await db.execute('SELECT id, employee_name FROM hr_entries ORDER BY id DESC LIMIT 1')
+  if (lastGlobal.length > 0 && lastGlobal[0].employee_name === employeeName) {
+    throw createError({ 
+      statusCode: 409, 
+      message: `DUPLICATE_CONSECUTIVE:${lastGlobal[0].id}`
+    })
+  }
+
   const mysqlDate = dateObj.format('YYYY-MM-DD 00:00:00')
   const mysqlEndDate = endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
   
