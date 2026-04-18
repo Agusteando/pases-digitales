@@ -26,17 +26,21 @@
       </div>
 
       <div class="w-full md:w-1/4 space-y-2">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Calendar class="w-3 h-3" /> Desde
-        </label>
+        <div class="flex items-center justify-between">
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <Calendar class="w-3 h-3" /> Desde
+          </label>
+          <!-- Botón de Navegación Rápida (Solo Admins) -->
+          <button v-if="isAdmin && periodosData?.ultimo_completo" @click="togglePeriod" type="button" class="text-[9px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-800 transition-colors flex items-center gap-1 outline-none bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded-md shadow-sm border border-brand-100/50">
+            <History class="w-2.5 h-2.5" /> {{ isShowingPrevious ? 'Actual' : 'Anterior' }}
+          </button>
+        </div>
         <input type="date" v-model="fechaInicio" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
-      <div class="w-full md:w-1/4 space-y-2 group">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 cursor-default relative w-fit">
+      <div class="w-full md:w-1/4 space-y-2">
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <Calendar class="w-3 h-3" /> Hasta
-          <!-- Hidden Admin Button -->
-          <div v-if="isAdmin && periodosData?.ultimo_completo" @click="setPreviousPeriod" class="absolute -right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-slate-300 opacity-0 group-hover:opacity-100 hover:bg-brand-500 transition-all cursor-pointer" title="Anterior"></div>
         </label>
         <input type="date" v-model="fechaFin" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
@@ -128,7 +132,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash } from 'lucide-vue-next'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, History, Hash } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { user } = useAuth()
@@ -143,6 +147,7 @@ const selectedPlantel = ref('')
 const fechaInicio = ref('')
 const fechaFin = ref('')
 
+const isShowingPrevious = ref(false)
 const previewData = ref(null)
 const pendingPreview = ref(false)
 const isExporting = ref(false)
@@ -150,7 +155,7 @@ const isExporting = ref(false)
 const isFormValid = computed(() => selectedPlantel.value && fechaInicio.value && fechaFin.value)
 
 watch(periodosData, (newVal) => {
-  if (newVal?.periodo_actual && !fechaInicio.value) {
+  if (newVal?.periodo_actual && !isShowingPrevious.value) {
     fechaInicio.value = newVal.periodo_actual.fecha_inicio
     fechaFin.value = newVal.periodo_actual.fecha_fin
   }
@@ -163,10 +168,19 @@ onMounted(() => {
   }, 1000)
 })
 
-const setPreviousPeriod = () => {
-  if (periodosData.value?.ultimo_completo) {
-    fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
-    fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
+const togglePeriod = () => {
+  if (!periodosData.value) return
+  
+  if (isShowingPrevious.value) {
+    fechaInicio.value = periodosData.value.periodo_actual.fecha_inicio
+    fechaFin.value = periodosData.value.periodo_actual.fecha_fin
+    isShowingPrevious.value = false
+  } else {
+    if (periodosData.value.ultimo_completo) {
+      fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
+      fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
+      isShowingPrevious.value = true
+    }
   }
 }
 
