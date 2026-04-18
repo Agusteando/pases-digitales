@@ -2,8 +2,8 @@
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full flex flex-col relative z-10">
     <header class="mb-8 shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Matriz de Asistencia Diaria</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Cruce y consolidación de asistencia, omisiones y justificaciones operativas.</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Asistencia</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Reportes</p>
       </div>
     </header>
 
@@ -15,34 +15,28 @@
           <Building2 class="w-3 h-3" /> Plantel
         </label>
         
-        <!-- Vista para Administrador de Plantel (Bloqueada) -->
         <div v-if="!isAdmin && authPlanteles.length > 0" class="w-full px-4 py-3 bg-white/40 border border-white rounded-xl text-sm font-black text-slate-600 shadow-sm cursor-not-allowed">
           {{ selectedPlantel }}
         </div>
         
-        <!-- Vista para Administrador Global (Dropdown) -->
         <select v-else v-model="selectedPlantel" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm cursor-pointer text-slate-800">
-          <option value="" disabled>Selecciona el plantel destino...</option>
+          <option value="" disabled>Selecciona...</option>
           <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
         </select>
       </div>
 
       <div class="w-full md:w-1/4 space-y-2">
-        <div class="flex items-center justify-between">
-          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-            <Calendar class="w-3 h-3" /> Desde
-          </label>
-          <!-- Botón Oculto de Navegación Rápida (Solo Admins Globales) -->
-          <button v-if="isAdmin && periodosData?.ultimo_completo" @click="togglePeriod" type="button" class="text-[9px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-800 transition-colors flex items-center gap-1 outline-none bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded-md shadow-sm border border-brand-100/50" :title="isShowingPrevious ? 'Volver al periodo activo' : 'Cargar el último periodo de nómina cerrado'">
-            <History class="w-2.5 h-2.5" /> {{ isShowingPrevious ? 'Actual' : 'Anterior' }}
-          </button>
-        </div>
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+          <Calendar class="w-3 h-3" /> Desde
+        </label>
         <input type="date" v-model="fechaInicio" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
-      <div class="w-full md:w-1/4 space-y-2">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+      <div class="w-full md:w-1/4 space-y-2 group">
+        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 cursor-default relative w-fit">
           <Calendar class="w-3 h-3" /> Hasta
+          <!-- Hidden Admin Button -->
+          <div v-if="isAdmin && periodosData?.ultimo_completo" @click="setPreviousPeriod" class="absolute -right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-slate-300 opacity-0 group-hover:opacity-100 hover:bg-brand-500 transition-all cursor-pointer" title="Anterior"></div>
         </label>
         <input type="date" v-model="fechaFin" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
@@ -51,7 +45,7 @@
          <button @click="loadPreview" :disabled="!isFormValid || pendingPreview" class="w-full md:w-auto px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition-all outline-none flex items-center justify-center gap-2">
            <Loader2 v-if="pendingPreview" class="w-4 h-4 animate-spin text-white/80" />
            <Search v-else class="w-4 h-4 text-white/80" />
-           <span>Vista Previa</span>
+           <span>Consultar</span>
          </button>
       </div>
     </div>
@@ -59,51 +53,49 @@
     <!-- Preview & Export Module -->
     <div class="glass-panel rounded-[2.5rem] flex-1 flex flex-col overflow-hidden min-h-[400px] border border-white shadow-sm relative z-10">
        
-       <!-- Internal Header -->
        <div class="px-6 py-5 border-b border-white/60 bg-white/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
          <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
             <FileSpreadsheet class="w-4 h-4 text-brand-500" />
-            Población y Período Validado
+            Resultados
          </h3>
          
          <button @click="exportReport" :disabled="!previewData || isExporting" class="px-6 py-3 bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white font-black text-xs rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all outline-none flex items-center justify-center gap-2">
            <Loader2 v-if="isExporting" class="w-4 h-4 animate-spin text-white/80" />
            <Download v-else class="w-4 h-4 text-white/80" />
-           <span>Descargar Matriz (Excel)</span>
+           <span>Descargar</span>
          </button>
        </div>
 
-       <!-- Table Content (Styled like a Spreadsheet) -->
        <div class="flex-1 overflow-auto custom-scrollbar p-0 bg-slate-50/50">
          
          <div v-if="pendingPreview" class="flex flex-col items-center justify-center h-full py-20 text-slate-400">
            <Loader2 class="w-12 h-12 animate-spin mb-4 text-brand-500" />
-           <p class="text-sm font-black text-slate-700">Procesando matriz en el motor Kardex externo...</p>
-           <p class="text-[10px] font-bold uppercase tracking-widest mt-1">Dependiendo del tamaño de la nómina, esto puede demorar unos segundos.</p>
+           <p class="text-sm font-black text-slate-700">Cargando</p>
+           <p class="text-[10px] font-bold uppercase tracking-widest mt-1">Espera</p>
          </div>
          
          <div v-else-if="!previewData" class="flex flex-col items-center justify-center h-full py-20 text-slate-400">
             <Search class="w-14 h-14 mb-4 opacity-20" />
-            <p class="text-sm font-black text-slate-700">Esperando parámetros de extracción</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">Selecciona el plantel y las fechas para consultar los datos.</p>
+            <p class="text-sm font-black text-slate-700">Filtros</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">Selecciona</p>
          </div>
          
          <div v-else-if="previewData.empleados?.length === 0" class="flex flex-col items-center justify-center h-full py-20 text-slate-400">
             <FileX class="w-14 h-14 mb-4 opacity-20" />
-            <p class="text-sm font-black text-slate-700">Sin hallazgos operativos</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">No se encontraron registros de asistencia para este periodo en el plantel.</p>
+            <p class="text-sm font-black text-slate-700">Vacío</p>
+            <p class="text-[10px] font-bold uppercase tracking-widest mt-1">Cero</p>
          </div>
          
          <table v-else class="w-full text-left border-collapse whitespace-nowrap bg-white text-sm">
             <thead class="bg-slate-100/80 sticky top-0 backdrop-blur-xl z-10 shadow-sm">
               <tr class="text-slate-500 text-[10px] uppercase tracking-widest font-black border-b-2 border-slate-200">
                 <th class="px-4 py-3 border-r border-slate-200 w-12 text-center text-slate-400"><Hash class="w-3 h-3 mx-auto" /></th>
-                <th class="px-4 py-3 border-r border-slate-200">ID / Nómina</th>
-                <th class="px-4 py-3 border-r border-slate-200">Colaborador</th>
-                <th class="px-4 py-3 border-r border-slate-200 text-center">Faltas Injust.</th>
+                <th class="px-4 py-3 border-r border-slate-200">Nómina</th>
+                <th class="px-4 py-3 border-r border-slate-200">Empleado</th>
+                <th class="px-4 py-3 border-r border-slate-200 text-center">Faltas</th>
                 <th class="px-4 py-3 border-r border-slate-200 text-center">Retardos</th>
-                <th class="px-4 py-3 border-r border-slate-200 text-center">Min. Descuento</th>
-                <th class="px-4 py-3 text-center">Días Registrados</th>
+                <th class="px-4 py-3 border-r border-slate-200 text-center">Minutos</th>
+                <th class="px-4 py-3 text-center">Días</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -112,7 +104,7 @@
                 <td class="px-4 py-3 border-r border-slate-100 font-mono text-xs font-bold text-slate-500">{{ emp.identidad?.numero_nomina || emp.identidad?.numero_empleado || emp.identidad?.id_empleado || '---' }}</td>
                 <td class="px-4 py-3 border-r border-slate-100">
                   <p class="text-sm font-black text-slate-800 tracking-tight">{{ emp.identidad?.nombre || 'Desconocido' }}</p>
-                  <p class="text-[10px] font-bold text-slate-400 mt-0.5">{{ emp.identidad?.curp || 'CURP no disponible' }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 mt-0.5">{{ emp.identidad?.curp || '---' }}</p>
                 </td>
                 <td class="px-4 py-3 border-r border-slate-100 text-center bg-slate-50/50 group-hover:bg-transparent">
                   <span class="text-sm font-black" :class="emp.kpis?.unjFaltas > 0 ? 'text-casita-red' : 'text-slate-300'">{{ emp.kpis?.unjFaltas || 0 }}</span>
@@ -121,7 +113,7 @@
                   <span class="text-sm font-black" :class="emp.kpis?.unjRetardos > 0 ? 'text-casita-peach' : 'text-slate-300'">{{ emp.kpis?.unjRetardos || 0 }}</span>
                 </td>
                 <td class="px-4 py-3 border-r border-slate-100 text-center bg-slate-50/50 group-hover:bg-transparent">
-                  <span class="text-sm font-black" :class="emp.kpis?.unjMins > 0 ? 'text-slate-700' : 'text-slate-300'">{{ emp.kpis?.unjMins || 0 }}m</span>
+                  <span class="text-sm font-black" :class="emp.kpis?.unjMins > 0 ? 'text-slate-700' : 'text-slate-300'">{{ emp.kpis?.unjMins || 0 }}</span>
                 </td>
                 <td class="px-4 py-3 text-center">
                   <span class="text-sm font-black" :class="(emp.enrichedKardex?.length || 0) > 0 ? 'text-casita-green-dark' : 'text-slate-300'">{{ emp.enrichedKardex?.length || 0 }}</span>
@@ -136,7 +128,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, History, Hash } from 'lucide-vue-next'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { user } = useAuth()
@@ -151,22 +143,19 @@ const selectedPlantel = ref('')
 const fechaInicio = ref('')
 const fechaFin = ref('')
 
-const isShowingPrevious = ref(false)
 const previewData = ref(null)
 const pendingPreview = ref(false)
 const isExporting = ref(false)
 
 const isFormValid = computed(() => selectedPlantel.value && fechaInicio.value && fechaFin.value)
 
-// Motor para inicializar fechas basado en la respuesta del motor de periodos
 watch(periodosData, (newVal) => {
-  if (newVal?.periodo_actual && !isShowingPrevious.value) {
+  if (newVal?.periodo_actual && !fechaInicio.value) {
     fechaInicio.value = newVal.periodo_actual.fecha_inicio
     fechaFin.value = newVal.periodo_actual.fecha_fin
   }
 }, { immediate: true })
 
-// Fallback por si la red retrasa mucho la asignación inicial
 onMounted(() => {
   setTimeout(() => {
     if (!fechaInicio.value) fechaInicio.value = dayjs().subtract(15, 'day').format('YYYY-MM-DD')
@@ -174,24 +163,13 @@ onMounted(() => {
   }, 1000)
 })
 
-// Función UX para Administradores: Intercalar Rápido entre Cortes de Nómina
-const togglePeriod = () => {
-  if (!periodosData.value) return
-  
-  if (isShowingPrevious.value) {
-    fechaInicio.value = periodosData.value.periodo_actual.fecha_inicio
-    fechaFin.value = periodosData.value.periodo_actual.fecha_fin
-    isShowingPrevious.value = false
-  } else {
-    if (periodosData.value.ultimo_completo) {
-      fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
-      fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
-      isShowingPrevious.value = true
-    }
+const setPreviousPeriod = () => {
+  if (periodosData.value?.ultimo_completo) {
+    fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
+    fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
   }
 }
 
-// Asignación automática del Plantel según el Rol
 watch([isAdmin, authPlanteles, plantelesList], () => {
   if (!selectedPlantel.value) {
     if (!isAdmin.value && authPlanteles.value.length > 0) {
@@ -202,7 +180,6 @@ watch([isAdmin, authPlanteles, plantelesList], () => {
   }
 })
 
-// Seguridad estricta en el Front: Bloqueo para usuarios no autorizados
 watch([user, profile], () => {
   if (user.value && profile.value) {
     if (!isAdmin.value && authPlanteles.value.length === 0) {
@@ -227,8 +204,8 @@ const loadPreview = async () => {
     })
     previewData.value = data
   } catch (e) {
-    console.error('Error al generar la vista previa', e)
-    alert(e.data?.message || 'Ocurrió un error de comunicación con el motor de reportes.')
+    console.error('Error', e)
+    alert(e.data?.message || 'Error')
   } finally {
     pendingPreview.value = false
   }
@@ -246,19 +223,15 @@ const exportReport = async () => {
       fecha_fin: fechaFin.value
     })
     
-    // El fetch atrapa el archivo binario del proxy local
     const response = await fetch(`/api/reports/export?${queryParams.toString()}`)
     
     if (!response.ok) {
-       const err = await response.json().catch(() => ({}))
-       throw new Error(err.message || 'El motor externo rechazó la solicitud de descarga.')
+       throw new Error('Error')
     }
     
     const blob = await response.blob()
     
-    // Tratamos de respetar el nombre de archivo dictado por el backend FastAPI, 
-    // de lo contrario caemos en el nombre estructurado por defecto.
-    let filename = `Reporte_Matricial_${selectedPlantel.value.replace(/\s+/g, '_')}_${fechaInicio.value}.xlsx`
+    let filename = `Reporte_${selectedPlantel.value.replace(/\s+/g, '_')}_${fechaInicio.value}.xlsx`
     const disposition = response.headers.get('Content-Disposition')
     
     if (disposition && disposition.includes('filename=')) {
@@ -280,8 +253,8 @@ const exportReport = async () => {
     window.URL.revokeObjectURL(url)
     
   } catch (e) {
-    console.error('Error al exportar la matriz de asistencia', e)
-    alert(e.message || 'Fallo inesperado al descargar el archivo Excel.')
+    console.error('Error', e)
+    alert(e.message || 'Error')
   } finally {
     isExporting.value = false
   }
