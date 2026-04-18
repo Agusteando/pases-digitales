@@ -8,7 +8,7 @@
     </header>
 
     <!-- Filters Panel -->
-    <div class="glass-panel p-6 rounded-[2rem] mb-6 shrink-0 shadow-sm border border-white flex flex-col md:flex-row items-end gap-5">
+    <div class="glass-panel p-6 rounded-[2rem] mb-6 shrink-0 shadow-sm border border-white flex flex-col md:flex-row items-end gap-5 relative z-20">
       
       <div class="w-full md:w-1/3 space-y-2">
         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -28,9 +28,15 @@
       </div>
 
       <div class="w-full md:w-1/4 space-y-2">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Calendar class="w-3 h-3" /> Desde
-        </label>
+        <div class="flex items-center justify-between">
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <Calendar class="w-3 h-3" /> Desde
+          </label>
+          <!-- Botón Oculto de Navegación Rápida (Solo Admins Globales) -->
+          <button v-if="isAdmin && periodosData?.ultimo_completo" @click="togglePeriod" type="button" class="text-[9px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-800 transition-colors flex items-center gap-1 outline-none bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded-md shadow-sm border border-brand-100/50" :title="isShowingPrevious ? 'Volver al periodo activo' : 'Cargar el último periodo de nómina cerrado'">
+            <History class="w-2.5 h-2.5" /> {{ isShowingPrevious ? 'Actual' : 'Anterior' }}
+          </button>
+        </div>
         <input type="date" v-model="fechaInicio" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
@@ -51,7 +57,7 @@
     </div>
 
     <!-- Preview & Export Module -->
-    <div class="glass-panel rounded-[2.5rem] flex-1 flex flex-col overflow-hidden min-h-[400px] border border-white shadow-sm relative">
+    <div class="glass-panel rounded-[2.5rem] flex-1 flex flex-col overflow-hidden min-h-[400px] border border-white shadow-sm relative z-10">
        
        <!-- Internal Header -->
        <div class="px-6 py-5 border-b border-white/60 bg-white/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
@@ -67,8 +73,8 @@
          </button>
        </div>
 
-       <!-- Table Content -->
-       <div class="flex-1 overflow-auto custom-scrollbar p-0 bg-white/20">
+       <!-- Table Content (Styled like a Spreadsheet) -->
+       <div class="flex-1 overflow-auto custom-scrollbar p-0 bg-slate-50/50">
          
          <div v-if="pendingPreview" class="flex flex-col items-center justify-center h-full py-20 text-slate-400">
            <Loader2 class="w-12 h-12 animate-spin mb-4 text-brand-500" />
@@ -88,33 +94,37 @@
             <p class="text-[10px] font-bold uppercase tracking-widest mt-1">No se encontraron registros de asistencia para este periodo en el plantel.</p>
          </div>
          
-         <table v-else class="w-full text-left border-collapse whitespace-nowrap">
-            <thead class="bg-white/70 sticky top-0 backdrop-blur-xl z-10 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-              <tr class="text-slate-500 text-[10px] uppercase tracking-widest font-black border-b border-slate-200/60">
-                <th class="px-6 py-5">Colaborador</th>
-                <th class="px-6 py-5 text-center">Faltas Injustificadas</th>
-                <th class="px-6 py-5 text-center">Retardos</th>
-                <th class="px-6 py-5 text-center">Min. de Descuento</th>
-                <th class="px-6 py-5 text-center">Días de Registro</th>
+         <table v-else class="w-full text-left border-collapse whitespace-nowrap bg-white text-sm">
+            <thead class="bg-slate-100/80 sticky top-0 backdrop-blur-xl z-10 shadow-sm">
+              <tr class="text-slate-500 text-[10px] uppercase tracking-widest font-black border-b-2 border-slate-200">
+                <th class="px-4 py-3 border-r border-slate-200 w-12 text-center text-slate-400"><Hash class="w-3 h-3 mx-auto" /></th>
+                <th class="px-4 py-3 border-r border-slate-200">ID / Nómina</th>
+                <th class="px-4 py-3 border-r border-slate-200">Colaborador</th>
+                <th class="px-4 py-3 border-r border-slate-200 text-center">Faltas Injust.</th>
+                <th class="px-4 py-3 border-r border-slate-200 text-center">Retardos</th>
+                <th class="px-4 py-3 border-r border-slate-200 text-center">Min. Descuento</th>
+                <th class="px-4 py-3 text-center">Días Registrados</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-white/50">
-              <tr v-for="(emp, i) in previewData.empleados" :key="i" class="hover:bg-white/50 transition-colors">
-                <td class="px-6 py-4">
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="(emp, i) in previewData.empleados" :key="i" class="hover:bg-brand-50/30 transition-colors group">
+                <td class="px-4 py-3 border-r border-slate-100 text-center text-xs font-black text-slate-300 group-hover:text-brand-400">{{ i + 1 }}</td>
+                <td class="px-4 py-3 border-r border-slate-100 font-mono text-xs font-bold text-slate-500">{{ emp.identidad?.numero_nomina || emp.identidad?.numero_empleado || emp.identidad?.id_empleado || '---' }}</td>
+                <td class="px-4 py-3 border-r border-slate-100">
                   <p class="text-sm font-black text-slate-800 tracking-tight">{{ emp.identidad?.nombre || 'Desconocido' }}</p>
-                  <p class="text-[10px] font-bold text-slate-500 mt-0.5">{{ emp.identidad?.curp || 'CURP no disponible' }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 mt-0.5">{{ emp.identidad?.curp || 'CURP no disponible' }}</p>
                 </td>
-                <td class="px-6 py-4 text-center">
-                  <span class="text-sm font-black" :class="emp.kpis?.unjFaltas > 0 ? 'text-casita-red' : 'text-slate-400'">{{ emp.kpis?.unjFaltas || 0 }}</span>
+                <td class="px-4 py-3 border-r border-slate-100 text-center bg-slate-50/50 group-hover:bg-transparent">
+                  <span class="text-sm font-black" :class="emp.kpis?.unjFaltas > 0 ? 'text-casita-red' : 'text-slate-300'">{{ emp.kpis?.unjFaltas || 0 }}</span>
                 </td>
-                <td class="px-6 py-4 text-center">
-                  <span class="text-sm font-black" :class="emp.kpis?.unjRetardos > 0 ? 'text-casita-peach' : 'text-slate-400'">{{ emp.kpis?.unjRetardos || 0 }}</span>
+                <td class="px-4 py-3 border-r border-slate-100 text-center bg-slate-50/50 group-hover:bg-transparent">
+                  <span class="text-sm font-black" :class="emp.kpis?.unjRetardos > 0 ? 'text-casita-peach' : 'text-slate-300'">{{ emp.kpis?.unjRetardos || 0 }}</span>
                 </td>
-                <td class="px-6 py-4 text-center">
-                  <span class="text-sm font-black" :class="emp.kpis?.unjMins > 0 ? 'text-slate-700' : 'text-slate-400'">{{ emp.kpis?.unjMins || 0 }}m</span>
+                <td class="px-4 py-3 border-r border-slate-100 text-center bg-slate-50/50 group-hover:bg-transparent">
+                  <span class="text-sm font-black" :class="emp.kpis?.unjMins > 0 ? 'text-slate-700' : 'text-slate-300'">{{ emp.kpis?.unjMins || 0 }}m</span>
                 </td>
-                <td class="px-6 py-4 text-center">
-                  <span class="text-sm font-black text-casita-green-dark">{{ emp.enrichedKardex?.length || 0 }}</span>
+                <td class="px-4 py-3 text-center">
+                  <span class="text-sm font-black" :class="(emp.enrichedKardex?.length || 0) > 0 ? 'text-casita-green-dark' : 'text-slate-300'">{{ emp.enrichedKardex?.length || 0 }}</span>
                 </td>
               </tr>
             </tbody>
@@ -125,26 +135,61 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar } from 'lucide-vue-next'
+import { ref, computed, watch, onMounted } from 'vue'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, History, Hash } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { user } = useAuth()
 const { data: profile } = useFetch('/api/auth/profile')
 const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
+const { data: periodosData } = useFetch('https://kardex.casitaapps.com/api/periodos')
 
 const isAdmin = computed(() => user.value?.is_admin || false)
 const authPlanteles = computed(() => profile.value?.admonPlanteles || [])
 
 const selectedPlantel = ref('')
-const fechaInicio = ref(dayjs().subtract(15, 'day').format('YYYY-MM-DD'))
-const fechaFin = ref(dayjs().format('YYYY-MM-DD'))
+const fechaInicio = ref('')
+const fechaFin = ref('')
 
+const isShowingPrevious = ref(false)
 const previewData = ref(null)
 const pendingPreview = ref(false)
 const isExporting = ref(false)
 
 const isFormValid = computed(() => selectedPlantel.value && fechaInicio.value && fechaFin.value)
+
+// Motor para inicializar fechas basado en la respuesta del motor de periodos
+watch(periodosData, (newVal) => {
+  if (newVal?.periodo_actual && !isShowingPrevious.value) {
+    fechaInicio.value = newVal.periodo_actual.fecha_inicio
+    fechaFin.value = newVal.periodo_actual.fecha_fin
+  }
+}, { immediate: true })
+
+// Fallback por si la red retrasa mucho la asignación inicial
+onMounted(() => {
+  setTimeout(() => {
+    if (!fechaInicio.value) fechaInicio.value = dayjs().subtract(15, 'day').format('YYYY-MM-DD')
+    if (!fechaFin.value) fechaFin.value = dayjs().format('YYYY-MM-DD')
+  }, 1000)
+})
+
+// Función UX para Administradores: Intercalar Rápido entre Cortes de Nómina
+const togglePeriod = () => {
+  if (!periodosData.value) return
+  
+  if (isShowingPrevious.value) {
+    fechaInicio.value = periodosData.value.periodo_actual.fecha_inicio
+    fechaFin.value = periodosData.value.periodo_actual.fecha_fin
+    isShowingPrevious.value = false
+  } else {
+    if (periodosData.value.ultimo_completo) {
+      fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
+      fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
+      isShowingPrevious.value = true
+    }
+  }
+}
 
 // Asignación automática del Plantel según el Rol
 watch([isAdmin, authPlanteles, plantelesList], () => {
