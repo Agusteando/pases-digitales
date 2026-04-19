@@ -30,8 +30,8 @@
           <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
             <Calendar class="w-3 h-3" /> Desde
           </label>
-          <!-- Botones de Navegación Rápida -->
-          <div class="flex items-center gap-1.5" v-if="periodosData">
+          <!-- Botones de Navegación Rápida & Ajuste -->
+          <div class="flex items-center gap-1.5" v-if="periodosData && !pendingPeriodos">
             <button @click="setPeriod('corte')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1 rounded-md shadow-sm border"
               :class="activePeriod === 'corte' ? 'bg-brand-100 text-brand-800 border-brand-200' : 'bg-white text-slate-500 hover:text-brand-600 border-slate-200'">
               Último Corte
@@ -40,10 +40,19 @@
               :class="activePeriod === 'actual' ? 'bg-brand-100 text-brand-800 border-brand-200' : 'bg-white text-slate-500 hover:text-brand-600 border-slate-200'">
               Actual
             </button>
+            
+            <!-- Botón de Ajuste (Sobrescribe la última fecha de corte en el backend) -->
+            <div class="relative overflow-hidden flex items-center justify-center rounded-md shadow-sm border transition-colors cursor-pointer" 
+                 :class="activePeriod === 'ajuste' ? 'bg-brand-100 border-brand-200 text-brand-800' : 'bg-white border-slate-200 text-slate-500 hover:text-brand-600'">
+               <button type="button" class="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 outline-none px-2 py-1 pointer-events-none">
+                 <Settings2 class="w-3 h-3" /> Ajustar
+               </button>
+               <input type="date" v-model="customCorteInput" @change="applyCustomCorte" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" title="Forzar fecha de corte atípica" />
+            </div>
           </div>
           <div v-else-if="pendingPeriodos" class="flex items-center gap-1.5 px-2">
-            <Loader2 class="w-3.5 h-3.5 animate-spin text-slate-400" />
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Calculando...</span>
+            <Loader2 class="w-3 h-3 animate-spin text-brand-500" />
+            <span class="text-[9px] font-bold text-brand-600 uppercase tracking-widest">Calculando...</span>
           </div>
         </div>
         <input type="date" v-model="fechaInicio" @change="activePeriod = 'custom'" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
@@ -142,8 +151,25 @@
 </template>
 
 <script setup>
+/**
+ * DOCUMENTACIÓN DE INTEGRACIÓN KARDEX:
+ * 
+ * Este módulo (Reportes) interactúa con la API externa del Motor Kardex para extraer y 
+ * cruzar incidencias de asistencia. Las peticiones son las siguientes:
+ * 
+ * 1. GET /api/kardex/periodos (Proxy a https://kardex.casitaapps.com/api/periodos)
+ *    - OBJETIVO: Obtener la configuración predictiva de periodos para establecer las fechas.
+ *    - PARAM: `ultima_fecha_corte` (Opcional): Permite inyectar manualmente un cierre atípico.
+ * 
+ * 2. GET /api/reports/preview (Proxy a https://kardex.casitaapps.com/api/crossover/plantel/...)
+ *    - OBJETIVO: Cargar en pantalla el cruce de incidencias y pases.
+ * 
+ * 3. GET /api/reports/export (Proxy a https://kardex.casitaapps.com/api/report2/export/plantel/...)
+ *    - OBJETIVO: Retornar el archivo matriz Excel final por descarga binaria en el navegador.
+ */
+
 import { ref, computed, watch } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash } from 'lucide-vue-next'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2 } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { user } = useAuth()
@@ -158,20 +184,33 @@ const fechaInicio = ref('')
 const fechaFin = ref('')
 
 const activePeriod = ref('actual')
+const customCorteInput = ref('')
+const customCorteQuery = ref('')
 
-// Hacemos proxy a nuestro propio backend para evitar bloqueos por CORS en CSR.
+// Llamada reactiva. Si `customCorteQuery` cambia, Nuxt re-evalúa y solicita datos de inmediato.
 const { data: periodosData, pending: pendingPeriodos } = useFetch('/api/kardex/periodos', { 
-  lazy: true 
+  lazy: true,
+  query: computed(() => {
+    const q = {}
+    if (customCorteQuery.value) q.ultima_fecha_corte = customCorteQuery.value
+    return q
+  })
 })
 
-// Este watcher reacciona de inmediato cuando la respuesta llega del backend.
-// Si el selector base está renderizado, muta los valores automáticamente de forma visible.
+// Accionada por el "Ajustar". Automáticamente dispara a pendingPeriodos y bloquea la interfaz en "Calculando".
+const applyCustomCorte = () => {
+  if (!customCorteInput.value) return
+  activePeriod.value = 'ajuste'
+  customCorteQuery.value = customCorteInput.value
+}
+
+// Este watcher reacciona apenas la respuesta (re-calculada o no) aterriza desde el servidor.
 watch(periodosData, (newVal) => {
   if (newVal) {
     if (activePeriod.value === 'actual' && newVal.periodo_actual) {
       fechaInicio.value = newVal.periodo_actual.fecha_inicio
       fechaFin.value = newVal.periodo_actual.fecha_fin
-    } else if (activePeriod.value === 'corte' && newVal.ultimo_completo) {
+    } else if ((activePeriod.value === 'corte' || activePeriod.value === 'ajuste') && newVal.ultimo_completo) {
       fechaInicio.value = newVal.ultimo_completo.fecha_inicio
       fechaFin.value = newVal.ultimo_completo.fecha_fin
     }
@@ -180,7 +219,7 @@ watch(periodosData, (newVal) => {
 
 watch(pendingPeriodos, (isPending) => {
   if (!isPending && !periodosData.value && (!fechaInicio.value || !fechaFin.value)) {
-    // Fallback de seguridad en caso de que la API de Kardex caiga
+    // Fallback de seguridad local
     fechaInicio.value = dayjs().subtract(15, 'day').format('YYYY-MM-DD')
     fechaFin.value = dayjs().format('YYYY-MM-DD')
   }
@@ -188,6 +227,13 @@ watch(pendingPeriodos, (isPending) => {
 
 const setPeriod = (type) => {
   activePeriod.value = type
+  
+  // Limpiamos el ajuste manual para que se usen las reglas de inferencia automáticas en Kardex
+  if (type === 'actual' || type === 'corte') {
+    customCorteQuery.value = ''
+    customCorteInput.value = ''
+  }
+  
   if (!periodosData.value) return
   
   if (type === 'actual' && periodosData.value.periodo_actual) {
