@@ -30,19 +30,30 @@
           <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
             <Calendar class="w-3 h-3" /> Desde
           </label>
-          <!-- Botón de Navegación Rápida (Solo Admins) -->
-          <button v-if="isAdmin && periodosData?.ultimo_completo" @click="togglePeriod" type="button" class="text-[9px] font-black uppercase tracking-widest text-brand-600 hover:text-brand-800 transition-colors flex items-center gap-1 outline-none bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded-md shadow-sm border border-brand-100/50">
-            <History class="w-2.5 h-2.5" /> {{ isShowingPrevious ? 'Actual' : 'Anterior' }}
-          </button>
+          <!-- Botones de Navegación Rápida -->
+          <div class="flex items-center gap-1.5" v-if="periodosData">
+            <button @click="setPeriod('corte')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1 rounded-md shadow-sm border"
+              :class="activePeriod === 'corte' ? 'bg-brand-100 text-brand-800 border-brand-200' : 'bg-white text-slate-500 hover:text-brand-600 border-slate-200'">
+              Último Corte
+            </button>
+            <button @click="setPeriod('actual')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1 rounded-md shadow-sm border"
+              :class="activePeriod === 'actual' ? 'bg-brand-100 text-brand-800 border-brand-200' : 'bg-white text-slate-500 hover:text-brand-600 border-slate-200'">
+              Actual
+            </button>
+          </div>
+          <div v-else-if="pendingPeriodos" class="flex items-center gap-1.5 px-2">
+            <Loader2 class="w-3.5 h-3.5 animate-spin text-slate-400" />
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Calculando...</span>
+          </div>
         </div>
-        <input type="date" v-model="fechaInicio" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
+        <input type="date" v-model="fechaInicio" @change="activePeriod = 'custom'" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
       <div class="w-full md:w-1/4 space-y-2">
         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <Calendar class="w-3 h-3" /> Hasta
         </label>
-        <input type="date" v-model="fechaFin" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
+        <input type="date" v-model="fechaFin" @change="activePeriod = 'custom'" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
       <div class="w-full md:w-auto flex items-center gap-3">
@@ -131,14 +142,34 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, History, Hash } from 'lucide-vue-next'
+/**
+ * DOCUMENTACIÓN DE INTEGRACIÓN KARDEX:
+ * 
+ * Este módulo (Reportes) interactúa con la API externa del Motor Kardex para extraer y 
+ * cruzar incidencias de asistencia. Las peticiones son las siguientes:
+ * 
+ * 1. GET https://kardex.casitaapps.com/api/periodos (Vía useFetch)
+ *    - OBJETIVO: Obtener la configuración operativa de fechas ("Periodo Actual" y "Último Corte") 
+ *      para rellenar automáticamente los inputs de fecha (DatePicker) apenas cargue la página,
+ *      evitando que el administrador calcule los cortes de nómina a mano.
+ * 
+ * 2. GET /api/reports/preview (Proxy interno hacia https://kardex.casitaapps.com/api/crossover/plantel/...)
+ *    - OBJETIVO: Solicitar la matriz JSON procesada por el motor Kardex. El motor calcula las 
+ *      omisiones de checada, retardos, y cruza esta información en vivo con los pases digitales 
+ *      autorizados para el plantel y fechas seleccionadas.
+ * 
+ * 3. GET /api/reports/export (Proxy binario hacia https://kardex.casitaapps.com/api/report2/export/plantel/...)
+ *    - OBJETIVO: Generar y descargar el archivo matriz Excel (.xlsx) definitivo, retornando un 
+ *      ReadableStream binario para entregarlo al navegador de forma segura con cabeceras de Content-Disposition.
+ */
+
+import { ref, computed, watch } from 'vue'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { user } = useAuth()
 const { data: profile } = useFetch('/api/auth/profile')
 const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
-const { data: periodosData } = useFetch('https://kardex.casitaapps.com/api/periodos')
 
 const isAdmin = computed(() => user.value?.is_admin || false)
 const authPlanteles = computed(() => profile.value?.admonPlanteles || [])
@@ -147,42 +178,50 @@ const selectedPlantel = ref('')
 const fechaInicio = ref('')
 const fechaFin = ref('')
 
-const isShowingPrevious = ref(false)
+const activePeriod = ref('actual')
+
+const { data: periodosData, pending: pendingPeriodos } = useFetch('https://kardex.casitaapps.com/api/periodos', { 
+  lazy: true,
+  server: false 
+})
+
+watch(periodosData, (newVal) => {
+  if (newVal) {
+    if (activePeriod.value === 'actual' && newVal.periodo_actual) {
+      fechaInicio.value = newVal.periodo_actual.fecha_inicio
+      fechaFin.value = newVal.periodo_actual.fecha_fin
+    } else if (activePeriod.value === 'corte' && newVal.ultimo_completo) {
+      fechaInicio.value = newVal.ultimo_completo.fecha_inicio
+      fechaFin.value = newVal.ultimo_completo.fecha_fin
+    }
+  }
+}, { immediate: true })
+
+watch(pendingPeriodos, (isPending) => {
+  if (!isPending && !periodosData.value && (!fechaInicio.value || !fechaFin.value)) {
+    fechaInicio.value = dayjs().subtract(15, 'day').format('YYYY-MM-DD')
+    fechaFin.value = dayjs().format('YYYY-MM-DD')
+  }
+})
+
+const setPeriod = (type) => {
+  activePeriod.value = type
+  if (!periodosData.value) return
+  
+  if (type === 'actual' && periodosData.value.periodo_actual) {
+    fechaInicio.value = periodosData.value.periodo_actual.fecha_inicio
+    fechaFin.value = periodosData.value.periodo_actual.fecha_fin
+  } else if (type === 'corte' && periodosData.value.ultimo_completo) {
+    fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
+    fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
+  }
+}
+
 const previewData = ref(null)
 const pendingPreview = ref(false)
 const isExporting = ref(false)
 
 const isFormValid = computed(() => selectedPlantel.value && fechaInicio.value && fechaFin.value)
-
-watch(periodosData, (newVal) => {
-  if (newVal?.periodo_actual && !isShowingPrevious.value) {
-    fechaInicio.value = newVal.periodo_actual.fecha_inicio
-    fechaFin.value = newVal.periodo_actual.fecha_fin
-  }
-}, { immediate: true })
-
-onMounted(() => {
-  setTimeout(() => {
-    if (!fechaInicio.value) fechaInicio.value = dayjs().subtract(15, 'day').format('YYYY-MM-DD')
-    if (!fechaFin.value) fechaFin.value = dayjs().format('YYYY-MM-DD')
-  }, 1000)
-})
-
-const togglePeriod = () => {
-  if (!periodosData.value) return
-  
-  if (isShowingPrevious.value) {
-    fechaInicio.value = periodosData.value.periodo_actual.fecha_inicio
-    fechaFin.value = periodosData.value.periodo_actual.fecha_fin
-    isShowingPrevious.value = false
-  } else {
-    if (periodosData.value.ultimo_completo) {
-      fechaInicio.value = periodosData.value.ultimo_completo.fecha_inicio
-      fechaFin.value = periodosData.value.ultimo_completo.fecha_fin
-      isShowingPrevious.value = true
-    }
-  }
-}
 
 watch([isAdmin, authPlanteles, plantelesList], () => {
   if (!selectedPlantel.value) {
