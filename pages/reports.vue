@@ -30,30 +30,27 @@
           <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
             <Calendar class="w-3 h-3" /> Desde
           </label>
-          <!-- Botones de Navegación Rápida & Ajuste -->
+          <!-- Botones de Navegación Rápida & Ajuste Manual -->
           <div class="flex items-center gap-1.5" v-if="periodosData && !pendingPeriodos">
-            <button @click="setPeriod('corte')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1 rounded-md shadow-sm border"
+            <button @click="setPeriod('corte')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1.5 rounded-md shadow-sm border"
               :class="activePeriod === 'corte' ? 'bg-brand-100 text-brand-800 border-brand-200' : 'bg-white text-slate-500 hover:text-brand-600 border-slate-200'">
               Último Corte
             </button>
-            <button @click="setPeriod('actual')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1 rounded-md shadow-sm border"
+            <button @click="setPeriod('actual')" type="button" class="text-[9px] font-black uppercase tracking-widest transition-colors flex items-center outline-none px-2 py-1.5 rounded-md shadow-sm border"
               :class="activePeriod === 'actual' ? 'bg-brand-100 text-brand-800 border-brand-200' : 'bg-white text-slate-500 hover:text-brand-600 border-slate-200'">
               Actual
             </button>
             
-            <!-- Botón de Ajuste (Override Manual Invisible) -->
-            <div class="relative overflow-hidden flex items-center justify-center rounded-md shadow-sm border transition-colors cursor-pointer" 
-                 :class="activePeriod === 'ajuste' ? 'bg-brand-100 border-brand-200 text-brand-800' : 'bg-white border-slate-200 text-slate-500 hover:text-brand-600'">
-               <button type="button" class="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 outline-none px-2 py-1 pointer-events-none">
-                 <CalendarClock v-if="activePeriod === 'ajuste'" class="w-3 h-3" />
-                 <Settings2 v-else class="w-3 h-3" />
-                 {{ activePeriod === 'ajuste' && customCorteInput ? 'Fijado: ' + formatShortDate(customCorteInput) : 'Ajustar' }}
-               </button>
-               <input type="date" v-model="customCorteInput" @change="applyCustomCorte" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" title="Forzar fecha de corte atípica" />
-            </div>
+            <!-- Botón de Ajuste (Dispara Modal de Configuración) -->
+            <button @click="openAjusteModal" type="button" class="text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-1 outline-none px-2 py-1.5 rounded-md shadow-sm border"
+              :class="activePeriod === 'ajuste' ? 'bg-brand-100 border-brand-200 text-brand-800' : 'bg-white border-slate-200 text-slate-500 hover:text-brand-600'">
+              <CalendarClock v-if="activePeriod === 'ajuste'" class="w-3 h-3 text-brand-600" />
+              <Settings2 v-else class="w-3 h-3" />
+              {{ activePeriod === 'ajuste' && customCorteQuery ? 'Fijado: ' + formatShortDate(customCorteQuery) : 'Ajustar' }}
+            </button>
           </div>
           <div v-else-if="pendingPeriodos" class="flex items-center gap-1.5 px-2">
-            <Loader2 class="w-3 h-3 animate-spin text-brand-500" />
+            <Loader2 class="w-3.5 h-3.5 animate-spin text-brand-500" />
             <span class="text-[9px] font-bold text-brand-600 uppercase tracking-widest">Calculando...</span>
           </div>
         </div>
@@ -149,6 +146,46 @@
          </table>
        </div>
     </div>
+
+    <!-- Modals Overlay / Intentional UX -> Ajuste Manual de Periodo -->
+    <div v-if="showAjusteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+      <div class="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-300 border border-white/50 relative overflow-hidden">
+        
+        <header class="px-8 py-6 border-b border-white/60 bg-white/40 flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-black text-slate-900 tracking-tight">Ajuste de Corte</h3>
+            <p class="text-xs font-bold text-slate-500 mt-1">Sobrescribir límite del periodo</p>
+          </div>
+          <button @click="closeAjusteModal" class="text-slate-400 hover:text-slate-700 bg-white shadow-sm hover:shadow-md p-2.5 rounded-full transition-all focus:outline-none border border-slate-100">
+            <X class="w-4 h-4" />
+          </button>
+        </header>
+
+        <div class="p-8 space-y-6">
+          <div class="bg-brand-50 border border-brand-100 p-4 rounded-2xl flex items-start gap-3">
+            <Settings2 class="w-5 h-5 text-brand-600 mt-0.5 shrink-0" />
+            <p class="text-xs font-medium text-brand-800 leading-relaxed">
+              Selecciona una fecha específica para obligar al motor predictivo a calcular el periodo usando este límite exacto.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Nueva Fecha de Corte</label>
+            <input type="date" v-model="tempAjusteDate" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm font-bold text-slate-900 transition-all bg-white/70 shadow-inner" />
+          </div>
+        </div>
+
+        <footer class="px-8 py-6 bg-white/60 border-t border-white/80 flex justify-end gap-3">
+          <button @click="closeAjusteModal" class="px-6 py-3 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all outline-none border border-transparent hover:border-slate-200 shadow-sm">
+            Cancelar
+          </button>
+          <button @click="applyAjusteModal" :disabled="!tempAjusteDate" class="px-6 py-3 bg-slate-900 text-white font-black text-sm rounded-xl shadow-md hover:bg-slate-800 disabled:opacity-50 transition-all outline-none">
+            Aplicar y Recalcular
+          </button>
+        </footer>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -171,7 +208,7 @@
  */
 
 import { ref, computed, watch } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2, CalendarClock } from 'lucide-vue-next'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2, CalendarClock, X } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 
@@ -189,12 +226,31 @@ const fechaInicio = ref('')
 const fechaFin = ref('')
 
 const activePeriod = ref('actual')
-const customCorteInput = ref('')
 const customCorteQuery = ref('')
+
+// Modal UX State
+const showAjusteModal = ref(false)
+const tempAjusteDate = ref('')
+
+const openAjusteModal = () => {
+  tempAjusteDate.value = customCorteQuery.value || dayjs().format('YYYY-MM-DD')
+  showAjusteModal.value = true
+}
+
+const closeAjusteModal = () => {
+  showAjusteModal.value = false
+}
+
+const applyAjusteModal = () => {
+  if (!tempAjusteDate.value) return
+  activePeriod.value = 'ajuste'
+  customCorteQuery.value = tempAjusteDate.value
+  showAjusteModal.value = false
+}
 
 const formatShortDate = (d) => dayjs(d).format('DD MMM')
 
-// Llamada reactiva. Si `customCorteQuery` cambia, Nuxt re-evalúa y solicita datos de inmediato.
+// Llamada reactiva. Si `customCorteQuery` cambia (por medio del Modal), Nuxt re-evalúa y solicita datos de inmediato.
 const { data: periodosData, pending: pendingPeriodos } = useFetch('/api/kardex/periodos', { 
   lazy: true,
   query: computed(() => {
@@ -203,13 +259,6 @@ const { data: periodosData, pending: pendingPeriodos } = useFetch('/api/kardex/p
     return q
   })
 })
-
-// Accionada por el "Ajustar". Automáticamente dispara a pendingPeriodos y bloquea la interfaz en "Calculando".
-const applyCustomCorte = () => {
-  if (!customCorteInput.value) return
-  activePeriod.value = 'ajuste'
-  customCorteQuery.value = customCorteInput.value
-}
 
 // Este watcher reacciona apenas la respuesta (re-calculada o no) aterriza desde el servidor.
 watch(periodosData, (newVal) => {
@@ -238,7 +287,6 @@ const setPeriod = (type) => {
   // Limpiamos el ajuste manual para que se usen las reglas de inferencia automáticas en Kardex
   if (type === 'actual' || type === 'corte') {
     customCorteQuery.value = ''
-    customCorteInput.value = ''
   }
   
   if (!periodosData.value) return
