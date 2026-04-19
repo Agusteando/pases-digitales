@@ -41,11 +41,13 @@
               Actual
             </button>
             
-            <!-- Botón de Ajuste (Sobrescribe la última fecha de corte en el backend) -->
+            <!-- Botón de Ajuste (Override Manual Invisible) -->
             <div class="relative overflow-hidden flex items-center justify-center rounded-md shadow-sm border transition-colors cursor-pointer" 
                  :class="activePeriod === 'ajuste' ? 'bg-brand-100 border-brand-200 text-brand-800' : 'bg-white border-slate-200 text-slate-500 hover:text-brand-600'">
                <button type="button" class="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 outline-none px-2 py-1 pointer-events-none">
-                 <Settings2 class="w-3 h-3" /> Ajustar
+                 <CalendarClock v-if="activePeriod === 'ajuste'" class="w-3 h-3" />
+                 <Settings2 v-else class="w-3 h-3" />
+                 {{ activePeriod === 'ajuste' && customCorteInput ? 'Fijado: ' + formatShortDate(customCorteInput) : 'Ajustar' }}
                </button>
                <input type="date" v-model="customCorteInput" @change="applyCustomCorte" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" title="Forzar fecha de corte atípica" />
             </div>
@@ -169,8 +171,11 @@
  */
 
 import { ref, computed, watch } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2 } from 'lucide-vue-next'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2, CalendarClock } from 'lucide-vue-next'
 import dayjs from 'dayjs'
+import 'dayjs/locale/es'
+
+dayjs.locale('es')
 
 const { user } = useAuth()
 const { data: profile } = useFetch('/api/auth/profile')
@@ -186,6 +191,8 @@ const fechaFin = ref('')
 const activePeriod = ref('actual')
 const customCorteInput = ref('')
 const customCorteQuery = ref('')
+
+const formatShortDate = (d) => dayjs(d).format('DD MMM')
 
 // Llamada reactiva. Si `customCorteQuery` cambia, Nuxt re-evalúa y solicita datos de inmediato.
 const { data: periodosData, pending: pendingPeriodos } = useFetch('/api/kardex/periodos', { 
