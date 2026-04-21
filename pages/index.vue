@@ -1,3 +1,5 @@
+## pages/index.vue
+
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     
@@ -107,7 +109,7 @@
              <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verificando responsables...</p>
           </div>
           
-          <div v-else-if="!currentCoverageTask && (selectedEmployees || []).length > 0" class="mt-6 pt-6 border-t border-white/60 flex flex-col">
+          <div ref="step2Ref" v-else-if="!currentCoverageTask && (selectedEmployees || []).length > 0" class="mt-6 pt-6 border-t border-white/60 flex flex-col">
             <div class="flex items-center gap-4 mb-5">
               <div class="w-10 h-10 rounded-full flex items-center justify-center text-base font-black shadow-md shrink-0 bg-gradient-to-br from-[#1AA8BC] to-[#007F92] text-white border border-[#0D94A6] shadow-[#007F92]/20">
                 2
@@ -507,11 +509,29 @@
         </div>
       </div>
     </div>
+
+    <!-- One-time Disclaimer Toast -->
+    <div v-if="showDisclaimer" class="fixed bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 z-[100] px-4 w-full max-w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-500">
+      <div class="bg-slate-900/95 backdrop-blur-xl p-5 rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] border border-slate-700/80 flex flex-col gap-4 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#007F92] to-[#5fb4a9]"></div>
+        <div class="flex items-start gap-3.5 text-white mt-1">
+          <div class="w-8 h-8 rounded-full bg-[#007F92]/20 flex items-center justify-center shrink-0 border border-[#007F92]/30">
+            <Info class="w-4 h-4 text-[#5fb4a9]" />
+          </div>
+          <p class="text-sm font-bold leading-relaxed pt-1.5 text-slate-100 tracking-wide">
+            Este tipo de pase no justifica cambios de horario
+          </p>
+        </div>
+        <button @click="dismissDisclaimer" class="w-full py-3 bg-white/10 hover:bg-white/20 transition-all rounded-xl text-[11px] font-black text-white outline-none uppercase tracking-widest active:scale-[0.98]">
+          Entiendo que este pase no justificará cambios de horario
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
 import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock, AlertCircle } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
@@ -547,7 +567,25 @@ const checkingCoverage = ref(false)
 const coverageQueue = ref([])
 const verifiedPlanteles = ref(new Set())
 
+const step2Ref = ref(null)
+const showDisclaimer = ref(false)
+const disclaimerCookie = useCookie('hide_schedule_disclaimer', { maxAge: 60 * 60 * 24 * 365 })
+let disclaimerTimeout = null
+
 const currentCoverageTask = computed(() => (coverageQueue.value || [])[0] || null)
+
+const isStep2Visible = computed(() => !checkingCoverage.value && !currentCoverageTask.value && (selectedEmployees.value || []).length > 0)
+
+watch(isStep2Visible, async (visible) => {
+  if (visible) {
+    await nextTick()
+    setTimeout(() => {
+      if (step2Ref.value) {
+        step2Ref.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 150)
+  }
+})
 
 const getEmpKey = (e) => e.ClaveUnica || e.curp || e.name;
 
@@ -773,10 +811,10 @@ watch([() => form.date, () => form.endDate, () => form.horarioEntrada, () => for
 })
 
 const predefinedScenarios = [
-  { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
-  { id: 'llegada', title: 'Llegada tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
-  { id: 'falta', title: 'Ausencia', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
   { id: 'cambio', title: 'Cambio de horario', icon: 'Clock', categoryId: 4, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
+  { id: 'llegada', title: 'Llegada tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
+  { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
+  { id: 'falta', title: 'Ausencia', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
   { id: 'imss', title: 'Incapacidad médica', icon: 'Stethoscope', categoryId: 5, needsTime: false, canReturn: false, needsEndDate: true, isMedical: true }
 ]
 
@@ -796,6 +834,22 @@ function selectScenario(scenario) {
   if (window.innerWidth < 1280) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  if ((scenario.categoryId === 1 || scenario.categoryId === 2) && !disclaimerCookie.value) {
+    showDisclaimer.value = true
+    if (disclaimerTimeout) clearTimeout(disclaimerTimeout)
+    disclaimerTimeout = setTimeout(() => {
+      dismissDisclaimer()
+    }, 8000)
+  } else {
+    showDisclaimer.value = false
+  }
+}
+
+function dismissDisclaimer() {
+  showDisclaimer.value = false
+  disclaimerCookie.value = 'true'
+  if (disclaimerTimeout) clearTimeout(disclaimerTimeout)
 }
 
 function isBirthday(emp) {
