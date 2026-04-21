@@ -1,3 +1,5 @@
+
+
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser, sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-engine'
@@ -39,6 +41,15 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
 
+  const isCambioHorario = pass.category_id === 4;
+  const cambioHorarioMsg = isCambioHorario && pass.horario_entrada && pass.horario_salida 
+    ? `\n⏰ *Nuevo Horario:* ${pass.horario_entrada} a ${pass.horario_salida}` 
+    : '';
+  const endDateFormatted = pass.fecha_fin ? new Date(pass.fecha_fin).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  const dateRangeMsg = isCambioHorario 
+    ? `Vigencia: ${formattedDate} al ${endDateFormatted || formattedDate}` 
+    : `Fecha: ${formattedDate}`;
+
   const tipoPermisoMsg = pass.tipo_permiso ? `\nTipo de permiso: ${pass.tipo_permiso}` : ''
   const motivoMsg = pass.comentarios ? ` con motivo: ${pass.comentarios}` : ''
   const returnMessage = pass.hora_regreso ? ` Se espera su regreso al plantel a las ${pass.hora_regreso}.` : ''
@@ -55,18 +66,20 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
   else if (isRejected) { statusIcon = '❌'; statusTitle = 'Pase Rechazado'; }
   else if (isCancelled) { statusIcon = '🚫'; statusTitle = 'Pase Anulado'; }
 
-  const tgMessage = `${statusIcon} ${statusTitle}\n${categoryName} de *${pass.employee_name}*${tipoPermisoMsg}${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*`
+  const tgMessage = `${statusIcon} ${statusTitle}\n${categoryName} de *${pass.employee_name}*${tipoPermisoMsg}${cambioHorarioMsg}${motivoMsg}${returnMessage}\n${dateRangeMsg}${timeMsg && !isCambioHorario ? timeMsg : ''} - Folio *${paddedId}*`
 
   let tgTriggerAt: string | undefined = undefined;
   if (options.scheduleTg && isAuthorized) {
-    // Database dates might be fetched as "YYYY-MM-DD HH:mm:ss". We strictly extract just the date part.
     const passDateStr = typeof pass.date === 'string' ? pass.date.substring(0, 10) : dayjs(pass.date).format('YYYY-MM-DD');
     let passTimeStr = pass.time ? String(pass.time).trim() : '08:00:00';
+    
+    if (isCambioHorario && pass.horario_entrada) {
+      passTimeStr = String(pass.horario_entrada).trim();
+    }
     
     // Normalize to proper ISO time component (HH:mm:ss)
     if (passTimeStr.length === 5) passTimeStr += ':00';
     
-    // Use proper ISO standard 'T' separator to prevent native engine parsing crashes
     const triggerDate = dayjs.tz(`${passDateStr}T${passTimeStr}`, 'America/Mexico_City');
     
     if (triggerDate.isValid() && triggerDate.isAfter(dayjs().tz('America/Mexico_City'))) {
@@ -198,7 +211,7 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
       const chatId = toWhatsAppChatId(target.phone)
       if (chatId && chatId.length > 10) {
         
-        const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${tipoPermisoMsg}${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
+        const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${tipoPermisoMsg}${cambioHorarioMsg}${motivoMsg}${returnMessage}\n${dateRangeMsg}${timeMsg && !isCambioHorario ? timeMsg : ''} - Folio *${paddedId}*\n\nHola ${target.name.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
 
         try {
           const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
@@ -231,7 +244,8 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
-              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>
+              ${isCambioHorario ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Vigencia:</strong><br><span style="color: #0f172a; font-weight: 600;">Del ${formattedDate} al ${endDateFormatted || formattedDate}</span></p>
+              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Nuevo Horario:</strong><br><span style="color: #0f172a; font-weight: 600;">${pass.horario_entrada} a ${pass.horario_salida}</span></p>` : `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>`}
               ${pass.tipo_permiso ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Tipo de Permiso:</strong><br><span style="color: #0f172a;">${pass.tipo_permiso}</span></p>` : ''}
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
               ${(isAuthorized || isRejected) && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${isAuthorized ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${isAuthorized ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${isAuthorized ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}

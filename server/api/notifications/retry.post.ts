@@ -1,3 +1,5 @@
+
+
 import { useDB } from '~/server/utils/db'
 import { sendWhatsAppMessage } from '~/server/utils/whatsappModule'
 import { sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
@@ -44,6 +46,15 @@ export default defineEventHandler(async (event) => {
     const motivoMsg = pass.comentarios ? ` con motivo: ${pass.comentarios}` : ''
     const timeMsg = pass.time ? ` - Hora: ${pass.time}` : ''
 
+    const isCambioHorario = pass.category_id === 4;
+    const cambioHorarioMsg = isCambioHorario && pass.horario_entrada && pass.horario_salida 
+      ? `\n⏰ *Nuevo Horario:* ${pass.horario_entrada} a ${pass.horario_salida}` 
+      : '';
+    const endDateFormatted = pass.fecha_fin ? new Date(pass.fecha_fin).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const dateRangeMsg = isCambioHorario 
+      ? `Vigencia: ${formattedDate} al ${endDateFormatted || formattedDate}` 
+      : `Fecha: ${formattedDate}`;
+
     let headerTitle = `*Solicitud de Autorización (Recordatorio)* ⚠️`
     let actionPhrase = `tienes esta solicitud pendiente de autorización. Por favor, revísala y resuélvela mediante este enlace seguro:`
     let emailSubject = `Recordatorio: Solicitud #${paddedId} requiere atención`
@@ -71,7 +82,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (isWhatsApp) {
-      const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${tipoPermisoMsg}${motivoMsg}${returnMessage}\nFecha: ${formattedDate}${timeMsg} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
+      const waMessage = `${headerTitle}\n\n${categoryName} para *${pass.employee_name}*${tipoPermisoMsg}${cambioHorarioMsg}${motivoMsg}${returnMessage}\n${dateRangeMsg}${timeMsg && !isCambioHorario ? timeMsg : ''} - Folio *${paddedId}*\n\nHola ${targetName.split(' ')[0]}, ${actionPhrase}\n${targetAuthUrl}`
 
       try {
         const response = await sendWhatsAppMessage({ chatId: log.chat_id, message: waMessage })
@@ -95,7 +106,8 @@ export default defineEventHandler(async (event) => {
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
-              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>
+              ${isCambioHorario ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Vigencia:</strong><br><span style="color: #0f172a; font-weight: 600;">Del ${formattedDate} al ${endDateFormatted || formattedDate}</span></p>
+              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Nuevo Horario:</strong><br><span style="color: #0f172a; font-weight: 600;">${pass.horario_entrada} a ${pass.horario_salida}</span></p>` : `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>`}
               ${pass.tipo_permiso ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Tipo de Permiso:</strong><br><span style="color: #0f172a;">${pass.tipo_permiso}</span></p>` : ''}
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
               ${(isAuthorized || isRejected) && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${isAuthorized ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${isAuthorized ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${isAuthorized ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}

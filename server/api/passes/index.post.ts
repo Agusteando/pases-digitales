@@ -1,3 +1,5 @@
+
+
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
@@ -30,7 +32,8 @@ export default defineEventHandler(async (event) => {
 
   const { 
     employeeName, curp, ingressioId, categoryId, date, endDate, time, comentarios, 
-    plantel, regreso, horaRegreso, imss, tipoIncapacidad, tipoPermiso, autoAuthorize, scheduleTg
+    plantel, regreso, horaRegreso, imss, tipoIncapacidad, tipoPermiso, autoAuthorize, scheduleTg,
+    horarioEntrada, horarioSalida
   } = body
 
   // Anclaje de evaluación temporal a zona local para prevenir inserciones con saltos de día por UTC
@@ -64,8 +67,8 @@ export default defineEventHandler(async (event) => {
   
   const sql = `
     INSERT INTO hr_entries 
-    (user, employee_name, curp, ingressioId, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, tipo_permiso, authorized_by, authorized_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)
+    (user, employee_name, curp, ingressioId, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, tipo_permiso, authorized_by, authorized_at, horario_entrada, horario_salida) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
   `
   
   try {
@@ -88,7 +91,9 @@ export default defineEventHandler(async (event) => {
       categoryId === 5 ? tipoIncapacidad : null,
       tipoPermiso || null,
       authorizedBy,
-      authorizedAt
+      authorizedAt,
+      horarioEntrada || null,
+      horarioSalida || null
     ])
 
     await dispatchNotificationsForPass(result.insertId, { scheduleTg })

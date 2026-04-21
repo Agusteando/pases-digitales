@@ -1,3 +1,5 @@
+
+
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import dayjs from 'dayjs'
@@ -64,7 +66,7 @@ export default defineEventHandler(async (event) => {
 
     const sql = `
       UPDATE hr_entries
-      SET date = ?, fecha_fin = ?, time = ?, comentarios = ?, category_id = ?, plantel = ?, regreso = ?, hora_regreso = ?, IMSS = ?, tipo_incapacidad = ?, tipo_permiso = ?
+      SET date = ?, fecha_fin = ?, time = ?, comentarios = ?, category_id = ?, plantel = ?, regreso = ?, hora_regreso = ?, IMSS = ?, tipo_incapacidad = ?, tipo_permiso = ?, horario_entrada = ?, horario_salida = ?
       WHERE id = ?
     `
     await db.execute(sql, [
@@ -79,6 +81,8 @@ export default defineEventHandler(async (event) => {
        body.imss || null,
        body.tipoIncapacidad || null,
        body.tipoPermiso || null,
+       body.horarioEntrada || null,
+       body.horarioSalida || null,
        id
     ])
 

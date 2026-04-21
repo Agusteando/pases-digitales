@@ -1,3 +1,5 @@
+
+
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { defineEventHandler, createError } from '#imports'
@@ -6,7 +8,7 @@ export default defineEventHandler(async () => {
   try {
     const db = useDB()
     const [rows]: any = await db.execute(
-      `SELECT id, employee_name, date, time, category_id, status, user, plantel 
+      `SELECT id, employee_name, date, fecha_fin, time, category_id, status, user, plantel, horario_entrada, horario_salida 
        FROM hr_entries 
        ORDER BY id DESC 
        LIMIT 40`

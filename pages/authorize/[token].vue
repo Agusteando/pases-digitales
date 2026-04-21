@@ -1,3 +1,5 @@
+
+
 <template>
   <div class="min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-transparent relative overflow-hidden font-sans">
     
@@ -48,8 +50,21 @@
               <span class="text-sm font-bold text-slate-800">{{ pass.plantel }}</span>
             </div>
             <div>
-              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Fecha</span>
-              <span class="text-sm font-bold text-slate-800">{{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}</span>
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                {{ pass.category_id === 4 ? 'Vigencia' : 'Fecha' }}
+              </span>
+              <span class="text-sm font-bold text-slate-800" v-if="pass.category_id === 4">
+                Del {{ formatDate(pass.date) }} al {{ formatDate(pass.fecha_fin || pass.date) }}
+              </span>
+              <span class="text-sm font-bold text-slate-800" v-else>
+                {{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}
+              </span>
+            </div>
+            <div v-if="pass.category_id === 4" class="col-span-2">
+              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nuevo Horario</span>
+              <span class="text-sm font-bold text-slate-800 font-mono">
+                {{ pass.horario_entrada }} a {{ pass.horario_salida }}
+              </span>
             </div>
           </div>
           <div v-if="pass.tipo_permiso" class="pb-6 border-b border-slate-100">

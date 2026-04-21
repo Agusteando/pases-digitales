@@ -1,3 +1,5 @@
+
+
 <template>
   <div class="p-6 md:p-10 max-w-6xl mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     
@@ -95,16 +97,24 @@
             
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               <div class="border-l-[3px] border-casita-green-light/50 pl-4 bg-white/40 py-2 rounded-r-xl">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Desde</span>
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  {{ pass.category_id === 4 ? 'Inicio Vigencia' : 'Desde' }}
+                </span>
                 <span class="text-base font-black text-slate-800">{{ formatDateOnly(pass.date) }}</span>
               </div>
-              <div class="border-l-[3px] border-casita-peach/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="[3, 5].includes(pass.category_id)">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hasta</span>
+              <div class="border-l-[3px] border-casita-peach/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="[3, 4, 5].includes(pass.category_id)">
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  {{ pass.category_id === 4 ? 'Fin Vigencia' : 'Hasta' }}
+                </span>
                 <span class="text-base font-black text-slate-800">{{ pass.fecha_fin ? formatDateOnly(pass.fecha_fin) : 'N/A' }}</span>
               </div>
-              <div class="border-l-[3px] border-iedis-blue/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="![3].includes(pass.category_id)">
+              <div class="border-l-[3px] border-iedis-blue/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="![3, 4].includes(pass.category_id)">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hora</span>
                 <span class="text-base font-black text-slate-800 font-mono">{{ formatTime(pass.time) }}</span>
+              </div>
+              <div class="border-l-[3px] border-casita-gold/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="pass.category_id === 4">
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nuevo Horario</span>
+                <span class="text-base font-black text-slate-800 font-mono">{{ formatTime(pass.horario_entrada) }} a {{ formatTime(pass.horario_salida) }}</span>
               </div>
               <div class="border-l-[3px] border-iedis-teal/50 pl-4 bg-iedis-teal/10 py-2 rounded-r-xl" v-if="pass.regreso">
                 <span class="block text-[10px] font-black text-iedis-teal-dark uppercase tracking-widest mb-1.5">Hora de retorno</span>

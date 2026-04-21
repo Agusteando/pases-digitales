@@ -209,30 +209,30 @@
                 <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest mb-4 block w-full">Fechas y horarios</h3>
                 
                 <div v-if="activeScenario.categoryId === 4" class="space-y-4 mb-5 pb-5 border-b border-white/60">
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div class="grid grid-cols-2 gap-4">
                     <div class="space-y-1.5">
-                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fecha a cubrir</label>
-                      <input type="date" v-model="form.shiftDate" :min="todayDate" class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Nueva Entrada</label>
+                      <input type="time" v-model="form.horarioEntrada" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                     </div>
                     <div class="space-y-1.5">
-                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Inicio</label>
-                      <input type="time" v-model="form.shiftStart" class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
-                    </div>
-                    <div class="space-y-1.5">
-                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fin</label>
-                      <input type="time" v-model="form.shiftEnd" class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
+                      <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Nueva Salida</label>
+                      <input type="time" v-model="form.horarioSalida" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                     </div>
                   </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5 col-span-2 sm:col-span-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fecha de inicio</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                      {{ activeScenario.categoryId === 4 ? 'Inicio de vigencia' : 'Fecha de inicio' }}
+                    </label>
                     <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                   </div>
                   
                   <div v-if="activeScenario.needsEndDate" class="space-y-1.5 col-span-2 sm:col-span-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Fecha de término</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                      {{ activeScenario.categoryId === 4 ? 'Fin de vigencia' : 'Fecha de término' }}
+                    </label>
                     <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                   </div>
 
@@ -280,7 +280,7 @@
                   <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Tipo de permiso</label>
                   <div class="flex flex-col sm:flex-row gap-3">
                     <button 
-                      v-for="opt in ['Permiso para salir temprano', 'Permiso para llegar tarde']" :key="opt"
+                      v-for="opt in ['Permiso temporal', 'Cambio definitivo']" :key="opt"
                       type="button"
                       @click="form.tipoPermiso = form.tipoPermiso === opt ? '' : opt"
                       class="px-4 py-3.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all border outline-none flex-1 text-center shadow-sm backdrop-blur-md"
@@ -570,7 +570,7 @@ const isFormComplete = computed(() => {
   if (activeScenario.value.categoryId !== 1 && !form.comentarios) return false;
   
   if (activeScenario.value.categoryId === 4) { 
-     if (!form.shiftDate || !form.shiftStart || !form.shiftEnd) return false;
+     if (!form.horarioEntrada || !form.horarioSalida) return false;
   }
   return true;
 })
@@ -748,6 +748,8 @@ const form = reactive({
   date: todayDate,
   endDate: todayDate,
   time: '',
+  horarioEntrada: '',
+  horarioSalida: '',
   comentarios: '',
   destino: '',
   regreso: false,
@@ -757,18 +759,16 @@ const form = reactive({
   optInAuthorizer: false,
   authorizerPhone: '',
   tipoPermiso: '',
-  shiftDate: '',
-  shiftStart: '',
-  shiftEnd: '',
   scheduleTg: true
 })
 
-watch([() => form.shiftDate, () => form.shiftStart, () => form.shiftEnd], ([d, s, e]) => {
-  if (activeScenario.value?.categoryId === 4 && d && s && e) {
-    const fmtDate = dayjs(d).format('DD/MM/YYYY')
-    const fmtStart = formatAmPm(s)
-    const fmtEnd = formatAmPm(e)
-    form.comentarios = `Cubre tiempo extendido a partir del ${fmtDate} de ${fmtStart} a ${fmtEnd}`
+watch([() => form.date, () => form.endDate, () => form.horarioEntrada, () => form.horarioSalida], ([start, end, he, hs]) => {
+  if (activeScenario.value?.categoryId === 4 && start && he && hs) {
+    const fmtStartD = dayjs(start).format('DD/MM/YYYY')
+    const fmtEndD = end ? dayjs(end).format('DD/MM/YYYY') : fmtStartD
+    const fmtHE = formatAmPm(he)
+    const fmtHS = formatAmPm(hs)
+    form.comentarios = `Cambio de horario aplicable del ${fmtStartD} al ${fmtEndD}. Nuevo horario: ${fmtHE} a ${fmtHS}.`
   }
 })
 
@@ -776,7 +776,7 @@ const predefinedScenarios = [
   { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
   { id: 'llegada', title: 'Llegada tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
   { id: 'falta', title: 'Ausencia', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
-  { id: 'cambio', title: 'Cambio de horario', icon: 'Clock', categoryId: 4, needsTime: false, canReturn: false, isMedical: false },
+  { id: 'cambio', title: 'Cambio de horario', icon: 'Clock', categoryId: 4, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
   { id: 'imss', title: 'Incapacidad médica', icon: 'Stethoscope', categoryId: 5, needsTime: false, canReturn: false, needsEndDate: true, isMedical: true }
 ]
 
@@ -786,10 +786,11 @@ function selectScenario(scenario) {
   clearEvidence()
   Object.assign(form, { 
     date: todayDate, endDate: todayDate, time: '', 
+    horarioEntrada: '', horarioSalida: '',
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
     imss: '', tipoIncapacidad: 'Enfermedad general',
     optInAuthorizer: false, authorizerPhone: '',
-    tipoPermiso: '', shiftDate: '', shiftStart: '', shiftEnd: '', scheduleTg: true
+    tipoPermiso: '', scheduleTg: true
   })
   
   if (window.innerWidth < 1280) {
@@ -916,6 +917,8 @@ async function submitPass(autoAuthorize = false) {
           date: form.date,
           endDate: form.endDate,
           time: form.time,
+          horarioEntrada: form.horarioEntrada,
+          horarioSalida: form.horarioSalida,
           comentarios: form.comentarios,
           regreso: form.regreso,
           horaRegreso: form.horaRegreso,

@@ -1,3 +1,5 @@
+
+
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 
 interface SendMessagePayload {
@@ -54,11 +56,16 @@ export const buildWhatsAppTemplate = (data: any, isCancelled = false): string =>
   const cleanPlantel = cleanPlantelName(data.plantel)
   const plantelStr = cleanPlantel ? `\n🏢 *Plantel:* ${cleanPlantel}` : ''
   
+  const isCambioHorario = data.categoryId === 4;
+  const cambioHorarioMsg = isCambioHorario && data.horarioEntrada && data.horarioSalida 
+    ? `\n⏰ *Nuevo Horario:* ${data.horarioEntrada} a ${data.horarioSalida}` 
+    : '';
+
   return `🎫 *PASE DIGITAL | #${String(data.id).padStart(5, '0')}*
 ${statusMark}
 
 👤 *Colaborador:* ${data.employeeName}${plantelStr}
-📋 *Movimiento:* ${categoryStr}
-⏰ *Fecha:* ${data.date}${data.time ? ' | Hora: ' + data.time : ''}${motivoStr}
+📋 *Movimiento:* ${categoryStr}${cambioHorarioMsg}
+⏰ *Fecha:* ${data.date}${data.time && !isCambioHorario ? ' | Hora: ' + data.time : ''}${motivoStr}
 🧑‍💻 *Emitido por:* ${data.user}`;
 }

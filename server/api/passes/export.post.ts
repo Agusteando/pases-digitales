@@ -1,3 +1,5 @@
+
+
 import { defineEventHandler, readBody, createError } from '#imports'
 import { useDB } from '~/server/utils/db'
 import ExcelJS from 'exceljs'
@@ -28,6 +30,8 @@ export default defineEventHandler(async (event) => {
           h.date,
           h.fecha_fin,
           h.time, 
+          h.horario_entrada,
+          h.horario_salida,
           h.status, 
           h.plantel as sistemas_plantel,
           h.comentarios, 
@@ -72,6 +76,8 @@ export default defineEventHandler(async (event) => {
       date: entry.date,
       fin: entry.fecha_fin,
       time: entry.time,
+      horario_entrada: entry.horario_entrada,
+      horario_salida: entry.horario_salida,
       status: entry.status,
       sistemas_plantel: entry.sistemas_plantel,
       comentarios: entry.comentarios,
