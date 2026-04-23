@@ -10,25 +10,28 @@
     <!-- Filters Panel -->
     <div class="glass-panel p-6 rounded-[2rem] mb-6 shrink-0 shadow-sm border border-white flex flex-col md:flex-row items-end gap-5 relative z-20">
       
-      <div class="w-full md:w-1/3 space-y-2">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Building2 class="w-3 h-3" /> Plantel
+      <div class="w-full md:w-1/3 space-y-2 relative group">
+        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+          <Building2 class="w-4 h-4 text-brand-500" /> Plantel
         </label>
         
-        <div v-if="!isAdmin && authPlanteles.length > 0" class="w-full px-4 py-3 bg-white/40 border border-white rounded-xl text-sm font-black text-slate-600 shadow-sm cursor-not-allowed">
+        <div v-if="!isAdmin && authPlanteles.length > 0" class="w-full px-5 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm font-black text-slate-500 shadow-inner cursor-not-allowed truncate">
           {{ selectedPlantel }}
         </div>
         
-        <select v-else v-model="selectedPlantel" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm cursor-pointer text-slate-800">
-          <option value="" disabled>Selecciona...</option>
-          <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
-        </select>
+        <div v-else class="relative">
+          <select v-model="selectedPlantel" class="w-full pl-5 pr-10 py-3.5 bg-white/80 backdrop-blur-sm border border-slate-200 hover:border-brand-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 rounded-xl text-sm font-bold outline-none transition-all shadow-sm cursor-pointer text-slate-800 appearance-none">
+            <option value="" disabled>Selecciona plantel...</option>
+            <option v-for="p in plantelesList" :key="p" :value="p">{{ p }}</option>
+          </select>
+          <ChevronDown class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none group-hover:text-brand-500 transition-colors" />
+        </div>
       </div>
 
-      <div class="w-full md:w-1/4 space-y-2">
-        <div class="flex items-center justify-between">
-          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-            <Calendar class="w-3 h-3" /> Desde
+      <div class="w-full md:w-1/4 space-y-2 relative">
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+            <Calendar class="w-4 h-4 text-brand-500" /> Desde
           </label>
           <!-- Botones de Navegación Rápida & Ajuste Manual -->
           <div class="flex items-center gap-1.5" v-if="periodosData && !pendingPeriodos">
@@ -54,20 +57,20 @@
             <span class="text-[9px] font-bold text-brand-600 uppercase tracking-widest">Calculando...</span>
           </div>
         </div>
-        <input type="date" v-model="fechaInicio" @change="activePeriod = 'custom'" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
+        <input type="date" v-model="fechaInicio" @change="activePeriod = 'custom'" class="w-full px-5 py-3.5 bg-white/80 backdrop-blur-sm border border-slate-200 hover:border-brand-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
-      <div class="w-full md:w-1/4 space-y-2">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Calendar class="w-3 h-3" /> Hasta
+      <div class="w-full md:w-1/4 space-y-2 relative">
+        <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+          <Calendar class="w-4 h-4 text-brand-500" /> Hasta
         </label>
-        <input type="date" v-model="fechaFin" @change="activePeriod = 'custom'" class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm border border-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
+        <input type="date" v-model="fechaFin" @change="activePeriod = 'custom'" class="w-full px-5 py-3.5 bg-white/80 backdrop-blur-sm border border-slate-200 hover:border-brand-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-50 rounded-xl text-sm font-bold outline-none transition-all shadow-sm text-slate-800" />
       </div>
 
       <div class="w-full md:w-auto flex items-center gap-3">
-         <button @click="loadPreview" :disabled="!isFormValid || pendingPreview" class="w-full md:w-auto px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 transition-all outline-none flex items-center justify-center gap-2">
-           <Loader2 v-if="pendingPreview" class="w-4 h-4 animate-spin text-white/80" />
-           <Search v-else class="w-4 h-4 text-white/80" />
+         <button @click="loadPreview" :disabled="!isFormValid || pendingPreview" class="w-full md:w-auto px-8 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all outline-none flex items-center justify-center gap-2">
+           <Loader2 v-if="pendingPreview" class="w-5 h-5 animate-spin text-white/80" />
+           <Search v-else class="w-5 h-5 text-white/80" />
            <span>Consultar</span>
          </button>
       </div>
@@ -208,7 +211,7 @@
  */
 
 import { ref, computed, watch } from 'vue'
-import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2, CalendarClock, X } from 'lucide-vue-next'
+import { Loader2, Search, Download, FileSpreadsheet, FileX, Building2, Calendar, Hash, Settings2, CalendarClock, X, ChevronDown } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 import 'dayjs/locale/es'
 
@@ -216,7 +219,7 @@ dayjs.locale('es')
 
 const { user } = useAuth()
 const { data: profile } = useFetch('/api/auth/profile')
-const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
+const { data: plantelesList } = useFetch('/api/reports/planteles', { default: () => [] })
 
 const isAdmin = computed(() => user.value?.is_admin || false)
 const authPlanteles = computed(() => profile.value?.admonPlanteles || [])
