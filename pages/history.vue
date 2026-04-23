@@ -1,10 +1,16 @@
+## pages/history.vue
+
 <template>
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
       <div>
         <h1 class="text-3xl font-black text-slate-900 tracking-tight">Historial</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Consulta y seguimiento de pases digitales emitidos.</p>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Consulta y exportación de registros.</p>
       </div>
+      <button @click="showExportModal = true" class="px-5 py-3 bg-white/80 backdrop-blur-md border border-white text-slate-700 font-black rounded-2xl shadow-sm hover:border-brand-500 hover:text-brand-600 hover:shadow-md transition-all flex items-center justify-center gap-2 outline-none">
+        <Download class="w-5 h-5" />
+        <span>Exportar reporte</span>
+      </button>
     </header>
 
     <div class="glass-panel p-5 rounded-[2rem] mb-8 flex flex-col lg:flex-row gap-5 items-center shrink-0">
@@ -121,17 +127,20 @@
       </div>
     </div>
 
+    <PassExportModal :isOpen="showExportModal" @close="showExportModal = false" />
     <PassEditModal v-if="selectedPass" :isOpen="!!selectedPass" :pass="selectedPass" @close="selectedPass = null" @updated="search" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Edit2, Check, Loader2, Eye, Send, Trash2 } from 'lucide-vue-next'
+import { Search, Download, Edit2, Check, Loader2, Eye, Send, Trash2 } from 'lucide-vue-next'
+import PassExportModal from '~/components/PassExportModal.vue'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
 
 const { user } = useAuth()
+const showExportModal = ref(false)
 const selectedPass = ref(null)
 
 const { data: planteles } = useFetch('/api/catalogs/planteles', { default: () => [] })
