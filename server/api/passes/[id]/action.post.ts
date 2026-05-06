@@ -42,6 +42,14 @@ export default defineEventHandler(async (event) => {
 
     const pass = rows[0]
 
+    if (action === 'resend-telegram') {
+      if (pass.user !== actingName && !isAdmin) {
+         throw createError({ statusCode: 403, message: 'Permisos insuficientes para reenviar notificaciones. Se requiere ser el creador del registro o un administrador.' })
+      }
+      await dispatchNotificationsForPass(Number(id), { scheduleTg: false, telegramOnly: true })
+      return { success: true }
+    }
+
     if (action === 'authorize' || action === 'reject') {
        if (pass.status !== 'pendiente') {
          throw createError({ statusCode: 400, message: `No es posible alterar la decisión. El pase ya ha sido procesado (Estado actual: ${pass.status}).` })

@@ -70,9 +70,15 @@
                     </span>
                   </div>
                 </div>
-                <NuxtLink :to="`/pass/${pass.id}`" class="shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all opacity-0 group-hover/card:opacity-100 -translate-x-2 group-hover/card:translate-x-0 outline-none shadow-sm">
-                  <ArrowRight class="w-3.5 h-3.5" />
-                </NuxtLink>
+                <div class="flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 -translate-x-2 group-hover/card:translate-x-0 transition-all">
+                  <button @click.prevent="resendTelegram(pass.id)" :disabled="resendingId === pass.id" class="shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all outline-none shadow-sm disabled:opacity-50" title="Reenviar a Telegram">
+                    <Loader2 v-if="resendingId === pass.id" class="w-3.5 h-3.5 animate-spin" />
+                    <Send v-else class="w-3.5 h-3.5 ml-[-1px] mt-[1px]" />
+                  </button>
+                  <NuxtLink :to="`/pass/${pass.id}`" class="shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all outline-none shadow-sm" title="Ver detalle">
+                    <ArrowRight class="w-3.5 h-3.5" />
+                  </NuxtLink>
+                </div>
               </div>
 
             </div>
@@ -80,14 +86,45 @@
         </div>
       </div>
     </div>
+    
+    <!-- Toast Notification -->
+    <div v-if="toastMessage" class="fixed bottom-6 right-6 md:right-10 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 z-50 animate-in fade-in slide-in-from-bottom-5">
+      <CheckCircle class="w-5 h-5 text-casita-green" />
+      <span class="text-sm font-bold tracking-wide">{{ toastMessage }}</span>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight, AlertTriangle, Building2 } from 'lucide-vue-next'
+import { ref } from 'vue'
+import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight, AlertTriangle, Building2, Send, CheckCircle } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { data, pending, error, refresh } = useFetch('/api/passes/recent')
+
+const resendingId = ref(null)
+const toastMessage = ref('')
+let toastTimeout = null
+
+const resendTelegram = async (id) => {
+  if (resendingId.value) return
+  resendingId.value = id
+  try {
+    await $fetch(`/api/passes/${id}/action`, {
+      method: 'POST',
+      body: { action: 'resend-telegram' }
+    })
+    toastMessage.value = 'Notificación reenviada a Telegram.'
+    if (toastTimeout) clearTimeout(toastTimeout)
+    toastTimeout = setTimeout(() => {
+      toastMessage.value = ''
+    }, 3500)
+  } catch (err) {
+    alert(err.data?.message || 'Error al reenviar la notificación a Telegram.')
+  } finally {
+    resendingId.value = null
+  }
+}
 
 const getCategoryIcon = (id) => {
   const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope }

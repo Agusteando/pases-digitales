@@ -1,5 +1,3 @@
-
-
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser, sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-engine'
@@ -20,7 +18,7 @@ const toWhatsAppChatId = (phone: string) => {
   return `${cleaned}@c.us`
 }
 
-export async function dispatchNotificationsForPass(passId: number, options: { scheduleTg?: boolean } = {}) {
+export async function dispatchNotificationsForPass(passId: number, options: { scheduleTg?: boolean, telegramOnly?: boolean } = {}) {
   const db = useDB()
   const config = useRuntimeConfig()
 
@@ -124,6 +122,8 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
       [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
     )
   }
+
+  if (options.telegramOnly) return true;
 
   // 2. Individual Target Resolution (Configurable Routing)
   const soapData = await getFastSoapEmployees()
