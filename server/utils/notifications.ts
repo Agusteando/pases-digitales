@@ -85,13 +85,39 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
     }
   }
 
+  // ALWAYS dispatch the immediate audit message (Ensures the act of authorizing never swallows the real-time notification)
   try {
-    if (tgTriggerAt) {
+    await $fetch('https://tgbot.casitaapps.com/sendMessages', {
+      method: 'POST',
+      body: {
+        chatId: [telegramGlobalId],
+        message: tgMessage,
+        parse_mode: 'Markdown',
+        disable_notification: false
+      }
+    })
+    await db.execute(
+      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+      [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram${tgTriggerAt ? ' (Inmediato)' : ''}`]
+    )
+  } catch (e: any) {
+    await db.execute(
+      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
+      [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
+    )
+  }
+
+  // If a scheduled trigger is set, ALSO dispatch the future reminder
+  if (tgTriggerAt) {
+    const scheduledTitle = 'Recordatorio de Pase'
+    const tgScheduledMessage = `⏰ *${scheduledTitle}*\n${categoryName} de *${pass.employee_name}*${tipoPermisoMsg}${cambioHorarioMsg}${motivoMsg}${returnMessage}\n${dateRangeMsg}${timeMsg && !isCambioHorario ? timeMsg : ''} - Folio *${paddedId}*`
+    
+    try {
       await $fetch('https://tgbot.casitaapps.com/scheduleMessage', {
         method: 'POST',
         body: {
           chatId: [telegramGlobalId],
-          message: tgMessage,
+          message: tgScheduledMessage,
           triggerAt: tgTriggerAt,
           parse_mode: 'Markdown',
           disable_notification: false
@@ -101,26 +127,12 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
         'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
         [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram (Programado para ${dayjs(tgTriggerAt).format('DD/MM/YY HH:mm')})`]
       )
-    } else {
-      await $fetch('https://tgbot.casitaapps.com/sendMessages', {
-        method: 'POST',
-        body: {
-          chatId: [telegramGlobalId],
-          message: tgMessage,
-          parse_mode: 'Markdown',
-          disable_notification: false
-        }
-      })
+    } catch (e: any) {
       await db.execute(
         'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
-        [pass.id, telegramGlobalId, 'sent', `Sistema: Auditoría Global | Método: Telegram`]
+        [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram (Programado) | Error: ${e.message || 'Fallo de red'}`]
       )
     }
-  } catch (e: any) {
-    await db.execute(
-      'INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)',
-      [pass.id, telegramGlobalId, 'failed', `Sistema: Auditoría Global | Método: Telegram | Error: ${e.message || 'Fallo de red'}`]
-    )
   }
 
   if (options.telegramOnly) return true;
