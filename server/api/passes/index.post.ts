@@ -3,6 +3,7 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
+import { resolveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
 import jwt from 'jsonwebtoken'
 import { getCookie, createError, defineEventHandler, readBody } from '#imports'
 import dayjs from 'dayjs'
@@ -21,14 +22,18 @@ export default defineEventHandler(async (event) => {
   if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida' })
 
   let actingUser = null
+  let actingEmail = null
   try {
     const decoded: any = jwt.decode(token)
     if (decoded && decoded.name) {
       actingUser = decoded.name
     }
+    if (decoded && decoded.email) {
+      actingEmail = decoded.email
+    }
   } catch (e) {}
 
-  if (!actingUser) throw createError({ statusCode: 401, message: 'Sesión inválida' })
+  if (!actingUser || !actingEmail) throw createError({ statusCode: 401, message: 'Sesión inválida' })
 
   const { 
     employeeName, curp, ingressioId, categoryId, date, endDate, time, comentarios, 
@@ -59,6 +64,16 @@ export default defineEventHandler(async (event) => {
   const mysqlDate = dateObj.format('YYYY-MM-DD 00:00:00')
   const mysqlEndDate = endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
   
+  if (autoAuthorize) {
+    const authorization = await resolveAuthorizationForPass({ employee_name: employeeName, curp, plantel })
+    if (!isAuthorizedEmail(authorization, actingEmail)) {
+      throw createError({
+        statusCode: 403,
+        message: `Este pase solo puede ser autorizado por ${authorization.requiredText}. La sesión actual no corresponde a un autorizador permitido.`
+      })
+    }
+  }
+
   const authToken = crypto.randomBytes(8).toString('hex') 
   
   const initialStatus = autoAuthorize ? 'autorizado' : 'pendiente'

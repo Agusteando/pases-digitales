@@ -3,8 +3,8 @@
     
     <header class="mb-8 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div>
-        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Configuración de envíos</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold">Distribución de avisos por plantel.</p>
+        <h1 class="text-3xl font-black text-slate-900 tracking-tight">Notificaciones autorizadas</h1>
+        <p class="text-slate-500 mt-2 text-sm font-bold">Distribución de enlaces de autorización por plantel.</p>
       </div>
     </header>
 
@@ -76,7 +76,7 @@
               <UserX class="w-6 h-6 text-slate-400" />
             </div>
             <p class="text-base font-black text-slate-700">Sin responsables asignados</p>
-            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de responsables. Agrega un contacto para que reciba las notificaciones por defecto.</p>
+            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">Este plantel carece de responsables. Agrega un contacto para que reciba enlaces de autorización por defecto.</p>
           </div>
 
           <div v-else class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-5">
@@ -118,14 +118,14 @@
           </div>
         </section>
 
-        <!-- Section: Reglas de Notificación -->
+        <!-- Section: Reglas de Autorización -->
         <section class="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div class="flex items-center justify-between mb-5">
             <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Network class="w-4 h-4" /> Opciones de envío directo
+              <Network class="w-4 h-4" /> Reglas de autorización directa
             </h3>
             <button @click="openAddModal('RULE')" class="px-5 py-2.5 bg-white border border-white text-brand-600 text-xs font-black rounded-xl shadow-sm hover:border-brand-300 hover:bg-brand-50 transition-all flex items-center gap-2 outline-none">
-              <Plus class="w-3.5 h-3.5" /> Agregar Regla
+              <Plus class="w-3.5 h-3.5" /> Agregar autorización
             </button>
           </div>
 
@@ -134,7 +134,7 @@
               <GitMerge class="w-6 h-6 text-slate-400" />
             </div>
             <p class="text-base font-black text-slate-700">Comportamiento estándar</p>
-            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">No existen reglas específicas de enrutamiento aquí. Los avisos fluirán hacia los responsables del plantel.</p>
+            <p class="text-sm font-medium text-slate-500 mt-1 max-w-sm">No existen reglas específicas aquí. Los enlaces de autorización fluirán hacia los responsables autorizados del plantel.</p>
           </div>
 
           <div v-else class="space-y-4">
@@ -205,7 +205,7 @@
               {{ 
                 modalType === 'DIRECTORY' ? 'Agregar Responsable' : 
                 modalType === 'EDIT_DIRECTORY' ? 'Configurar Destinatario' : 
-                'Agregar Regla Específica'
+                'Agregar autorización Específica'
               }}
             </h3>
             <p class="text-xs font-bold text-slate-500 mt-1">Plantel: <span class="text-brand-600">{{ form.plantel === 'ALL' ? 'Toda la institución' : form.plantel }}</span></p>
@@ -535,7 +535,7 @@ const submitForm = async () => {
 }
 
 const deleteRule = async (id) => {
-  if (!confirm('¿Eliminar permanentemente esta regla de envío?')) return
+  if (!confirm('¿Eliminar permanentemente esta regla de autorización?')) return
   try {
     await $fetch(`/api/routing/rules/${id}`, { method: 'DELETE' })
     refreshRules()

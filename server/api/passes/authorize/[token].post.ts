@@ -1,6 +1,7 @@
 import { useDB } from '~/server/utils/db'
 import { verifyRecipientToken } from '~/server/utils/token'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
+import { resolveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
 import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
@@ -20,22 +21,23 @@ export default defineEventHandler(async (event) => {
 
   if (!rToken) throw createError({ statusCode: 401, message: 'Petición de resolución denegada por ausencia de firma de identidad.' })
 
-  let actingUser = null
+  let actingUser = ''
+  let actingEmail = ''
 
   try {
     const decoded = verifyRecipientToken(rToken)
-    if (decoded && decoded.name) actingUser = decoded.name
-    else throw new Error()
+    if (decoded?.name && decoded?.email) {
+      actingUser = decoded.name
+      actingEmail = decoded.email
+    } else throw new Error()
   } catch (e) {
     throw createError({ statusCode: 401, message: 'Firma de enlace inválida o caducada.' })
   }
 
-  if (!actingUser) throw createError({ statusCode: 401, message: 'Identidad no verificable.' })
-
   const db = useDB()
 
   try {
-    const [rows]: any = await db.execute(`SELECT id, employee_name, user, status FROM hr_entries WHERE auth_token = ?`, [tokenUrl])
+    const [rows]: any = await db.execute(`SELECT id, employee_name, curp, user, status, plantel FROM hr_entries WHERE auth_token = ?`, [tokenUrl])
     if (!rows.length) throw createError({ statusCode: 404, message: 'Enlace inválido o documento no encontrado.' })
 
     const pass = rows[0]
@@ -44,12 +46,20 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: `El documento seguro ya fue procesado y su estado actual es: ${pass.status}` })
     }
 
+    const authorization = await resolveAuthorizationForPass(pass)
+    if (!isAuthorizedEmail(authorization, actingEmail)) {
+      throw createError({
+        statusCode: 403,
+        message: `Este pase solo puede ser autorizado por ${authorization.requiredText}. Tu enlace no corresponde al autorizador obligatorio de este grupo.`
+      })
+    }
+
     const nowTzStr = dayjs().tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss')
     const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
-    
+
     await db.execute(`UPDATE hr_entries SET status = ?, authorized_by = ?, authorized_at = ? WHERE id = ?`, [newStatus, actingUser, nowTzStr, pass.id])
     await dispatchNotificationsForPass(pass.id, { scheduleTg })
-    
+
     return { success: true, status: newStatus }
   } catch (error: any) {
     if (error.statusCode) throw error

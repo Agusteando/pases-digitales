@@ -33,6 +33,27 @@
         <p class="text-sm font-black text-casita-green-dark uppercase tracking-widest">{{ getCategoryName(pass.category_id) }}</p>
       </header>
 
+
+      <div v-if="pass.authorization_policy" class="relative z-10 mb-8 p-5 rounded-[2rem] border shadow-sm" :class="pass._viewerAuthorized ? 'bg-iedis-teal/10 border-iedis-teal/20' : 'bg-casita-red/10 border-casita-red/20'">
+        <div class="flex items-start gap-4">
+          <div class="w-11 h-11 rounded-xl bg-white flex items-center justify-center border border-white shadow-sm shrink-0" :class="pass._viewerAuthorized ? 'text-iedis-teal-dark' : 'text-casita-red'">
+            <ShieldCheck v-if="pass._viewerAuthorized" class="w-5 h-5" />
+            <XCircle v-else class="w-5 h-5" />
+          </div>
+          <div class="text-left">
+            <h2 class="text-sm font-black" :class="pass._viewerAuthorized ? 'text-iedis-teal-dark' : 'text-casita-red-dark'">
+              {{ pass._viewerAuthorized ? 'Autorización exclusiva activa' : 'Acceso no autorizado' }}
+            </h2>
+            <p class="text-xs font-bold text-slate-700 mt-1 leading-relaxed">
+              Este pase solo puede ser autorizado por {{ pass.authorization_policy.requiredText }}.
+            </p>
+            <p v-if="!pass._viewerAuthorized" class="text-xs font-bold text-casita-red-dark mt-2 leading-relaxed">
+              Tu enlace no corresponde al autorizador obligatorio de este grupo. No se realizó ningún cambio al pase.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="space-y-8 relative z-10 mb-12">
         <div class="bg-white/80 backdrop-blur-md rounded-[2rem] p-8 border border-white shadow-sm grid grid-cols-1 gap-6">
           <div class="pb-6 border-b border-slate-100">
@@ -112,7 +133,7 @@
         </div>
       </div>
 
-      <footer v-if="pass.status === 'pendiente'" class="flex flex-col gap-4 relative z-10">
+      <footer v-if="pass.status === 'pendiente' && pass._viewerAuthorized" class="flex flex-col gap-4 relative z-10">
         
         <div v-if="isFuture" class="mb-2 bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200 shadow-sm w-full relative overflow-hidden group">
            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-iedis-teal"></div>
@@ -122,8 +143,8 @@
                  <CalendarClock class="w-5 h-5" />
                </div>
                <div class="text-left">
-                 <h4 class="text-sm font-black text-slate-800">Programar aviso en Telegram</h4>
-                 <p class="text-[10px] font-bold text-slate-500 mt-0.5">El registro se publicará al momento exacto del pase.</p>
+                 <h4 class="text-sm font-black text-slate-800">Programar recordatorio en Telegram</h4>
+                 <p class="text-[10px] font-bold text-slate-500 mt-0.5">El recordatorio se publicará al momento exacto del pase autorizado.</p>
                </div>
              </div>
              <label class="relative inline-flex items-center cursor-pointer shrink-0">
@@ -152,6 +173,12 @@
           </button>
         </div>
       </footer>
+
+
+      <div v-if="pass.status === 'pendiente' && !pass._viewerAuthorized" class="relative z-10 p-6 rounded-[2rem] bg-white/80 border border-casita-red/20 shadow-sm text-center">
+        <p class="text-sm font-black text-casita-red-dark">Resolución bloqueada</p>
+        <p class="text-xs font-bold text-slate-600 mt-2">Solicita al autorizador obligatorio que use su propio enlace seguro.</p>
+      </div>
 
       <div class="mt-10 text-center relative z-10 flex flex-col items-center gap-4">
          <img src="/id.png" alt="Identidad Institucional" class="h-6 opacity-50 hover:opacity-100 transition-opacity mix-blend-multiply" />

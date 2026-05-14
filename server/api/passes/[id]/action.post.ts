@@ -1,5 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
+import { resolveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
 import jwt from 'jsonwebtoken'
 import { getCookie, defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 import dayjs from 'dayjs'
@@ -37,7 +38,7 @@ export default defineEventHandler(async (event) => {
     const [adminRows]: any = await db.execute('SELECT is_admin FROM system_users WHERE email = ?', [actingEmail])
     const isAdmin = adminRows.length > 0 && adminRows[0].is_admin === 1
 
-    const [rows]: any = await db.execute(`SELECT user, employee_name, status FROM hr_entries WHERE id = ?`, [id])
+    const [rows]: any = await db.execute(`SELECT id, user, employee_name, curp, plantel, status FROM hr_entries WHERE id = ?`, [id])
     if (!rows.length) throw createError({ statusCode: 404, message: 'El pase digital no fue encontrado.' })
 
     const pass = rows[0]
@@ -55,6 +56,14 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 400, message: `No es posible alterar la decisión. El pase ya ha sido procesado (Estado actual: ${pass.status}).` })
        }
        
+       const authorization = await resolveAuthorizationForPass(pass)
+       if (!isAuthorizedEmail(authorization, actingEmail)) {
+         throw createError({
+           statusCode: 403,
+           message: `Este pase solo puede ser autorizado por ${authorization.requiredText}. La sesión actual no corresponde a un autorizador permitido.`
+         })
+       }
+
        const nowTzStr = dayjs().tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss')
        const newStatus = action === 'authorize' ? 'autorizado' : 'rechazado'
        
