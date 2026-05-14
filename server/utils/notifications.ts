@@ -3,7 +3,7 @@ import { sendWorkspaceEmail } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { sendWhatsAppMessage } from '~/server/utils/whatsappModule'
 import { signRecipientToken } from '~/server/utils/token'
-import { resolveAuthorizationForPass, type AuthorizationTarget } from '~/server/utils/authorizationRules'
+import { resolveAuthorizationForPass, logAuthorizationDebug, type AuthorizationTarget } from '~/server/utils/authorizationRules'
 import { useRuntimeConfig } from '#imports'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
@@ -139,7 +139,7 @@ async function sendTelegramAudit(db: any, pass: any, options: { scheduleTg?: boo
   }
 }
 
-function getNotificationLabels(pass: any, paddedId: string) {
+function getNotificationLabels(pass: any, paddedId: string, isExclusive = false) {
   const isAuthorized = pass.status === 'autorizado'
   const isRejected = pass.status === 'rechazado'
   const isCancelled = pass.status === 'cancelado'
@@ -176,23 +176,25 @@ function getNotificationLabels(pass: any, paddedId: string) {
 
   return {
     headerTitle: '*Solicitud de Autorización* ⚠️',
-    actionPhrase: 'este pase requiere tu autorización exclusiva. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:',
+    actionPhrase: isExclusive
+      ? 'este pase requiere tu autorización exclusiva. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:'
+      : 'se requiere tu autorización para este pase digital. Por favor, revisa y resuelve la solicitud accediendo al siguiente enlace seguro:',
     emailTitle: 'Solicitud de Autorización',
     emailActionBtn: 'Revisar y Resolver Solicitud',
     emailSubject: `Autorización Requerida: Pase #${paddedId} para ${pass.employee_name}`
   }
 }
 
-async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget, copy: any, authUrlBase: string, requiredText: string) {
+async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget, copy: any, authUrlBase: string, requiredText: string, isExclusive: boolean) {
   const rToken = signRecipientToken(target.email, target.name)
   const targetAuthUrl = `${authUrlBase}?r=${rToken}`
-  const labels = getNotificationLabels(pass, copy.paddedId)
-  const exclusiveLine = `Este pase solo puede ser autorizado por ${requiredText}.`
+  const labels = getNotificationLabels(pass, copy.paddedId, isExclusive)
+  const exclusiveLine = isExclusive ? `Este pase solo puede ser autorizado por ${requiredText}.` : ''
 
   if (target.channels.includes('WHATSAPP')) {
     const chatId = toWhatsAppChatId(target.phone)
     if (chatId && chatId.length > 10) {
-      const waMessage = `${labels.headerTitle}\n\n${copy.categoryName} para *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario ? copy.timeMsg : ''} - Folio *${copy.paddedId}*\n\n${exclusiveLine}\n\nHola ${target.name.split(' ')[0]}, ${labels.actionPhrase}\n${targetAuthUrl}`
+      const waMessage = `${labels.headerTitle}\n\n${copy.categoryName} para *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario ? copy.timeMsg : ''} - Folio *${copy.paddedId}*${exclusiveLine ? `\n\n${exclusiveLine}` : ''}\n\nHola ${target.name.split(' ')[0]}, ${labels.actionPhrase}\n${targetAuthUrl}`
 
       try {
         const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
@@ -214,7 +216,7 @@ async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget,
            <div style="width: 64px; height: 64px; background-color: #eef2ff; border-radius: 16px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🎫</div>
            <h1 style="margin: 0 0 8px; color: #0f172a; font-size: 24px; font-weight: 800;">${labels.emailTitle}</h1>
            <p style="margin: 0 0 18px; color: #64748b; font-size: 15px;">Folio <strong>#${copy.paddedId}</strong> &bull; ${copy.categoryName}</p>
-           <p style="margin: 0 0 32px; color: ${resolvedColor}; font-size: 13px; font-weight: 800; background: #f8fafc; padding: 12px 16px; border-radius: 14px; border: 1px solid #e2e8f0;">${exclusiveLine}</p>
+           ${exclusiveLine ? `<p style="margin: 0 0 32px; color: ${resolvedColor}; font-size: 13px; font-weight: 800; background: #f8fafc; padding: 12px 16px; border-radius: 14px; border: 1px solid #e2e8f0;">${exclusiveLine}</p>` : ''}
            
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
@@ -265,8 +267,21 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
 
   const resolution = await resolveAuthorizationForPass(pass)
 
+  logAuthorizationDebug('Destinatarios resueltos para notificación de pase.', {
+    passId: pass.id,
+    status: pass.status,
+    plantel: resolution.employeePlantel,
+    puesto: resolution.employeePuesto,
+    source: resolution.source,
+    isExclusive: resolution.isExclusive,
+    targetCount: resolution.targets.length,
+    targetEmails: resolution.targets.map((target) => target.email)
+  })
+
   if (!resolution.hasTargets) {
-    await logNotification(db, pass.id, 'N/A', 'failed', `Sin destinatarios autorizados. Plantel: ${resolution.employeePlantel || 'N/A'} | Puesto: ${resolution.employeePuesto || 'N/A'}`)
+    const msg = `Sin destinatarios autorizados. Plantel: ${resolution.employeePlantel || 'N/A'} | Puesto: ${resolution.employeePuesto || 'N/A'} | Fuente: ${resolution.source}`
+    logAuthorizationDebug('No se enviaron notificaciones porque no hay destinatarios autorizados.', { passId: pass.id, plantel: resolution.employeePlantel, puesto: resolution.employeePuesto, source: resolution.source }, 'warn')
+    await logNotification(db, pass.id, 'N/A', 'failed', msg)
     return true
   }
 
@@ -275,7 +290,7 @@ export async function dispatchNotificationsForPass(passId: number, options: { sc
   }
 
   for (const target of resolution.targets) {
-    await dispatchToTarget(db, pass, target, copy, authUrlBase, resolution.requiredText)
+    await dispatchToTarget(db, pass, target, copy, authUrlBase, resolution.requiredText, resolution.isExclusive)
   }
 
   return true

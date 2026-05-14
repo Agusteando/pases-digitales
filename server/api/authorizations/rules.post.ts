@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     for (const puesto of puestos) {
       if (replaceExisting) {
         await db.execute(
-          'DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ?',
+          "DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ? AND target_type = 'AUTHORIZATION'",
           [plantel, puesto]
         )
       }
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
       for (const channel of finalChannels) {
         await db.execute(
           'INSERT INTO notification_rules (condition_plantel, condition_puesto, target_type, target_val, channel) VALUES (?, ?, ?, ?, ?)',
-          [plantel, puesto, 'CONTACT', email, channel]
+          [plantel, puesto, 'AUTHORIZATION', email, channel]
         )
       }
     }

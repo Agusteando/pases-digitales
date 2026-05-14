@@ -510,6 +510,29 @@
       </div>
     </div>
 
+    <!-- Modal de Resultado / Error de Solicitud -->
+    <div v-if="requestIssue" class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/45 backdrop-blur-sm animate-in fade-in duration-300">
+      <div class="bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-300 border border-white/50 relative overflow-hidden p-7">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-sm" :class="requestIssue.variant === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-600' : requestIssue.variant === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'">
+            <AlertCircle v-if="requestIssue.variant !== 'success'" class="w-6 h-6" />
+            <CheckCircle v-else class="w-6 h-6" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Solicitud de pase</p>
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">{{ requestIssue.title }}</h3>
+            <p class="text-sm font-bold text-slate-600 leading-relaxed mt-3 whitespace-pre-line">{{ requestIssue.message }}</p>
+            <div v-if="requestIssue.detail" class="mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4 text-xs font-bold text-slate-500 leading-relaxed">
+              {{ requestIssue.detail }}
+            </div>
+          </div>
+        </div>
+        <button @click="requestIssue = null" class="w-full mt-7 py-3.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-black rounded-xl transition-all shadow-md outline-none">
+          Entendido
+        </button>
+      </div>
+    </div>
+
     <!-- One-time Disclaimer Toast -->
     <div v-if="showDisclaimer" class="fixed bottom-6 md:bottom-12 left-1/2 -translate-x-1/2 z-[100] px-4 w-full max-w-[400px] animate-in slide-in-from-bottom-10 fade-in duration-500">
       <div class="bg-slate-900/95 backdrop-blur-xl p-5 rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] border border-slate-700/80 flex flex-col gap-4 relative overflow-hidden">
@@ -562,6 +585,7 @@ const evidenceFile = ref(null)
 
 const duplicatePassInfo = ref(null)
 const isResendingDuplicate = ref(false)
+const requestIssue = ref(null)
 
 const checkingCoverage = ref(false)
 const coverageQueue = ref([])
@@ -626,11 +650,52 @@ const getScenarioIcon = (iconName) => {
   return map[iconName] || Clock
 }
 
+
+function getFetchStatus(error) {
+  return error?.response?.status || error?.statusCode || error?.status || 0
+}
+
+function getFetchMessage(error) {
+  return error?.response?._data?.message || error?.data?.message || error?.message || ''
+}
+
+function showRequestIssueFromError(error, fallbackTitle = 'No se pudo registrar la solicitud') {
+  const status = getFetchStatus(error)
+  const message = getFetchMessage(error)
+
+  if (status === 403) {
+    requestIssue.value = {
+      variant: 'warning',
+      title: 'No puedes autorizar directamente este pase',
+      message: message || 'Tu sesión no corresponde al autorizador configurado para este grupo. Registra el pase como solicitud para enviarlo al responsable correcto.',
+      detail: 'No se registró el pase con autorización directa.'
+    }
+    return
+  }
+
+  if (status === 400 || status === 401 || status === 409) {
+    requestIssue.value = {
+      variant: 'warning',
+      title: fallbackTitle,
+      message: message || 'La solicitud no pudo completarse con los datos actuales.',
+      detail: status ? `Código ${status}` : ''
+    }
+    return
+  }
+
+  requestIssue.value = {
+    variant: 'error',
+    title: fallbackTitle,
+    message: message || 'Hubo un problema al registrar la solicitud. El equipo técnico puede revisar los logs de Vercel con el prefijo [authorization-flow].',
+    detail: status ? `Código ${status}` : 'Sin código de respuesta disponible'
+  }
+}
+
 function onFileChange(e) {
   const file = e.target.files?.[0]
   if (!file) return
   if (file.size > 5 * 1024 * 1024) {
-    alert('El archivo supera el tamaño máximo permitido (5MB).')
+    requestIssue.value = { variant: 'warning', title: 'Archivo demasiado grande', message: 'El archivo supera el tamaño máximo permitido de 5MB.' }
     e.target.value = ''
     return
   }
@@ -934,7 +999,7 @@ async function submitPass(autoAuthorize = false) {
     try {
       evidenceUrl = await uploadFileToServer(evidenceFile.value)
     } catch (err) {
-      alert('No se pudo subir la evidencia adjunta. ' + err.message)
+      requestIssue.value = { variant: 'error', title: 'No se pudo subir la evidencia', message: err.message || 'Fallo al adjuntar el archivo antes de registrar el pase.' }
       isSubmitting.value = false
       return
     }
@@ -959,14 +1024,16 @@ async function submitPass(autoAuthorize = false) {
       }
     }
 
+    const notificationWarnings = []
     for (const emp of (selectedEmployees.value || [])) {
-      await $fetch('/api/passes', {
+      const createdPass = await $fetch('/api/passes', {
         method: 'POST',
         body: { 
           employeeName: emp.name, 
           curp: emp.curp || null,
           ingressioId: emp.ClaveUnica || null,
           plantel: emp.plantelActual || emp.plantelBase || 'N/A', 
+          puesto: emp.puesto || null,
           categoryId: activeScenario.value.categoryId, 
           date: form.date,
           endDate: form.endDate,
@@ -984,20 +1051,29 @@ async function submitPass(autoAuthorize = false) {
           scheduleTg: form.scheduleTg
         }
       })
+      if (createdPass?.notificationWarning) notificationWarnings.push(`${emp.name}: ${createdPass.notificationWarning}`)
     }
     
     resetFlow();
     clearEvidence();
     
-    refreshNuxtData() 
+    refreshNuxtData()
+    if (notificationWarnings.length) {
+      requestIssue.value = {
+        variant: 'warning',
+        title: 'Pase registrado con aviso de notificación',
+        message: 'La solicitud quedó registrada, pero hubo un problema al enviar una o más notificaciones autorizadas.',
+        detail: notificationWarnings.join('\n')
+      }
+    }
   } catch(e) {
     console.error('Error', e)
-    const msg = e.response?._data?.message || '';
-    if (e.response?.status === 409 && msg.startsWith('DUPLICATE_CONSECUTIVE:')) {
+    const msg = getFetchMessage(e);
+    if (getFetchStatus(e) === 409 && msg.startsWith('DUPLICATE_CONSECUTIVE:')) {
        const existingPassId = msg.split(':')[1];
        duplicatePassInfo.value = { passId: existingPassId };
     } else {
-       alert('Hubo un problema al registrar la solicitud.')
+       showRequestIssueFromError(e)
     }
   } finally {
     isSubmitting.value = false
@@ -1009,13 +1085,13 @@ const resendDuplicateNotification = async () => {
   isResendingDuplicate.value = true;
   try {
     await $fetch(`/api/passes/${duplicatePassInfo.value.passId}/notify`, { method: 'POST' });
-    alert('Notificación reenviada exitosamente.');
+    requestIssue.value = { variant: 'success', title: 'Notificación reenviada', message: 'La notificación autorizada fue reenviada correctamente.' };
     duplicatePassInfo.value = null;
     resetFlow();
     clearEvidence();
     refreshNuxtData();
   } catch(e) {
-    alert(e?.response?._data?.message || 'Error al reenviar notificación.');
+    showRequestIssueFromError(e, 'Error al reenviar notificación');
   } finally {
     isResendingDuplicate.value = false;
   }

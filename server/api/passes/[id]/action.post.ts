@@ -1,6 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
-import { resolveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
+import { resolveExclusiveAuthorizationForPass, isAuthorizedEmail, logAuthorizationDebug } from '~/server/utils/authorizationRules'
 import jwt from 'jsonwebtoken'
 import { getCookie, defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 import dayjs from 'dayjs'
@@ -56,11 +56,20 @@ export default defineEventHandler(async (event) => {
          throw createError({ statusCode: 400, message: `No es posible alterar la decisión. El pase ya ha sido procesado (Estado actual: ${pass.status}).` })
        }
        
-       const authorization = await resolveAuthorizationForPass(pass)
-       if (!isAuthorizedEmail(authorization, actingEmail)) {
+       const authorization = await resolveExclusiveAuthorizationForPass(pass)
+       if (authorization.isExclusive && !isAuthorizedEmail(authorization, actingEmail)) {
+         logAuthorizationDebug('Acción interna bloqueada por regla exclusiva.', {
+           passId: pass.id,
+           employeeName: pass.employee_name,
+           plantel: authorization.employeePlantel,
+           puesto: authorization.employeePuesto,
+           source: authorization.source,
+           actor: actingEmail,
+           authorizedEmails: authorization.authorizedEmails
+         }, 'warn')
          throw createError({
            statusCode: 403,
-           message: `Este pase solo puede ser autorizado por ${authorization.requiredText}. La sesión actual no corresponde a un autorizador permitido.`
+           message: `Este pase solo puede ser autorizado por ${authorization.requiredText}. La sesión actual no corresponde al autorizador exclusivo configurado.`
          })
        }
 

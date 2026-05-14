@@ -1,1 +1,1 @@
-Implement critical authorization routing matrix and enforce authorized-only notifications
+Fix authorization routing separation and clear pass creation failures

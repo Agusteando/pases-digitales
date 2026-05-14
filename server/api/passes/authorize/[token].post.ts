@@ -1,7 +1,7 @@
 import { useDB } from '~/server/utils/db'
 import { verifyRecipientToken } from '~/server/utils/token'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
-import { resolveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
+import { resolveAuthorizationForPass, isAuthorizedEmail, logAuthorizationDebug } from '~/server/utils/authorizationRules'
 import { defineEventHandler, getRouterParam, readBody, createError } from '#imports'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
@@ -48,6 +48,16 @@ export default defineEventHandler(async (event) => {
 
     const authorization = await resolveAuthorizationForPass(pass)
     if (!isAuthorizedEmail(authorization, actingEmail)) {
+      logAuthorizationDebug('Resolución desde enlace bloqueada por destinatario no autorizado.', {
+        passId: pass.id,
+        employeeName: pass.employee_name,
+        plantel: authorization.employeePlantel,
+        puesto: authorization.employeePuesto,
+        source: authorization.source,
+        isExclusive: authorization.isExclusive,
+        actor: actingEmail,
+        authorizedEmails: authorization.authorizedEmails
+      }, 'warn')
       throw createError({
         statusCode: 403,
         message: `Este pase solo puede ser autorizado por ${authorization.requiredText}. Tu enlace no corresponde al autorizador obligatorio de este grupo.`

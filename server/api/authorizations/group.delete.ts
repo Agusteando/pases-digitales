@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDB()
     await db.execute(
-      'DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ?',
+      "DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ? AND target_type = 'AUTHORIZATION'",
       [plantel, puesto]
     )
     return { success: true }

@@ -24,7 +24,7 @@ export type AuthorizationTarget = {
 export type AuthorizationResolution = {
   employeePlantel: string
   employeePuesto: string
-  source: 'EXACT_PUESTO' | 'GLOBAL_PUESTO' | 'PLANTEL_DEFAULT' | 'STANDARD_DIRECTORY' | 'UNCONFIGURED'
+  source: 'EXACT_PUESTO' | 'GLOBAL_PUESTO' | 'PLANTEL_DEFAULT' | 'STANDARD_DIRECTORY' | 'LEGACY_NOTIFICATION' | 'UNCONFIGURED'
   sourceLabel: string
   isExclusive: boolean
   hasTargets: boolean
@@ -42,6 +42,19 @@ export function normalizePhoneDigits(phone: any) {
   if (digits.startsWith('521') && digits.length >= 13) digits = digits.slice(3)
   if (digits.length > 10) digits = digits.slice(-10)
   return digits.slice(0, 10)
+}
+
+export function logAuthorizationDebug(message: string, payload: Record<string, any> = {}, level: 'info' | 'warn' | 'error' = 'info') {
+  const safePayload = Object.fromEntries(
+    Object.entries(payload).map(([key, value]) => [
+      key,
+      typeof value === 'string' && value.length > 300 ? `${value.slice(0, 300)}…` : value
+    ])
+  )
+  const line = `[authorization-flow] ${message}`
+  if (level === 'error') console.error(line, safePayload)
+  else if (level === 'warn') console.warn(line, safePayload)
+  else console.info(line, safePayload)
 }
 
 export function formatAuthorizationTargetList(targets: AuthorizationTarget[]) {
@@ -76,8 +89,12 @@ async function resolvePuestoFromSignia(pass: any) {
         return normalizeRuleValue(match?.puesto)
       }
       if (res?.puesto) return normalizeRuleValue(res.puesto)
-    } catch {
-      // Keep the authorization engine deterministic even if enrichment is unavailable.
+    } catch (error: any) {
+      logAuthorizationDebug('No se pudo resolver puesto desde Signia remoto; se continúa con fuentes locales.', {
+        employee: pass?.employee_name,
+        curpPresent: Boolean(passCurp),
+        error: error?.message || String(error)
+      }, 'warn')
     }
   }
 
@@ -100,12 +117,16 @@ export async function resolveEmployeePuesto(pass: any) {
   return ''
 }
 
-export async function getNotificationRules() {
+async function getRulesByKind(kind: 'AUTHORIZATION' | 'LEGACY') {
   const db = useDB()
+  const where = kind === 'AUTHORIZATION'
+    ? "target_type = 'AUTHORIZATION'"
+    : "(target_type IS NULL OR target_type <> 'AUTHORIZATION')"
+
   const [rows]: any = await db.execute(
     `SELECT id, condition_plantel, condition_puesto, target_type, target_val, channel
      FROM notification_rules
-     WHERE target_val IS NOT NULL AND target_val <> ''
+     WHERE target_val IS NOT NULL AND target_val <> '' AND ${where}
      ORDER BY id ASC`
   )
 
@@ -115,6 +136,16 @@ export async function getNotificationRules() {
     condition_puesto: normalizeRuleValue(row.condition_puesto) || 'ALL',
     channel: row.channel || 'EMAIL'
   }))
+}
+
+// Exclusive authorization rules are stored in notification_rules using target_type = AUTHORIZATION.
+// This preserves all legacy notification rows exactly as notification recipients, not hard authorization overrides.
+export async function getNotificationRules() {
+  return getRulesByKind('AUTHORIZATION')
+}
+
+export async function getLegacyNotificationRules() {
+  return getRulesByKind('LEGACY')
 }
 
 export async function enrichTargets(rows: TargetRow[]): Promise<AuthorizationTarget[]> {
@@ -204,18 +235,31 @@ export function selectEffectiveRules(rules: any[], plantel: string, puesto: stri
   return { source: 'STANDARD_DIRECTORY' as const, rows: [] }
 }
 
+function selectLegacyNotificationRules(rules: any[], plantel: string, puesto: string) {
+  const plantelKey = normalizeComparable(plantel)
+  const puestoKey = normalizeComparable(puesto)
+
+  return rules.filter((rule) => {
+    const rulePlantel = cleanPlantelName(rule.condition_plantel) || 'ALL'
+    const matchPlantel = isAllRuleValue(rulePlantel) || normalizeComparable(rulePlantel) === plantelKey
+    const matchPuesto = isAllRuleValue(rule.condition_puesto) || normalizeComparable(rule.condition_puesto) === puestoKey
+    return matchPlantel && matchPuesto
+  })
+}
+
 export function getSourceLabel(source: AuthorizationResolution['source']) {
   const labels = {
     EXACT_PUESTO: 'Override de puesto por plantel',
     GLOBAL_PUESTO: 'Override global de puesto',
     PLANTEL_DEFAULT: 'Regla general del plantel',
     STANDARD_DIRECTORY: 'Comportamiento estándar',
+    LEGACY_NOTIFICATION: 'Notificación autorizada existente',
     UNCONFIGURED: 'Sin autorizadores configurados'
   }
   return labels[source]
 }
 
-export async function resolveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
+export async function resolveExclusiveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
   const employeePlantel = cleanPlantelName(pass?.plantel) || ''
   const employeePuesto = await resolveEmployeePuesto(pass)
   const rules = await getNotificationRules()
@@ -236,8 +280,49 @@ export async function resolveAuthorizationForPass(pass: any): Promise<Authorizat
     }
   }
 
+  return {
+    employeePlantel,
+    employeePuesto,
+    source: 'UNCONFIGURED',
+    sourceLabel: getSourceLabel('UNCONFIGURED'),
+    isExclusive: false,
+    hasTargets: false,
+    targets: [],
+    authorizedEmails: [],
+    requiredText: ''
+  }
+}
+
+export async function resolveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
+  const exclusive = await resolveExclusiveAuthorizationForPass(pass)
+  if (exclusive.isExclusive) return exclusive
+
+  const employeePlantel = exclusive.employeePlantel
+  const employeePuesto = exclusive.employeePuesto
   const directoryTargets = employeePlantel ? await getPlantelDirectoryTargets(employeePlantel) : []
-  const source = directoryTargets.length ? 'STANDARD_DIRECTORY' : 'UNCONFIGURED'
+  const legacyRules = await getLegacyNotificationRules()
+  const legacyRows = selectLegacyNotificationRules(legacyRules, employeePlantel, employeePuesto)
+  const legacyTargets = await enrichTargets(rulesToTargetRows(legacyRows))
+  const targets = await enrichTargets([
+    ...directoryTargets.flatMap((target) => (target.channels.length ? target.channels : ['EMAIL']).map((channel) => ({
+      id: target.ruleIds[0],
+      email: target.email,
+      channel,
+      role: target.role,
+      source: 'DIRECTORY'
+    }))),
+    ...legacyTargets.flatMap((target) => (target.channels.length ? target.channels : ['EMAIL']).map((channel) => ({
+      id: target.ruleIds[0],
+      email: target.email,
+      channel,
+      role: target.role,
+      source: 'LEGACY_RULE'
+    })))
+  ])
+
+  const source = targets.length
+    ? (legacyRows.length ? 'LEGACY_NOTIFICATION' : 'STANDARD_DIRECTORY')
+    : 'UNCONFIGURED'
 
   return {
     employeePlantel,
@@ -245,10 +330,10 @@ export async function resolveAuthorizationForPass(pass: any): Promise<Authorizat
     source,
     sourceLabel: getSourceLabel(source),
     isExclusive: false,
-    hasTargets: directoryTargets.length > 0,
-    targets: directoryTargets,
-    authorizedEmails: directoryTargets.map((target) => target.email.toLowerCase()),
-    requiredText: formatAuthorizationTargetList(directoryTargets)
+    hasTargets: targets.length > 0,
+    targets,
+    authorizedEmails: targets.map((target) => target.email.toLowerCase()),
+    requiredText: formatAuthorizationTargetList(targets)
   }
 }
 
@@ -286,12 +371,12 @@ export async function getEmployeeGroupCounts() {
   }
 
   for (const row of signiaRows) {
-    if (row.puesto) puestos.add(normalizeRuleValue(row.puesto))
+    if (row?.puesto) puestos.add(normalizeRuleValue(row.puesto))
   }
 
   return {
     counts,
     planteles: Array.from(planteles).sort(),
-    puestos: Array.from(puestos).sort()
+    puestos: Array.from(puestos).filter(Boolean).sort()
   }
 }
