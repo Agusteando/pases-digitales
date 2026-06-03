@@ -1,1 +1,1 @@
-Fix authorization routing separation and clear pass creation failures
+Permitir anular pases autorizados sin eliminarlos y resaltarlos como anulados

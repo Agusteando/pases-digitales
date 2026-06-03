@@ -209,7 +209,7 @@ async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget,
   }
 
   if (target.channels.includes('EMAIL')) {
-    const resolvedColor = pass.status === 'autorizado' ? '#059669' : (pass.status === 'rechazado' ? '#dc2626' : '#4f46e5')
+    const resolvedColor = pass.status === 'autorizado' ? '#059669' : ((pass.status === 'rechazado' || pass.status === 'cancelado') ? '#dc2626' : '#4f46e5')
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; text-align: center;">
         <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
@@ -225,6 +225,8 @@ async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget,
               ${pass.tipo_permiso ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Tipo de Permiso:</strong><br><span style="color: #0f172a;">${pass.tipo_permiso}</span></p>` : ''}
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
               ${(pass.status === 'autorizado' || pass.status === 'rechazado') && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${pass.status === 'autorizado' ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${pass.status === 'autorizado' ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${pass.status === 'autorizado' ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
+              ${pass.status === 'cancelado' ? `<p style="margin: 12px 0 0; color: #dc2626; font-size: 14px;"><strong>Estado actual:</strong><br><span style="color: #991b1b; font-weight: 800;">ANULADO</span></p>` : ''}
+              ${pass.status === 'cancelado' && pass.authorized_by ? `<p style="margin: 12px 0 0; color: #475569; font-size: 13px;"><strong>Autorización previa:</strong><br><span style="color: #334155; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}
            </div>
 
            <a href="${targetAuthUrl}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; padding: 16px 32px; border-radius: 12px; font-weight: bold; text-decoration: none; font-size: 16px; transition: background-color 0.2s;">${labels.emailActionBtn}</a>

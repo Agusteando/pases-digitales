@@ -1,5 +1,3 @@
-## pages/index.vue
-
 <template>
   <div class="flex flex-col xl:flex-row w-full min-h-[100dvh] xl:h-screen xl:overflow-hidden bg-transparent">
     

@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     const [adminRows]: any = await db.execute('SELECT is_admin FROM system_users WHERE email = ?', [actingEmail])
     const isAdmin = adminRows.length > 0 && adminRows[0].is_admin === 1
 
-    const [rows]: any = await db.execute(`SELECT id, user, employee_name, curp, plantel, status FROM hr_entries WHERE id = ?`, [id])
+    const [rows]: any = await db.execute(`SELECT id, user, employee_name, curp, plantel, status, authorized_by, authorized_at FROM hr_entries WHERE id = ?`, [id])
     if (!rows.length) throw createError({ statusCode: 404, message: 'El pase digital no fue encontrado.' })
 
     const pass = rows[0]
@@ -97,10 +97,20 @@ export default defineEventHandler(async (event) => {
       if (pass.user !== actingName && !isAdmin) {
         throw createError({ statusCode: 403, message: 'Permisos insuficientes para anular el registro. Se requiere ser el creador o un administrador de plataforma.' })
       }
-      if (pass.status !== 'pendiente') {
-         throw createError({ statusCode: 403, message: 'Operación denegada. No se puede anular un pase que ya ha sido resuelto por los responsables.' })
+
+      const cancellableStatuses = ['pendiente', 'autorizado']
+      if (!cancellableStatuses.includes(pass.status)) {
+        throw createError({
+          statusCode: 403,
+          message: `Operación denegada. Solo se pueden anular pases pendientes o autorizados. Estado actual: ${pass.status}.`
+        })
       }
+
       await db.execute(`UPDATE hr_entries SET status = 'cancelado' WHERE id = ?`, [id])
+      await db.execute(
+        `INSERT INTO notification_logs (pass_id, chat_id, status, error_text) VALUES (?, ?, ?, ?)`,
+        [id, 'N/A', 'sent', `Sistema: Auditoría Global | Acción: Pase anulado por ${actingName} | Estado previo: ${pass.status}`]
+      )
       await dispatchNotificationsForPass(Number(id), { scheduleTg: false })
       return { success: true }
     }

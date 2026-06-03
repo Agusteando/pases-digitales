@@ -38,11 +38,12 @@
             <div class="pt-1">
               <div class="flex items-center gap-4 mb-2">
                 <h1 class="text-4xl font-black text-slate-900 tracking-tighter font-mono">#{{ String(pass.id).padStart(5, '0') }}</h1>
-                <span class="text-[10px] uppercase font-black tracking-widest px-3 py-1.5 rounded-lg border shadow-sm bg-white/60"
-                      :class="{'text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
-                               'text-casita-green border-casita-green/30': pass.status === 'autorizado',
-                               'text-casita-red border-casita-red/30': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                  {{ pass.status }}
+                <span class="text-[10px] uppercase font-black tracking-widest px-3 py-1.5 rounded-lg border shadow-sm"
+                      :class="pass.status === 'cancelado' ? 'bg-casita-red text-white border-casita-red shadow-md' : {
+                               'bg-white/60 text-casita-gold-dark border-casita-gold/30': pass.status === 'pendiente',
+                               'bg-white/60 text-casita-green border-casita-green/30': pass.status === 'autorizado',
+                               'bg-white/60 text-casita-red border-casita-red/30': pass.status === 'rechazado'}">
+                  {{ getStatusLabel(pass.status) }}
                 </span>
               </div>
               <p class="text-xl font-black text-slate-700">{{ getCategoryName(pass.category_id) }}</p>
@@ -50,6 +51,25 @@
                 <Clock class="w-3.5 h-3.5" /> Creado el {{ formatDateLong(pass.created_at) }}
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="pass.status === 'cancelado'" class="rounded-[2rem] border-2 border-casita-red/40 bg-casita-red/10 p-6 shadow-lg relative overflow-hidden">
+        <div class="absolute inset-y-0 left-0 w-2 bg-casita-red"></div>
+        <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 pl-2">
+          <div class="w-14 h-14 rounded-2xl bg-white border border-casita-red/30 shadow-sm flex items-center justify-center shrink-0 text-casita-red">
+            <Ban class="w-7 h-7" />
+          </div>
+          <div class="flex-1">
+            <p class="text-[11px] font-black uppercase tracking-[0.25em] text-casita-red-dark">Pase anulado</p>
+            <h2 class="text-2xl font-black text-casita-red-dark tracking-tight mt-1">Este folio permanece registrado y no debe considerarse vigente.</h2>
+            <p class="text-sm font-bold text-casita-red-dark/75 mt-2 leading-relaxed">
+              La anulación no elimina el pase; lo marca de forma visible para conservar trazabilidad en historial, expediente y registros de notificación.
+            </p>
+            <p v-if="pass.authorized_by" class="text-xs font-bold text-slate-600 mt-3">
+              Autorización previa: <span class="text-slate-900">{{ pass.authorized_by }}</span><span v-if="pass.authorized_at"> · {{ formatDateLong(pass.authorized_at) }}</span>
+            </p>
           </div>
         </div>
       </div>
@@ -222,7 +242,7 @@
                <div>
                  <p class="text-sm font-black text-slate-700">Edición bloqueada</p>
                  <p class="text-[11px] font-medium text-slate-500 mt-1.5 leading-relaxed">
-                   No es posible alterar o notificar un pase que ya ha sido resuelto o anulado.
+                   La edición y el reenvío están bloqueados para pases resueltos. La anulación conserva el folio y lo marca como ANULADO.
                  </p>
                </div>
             </div>
@@ -240,9 +260,9 @@
               </button>
               <p v-if="pass.status === 'pendiente' && isExpired" class="text-[10px] font-bold text-casita-gold-dark mt-1 px-1 text-center">Edición no disponible (límite de 48 hrs excedido).</p>
 
-              <button @click="handleCancel" :disabled="pass.status !== 'pendiente' || isCancelling" class="w-full py-3.5 bg-white/80 hover:bg-white border border-white text-casita-red text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50 outline-none">
+              <button @click="handleCancel" :disabled="!canCancelPass || isCancelling" class="w-full py-3.5 bg-white/80 hover:bg-white border border-white text-casita-red text-sm font-black rounded-2xl transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50 outline-none">
                 <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin" />
-                <Trash2 v-else class="w-4 h-4 text-casita-red/70" />
+                <Ban v-else class="w-4 h-4 text-casita-red/70" />
                 <span>Anular pase</span>
               </button>
             </div>
@@ -276,9 +296,13 @@
                 <div class="p-5 rounded-2xl border shadow-sm" :class="{'bg-casita-gold/10 border-casita-gold/20': pass.status === 'pendiente', 'bg-casita-green/10 border-casita-green/20': pass.status === 'autorizado', 'bg-casita-red/10 border-casita-red/20': pass.status === 'rechazado' || pass.status === 'cancelado'}">
                   <p class="text-xs font-black uppercase tracking-widest mb-1.5"
                      :class="{'text-casita-gold-dark': pass.status === 'pendiente', 'text-casita-green-dark': pass.status === 'autorizado', 'text-casita-red-dark': pass.status === 'rechazado' || pass.status === 'cancelado'}">
-                    {{ pass.status === 'pendiente' ? 'Pendiente' : `Estado: ${pass.status}` }}
+                    {{ pass.status === 'pendiente' ? 'Pendiente' : (pass.status === 'cancelado' ? 'Pase anulado' : `Estado: ${getStatusLabel(pass.status)}`) }}
                   </p>
-                  <p v-if="pass.authorized_by" class="text-[11px] font-bold text-slate-600 mt-1">Por: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
+                  <p v-if="pass.status === 'cancelado'" class="text-[11px] font-bold text-casita-red-dark/80 mt-1">
+                    El folio se conserva para auditoría y queda marcado como no vigente.
+                  </p>
+                  <p v-if="pass.status === 'cancelado' && pass.authorized_by" class="text-[11px] font-bold text-slate-600 mt-2">Autorización previa: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
+                  <p v-else-if="pass.authorized_by" class="text-[11px] font-bold text-slate-600 mt-1">Por: <span class="text-slate-800">{{ pass.authorized_by }}</span></p>
                   <p v-if="pass.authorized_at" class="text-[10px] font-bold text-slate-500 mt-2.5 opacity-80">{{ formatDateLong(pass.authorized_at) }}</p>
                 </div>
               </div>
@@ -334,7 +358,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Trash2, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Ban, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
@@ -362,6 +386,7 @@ const isResolving = ref(false)
 const isAdmin = computed(() => user.value?.is_admin || false)
 const isOwner = computed(() => user.value && pass.value && user.value.name === pass.value.user)
 const canManage = computed(() => isOwner.value || isAdmin.value)
+const canCancelPass = computed(() => ['pendiente', 'autorizado'].includes(pass.value?.status))
 
 const isExpired = computed(() => {
   if (!pass.value) return true
@@ -392,8 +417,14 @@ const handleResend = async () => {
 }
 
 const handleCancel = async () => {
-  if (isCancelling.value || !pass.value) return
-  if (!confirm('¿Estás seguro de que deseas anular permanentemente este pase? Esta acción no se puede deshacer.')) return
+  if (isCancelling.value || !pass.value || !canCancelPass.value) return
+
+  const previousStatus = getStatusLabel(pass.value.status)
+  const message = `¿Estás seguro de que deseas anular este pase?
+
+El folio no se eliminará; quedará marcado de forma visible como ANULADO.
+Estado actual: ${previousStatus}.`
+  if (!confirm(message)) return
   
   isCancelling.value = true
   try {
@@ -427,6 +458,11 @@ const handleInAppAuth = async (action) => {
   }
 }
 
+const getStatusLabel = (status) => {
+  const labels = { pendiente: 'pendiente', autorizado: 'autorizado', rechazado: 'rechazado', cancelado: 'ANULADO' }
+  return labels[status] || status
+}
+
 const getCategoryIcon = (id) => {
   const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope }
   return map[id] || Clock
@@ -458,6 +494,7 @@ const isSystemLog = (text) => {
 
 const extractTargetName = (text) => {
   if (!text) return 'Desconocido'
+  if (text.includes('Acción: Pase anulado')) return 'Anulación del folio'
   if (isSystemLog(text)) return 'Registro general (Sistema)'
   const match = text.match(/Destinatario:\s*([^|]+)/)
   return match ? match[1].trim() : 'Sistema'
@@ -488,6 +525,13 @@ const getDeliveryDetail = (log) => {
   if (text.includes('WhatsApp')) methodStr = 'WhatsApp'
   else if (text.includes('Email')) methodStr = 'Correo Electrónico'
   else if (text.includes('Telegram') || isSystem) methodStr = 'Red Interna (Telegram)'
+
+  const actionMatch = text.match(/Acción:\s*([^|]+)(?:\|\s*Estado previo:\s*(.+))?/)
+  if (actionMatch) {
+    const actionText = actionMatch[1].trim()
+    const previousStatus = actionMatch[2]?.trim()
+    return previousStatus ? `${actionText}. Estado previo: ${getStatusLabel(previousStatus)}.` : actionText
+  }
 
   if (isOk) return isSystem ? `Confirmación de respaldo en ${methodStr}` : `Entregado vía ${methodStr} a ${log.chat_id}`
   

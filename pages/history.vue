@@ -1,5 +1,3 @@
-## pages/history.vue
-
 <template>
   <div class="p-6 md:p-10 max-w-[1400px] mx-auto h-full overflow-y-auto custom-scrollbar relative z-10 flex flex-col">
     <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
@@ -70,7 +68,7 @@
                 <p class="text-slate-400 text-sm mt-1">Ajusta los filtros o intenta con otra búsqueda.</p>
               </td>
             </tr>
-            <tr v-else v-for="pass in passes" :key="pass.id" class="bg-transparent hover:bg-white/50 transition-colors group">
+            <tr v-else v-for="pass in passes" :key="pass.id" class="transition-colors group" :class="pass.status === 'cancelado' ? 'bg-casita-red/5 hover:bg-casita-red/10' : 'bg-transparent hover:bg-white/50'">
               <td class="px-6 py-5">
                 <div class="flex items-center gap-2">
                   <NuxtLink :to="`/pass/${pass.id}`" class="font-mono text-sm font-black text-brand-600 hover:text-brand-900 tracking-tight transition-colors">
@@ -96,9 +94,10 @@
               </td>
               <td class="px-6 py-5">
                 <span class="text-[10px] uppercase font-black tracking-widest px-2.5 py-1 rounded-md border shadow-sm"
-                      :class="pass.status === 'autorizado' ? 'bg-casita-green/10 text-casita-green border-casita-green/30' : 
-                             (pass.status === 'cancelado' || pass.status === 'rechazado' ? 'bg-casita-red/10 text-casita-red border-casita-red/30' : 'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30')">
-                  {{ pass.status }}
+                      :class="pass.status === 'cancelado' ? 'bg-casita-red text-white border-casita-red shadow-md' :
+                             (pass.status === 'autorizado' ? 'bg-casita-green/10 text-casita-green border-casita-green/30' :
+                             (pass.status === 'rechazado' ? 'bg-casita-red/10 text-casita-red border-casita-red/30' : 'bg-casita-gold/10 text-casita-gold-dark border-casita-gold/30'))">
+                  {{ getStatusLabel(pass.status) }}
                 </span>
               </td>
               <td class="px-6 py-5 text-right">
@@ -114,9 +113,9 @@
                     <button v-if="isEditable(pass)" @click="openEditModal(pass)" class="p-2 text-slate-500 hover:text-brand-600 bg-white/80 hover:bg-white rounded-xl transition-all border border-white shadow-sm outline-none" title="Editar datos">
                       <Edit2 class="w-4 h-4" />
                     </button>
-                    <button v-if="pass.status === 'pendiente'" @click="quickCancel(pass.id)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-casita-red bg-white/80 hover:bg-casita-red/10 rounded-xl transition-all border border-white hover:border-casita-red/30 shadow-sm disabled:opacity-50 outline-none" title="Anular folio">
+                    <button v-if="canCancelPass(pass)" @click="quickCancel(pass)" :disabled="actionLoading === pass.id" class="p-2 text-slate-500 hover:text-casita-red bg-white/80 hover:bg-casita-red/10 rounded-xl transition-all border border-white hover:border-casita-red/30 shadow-sm disabled:opacity-50 outline-none" title="Anular pase sin eliminar el folio">
                       <Loader2 v-if="actionLoading === pass.id && actionType === 'cancel'" class="w-4 h-4 animate-spin" />
-                      <Trash2 v-else class="w-4 h-4" />
+                      <Ban v-else class="w-4 h-4" />
                     </button>
                   </template>
                 </div>
@@ -134,7 +133,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Download, Edit2, Check, Loader2, Eye, Send, Trash2 } from 'lucide-vue-next'
+import { Search, Download, Edit2, Check, Loader2, Eye, Send, Ban } from 'lucide-vue-next'
 import PassExportModal from '~/components/PassExportModal.vue'
 import PassEditModal from '~/components/PassEditModal.vue'
 import dayjs from 'dayjs'
@@ -167,6 +166,16 @@ const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
   return dayjs(dateStr).format('DD/MM/YYYY')
 }
+
+const getStatusLabel = (status) => {
+  const labels = { pendiente: 'pendiente', autorizado: 'autorizado', rechazado: 'rechazado', cancelado: 'ANULADO' }
+  return labels[status] || status
+}
+
+const canCancelPass = (pass) => {
+  return ['pendiente', 'autorizado'].includes(pass?.status)
+}
+
 
 const isEditable = (pass) => {
   if (pass.status !== 'pendiente') return false
@@ -212,13 +221,20 @@ const quickResend = async (id) => {
   }
 }
 
-const quickCancel = async (id) => {
-  if (actionLoading.value) return
-  if (!confirm('¿Seguro que deseas anular este pase? Esta acción no se puede deshacer.')) return
-  actionLoading.value = id
+const quickCancel = async (pass) => {
+  if (actionLoading.value || !canCancelPass(pass)) return
+
+  const previousStatus = getStatusLabel(pass.status)
+  const message = `¿Seguro que deseas anular este pase?
+
+El folio no se eliminará; quedará marcado de forma visible como ANULADO.
+Estado actual: ${previousStatus}.`
+  if (!confirm(message)) return
+
+  actionLoading.value = pass.id
   actionType.value = 'cancel'
   try {
-    await $fetch(`/api/passes/${id}/action`, { method: 'POST', body: { action: 'cancel' } })
+    await $fetch(`/api/passes/${pass.id}/action`, { method: 'POST', body: { action: 'cancel' } })
     search()
   } catch (err) {
     alert(err?.data?.message || 'Error al anular el pase.')
