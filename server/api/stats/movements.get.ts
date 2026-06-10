@@ -37,7 +37,8 @@ export default defineEventHandler(async () => {
       2: 'Salida anticipada',
       3: 'Ausencia justificada',
       4: 'Cambio de horario',
-      5: 'Incapacidad médica'
+      5: 'Incapacidad médica',
+      6: 'Permiso especial permanente'
     }
 
     const byCategory = Object.keys(catMap).map(k => ({

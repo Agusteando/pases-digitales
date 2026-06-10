@@ -47,6 +47,7 @@ export default defineNuxtConfig({
     mysqlDatabase: process.env.MYSQL_DATABASE,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     jwtSecret: process.env.JWT_SECRET,
+    cronSecret: process.env.CRON_SECRET || process.env.PERMANENT_PASS_CRON_SECRET,
     signiaApiUrl: process.env.SIGNIA_API_URL || 'https://signia.casitaapps.com/api/export/employees',
     googleWorkspaceAdminEmail: process.env.GOOGLE_WORKSPACE_ADMIN_EMAIL,
     googleSaClientEmail: process.env.GOOGLE_SA_CLIENT_EMAIL,

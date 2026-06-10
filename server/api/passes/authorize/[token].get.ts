@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const [rows]: any = await db.execute(
-      `SELECT id, employee_name, curp, date, fecha_fin, time, comentarios, category_id, status, plantel, tipo_permiso, user, authorized_by, authorized_at, horario_entrada, horario_salida 
+      `SELECT id, employee_name, curp, date, fecha_fin, time, comentarios, category_id, status, plantel, tipo_permiso, permanent_weekdays, user, authorized_by, authorized_at, horario_entrada, horario_salida 
        FROM hr_entries WHERE auth_token = ?`,
       [token]
     )

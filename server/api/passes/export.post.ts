@@ -9,7 +9,8 @@ const categoryMapping: Record<number, string> = {
   2: 'Pase de salida',
   3: 'Pase para faltar',
   4: 'Pase cambio de horario',
-  5: 'Incapacidad'
+  5: 'Incapacidad',
+  6: 'Permiso especial permanente'
 }
 
 export default defineEventHandler(async (event) => {
@@ -36,6 +37,7 @@ export default defineEventHandler(async (event) => {
           h.plantel as sistemas_plantel,
           h.comentarios, 
           h.tipo_permiso,
+          h.permanent_weekdays,
           h.user, 
           h.autoriza, 
           e.position,
@@ -82,6 +84,7 @@ export default defineEventHandler(async (event) => {
       sistemas_plantel: entry.sistemas_plantel,
       comentarios: entry.comentarios,
       tipo_permiso: entry.tipo_permiso,
+      permanent_weekdays: entry.permanent_weekdays,
       user: entry.user,
       autoriza: entry.autoriza,
       position: entry.position,

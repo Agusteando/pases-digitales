@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { LogOut, LogIn, UserX, Stethoscope, Clock } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, KeyRound } from 'lucide-vue-next'
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -37,7 +37,8 @@ const iconMap = {
   'LogIn': LogIn,
   'UserX': UserX,
   'Stethoscope': Stethoscope,
-  'Clock': Clock
+  'Clock': Clock,
+  'KeyRound': KeyRound
 }
 
 const icon = iconMap[props.iconName] || Clock

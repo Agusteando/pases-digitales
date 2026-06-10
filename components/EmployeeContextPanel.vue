@@ -132,6 +132,7 @@
                             {{ getCategoryName(pass.category_id) }}
                           </h5>
                           <p v-if="pass.tipo_permiso" class="text-[10px] font-bold text-[#86888C] mt-1">{{ pass.tipo_permiso }}</p>
+                          <p v-if="Number(pass.category_id) === 6" class="text-[9px] font-black text-violet-500 uppercase tracking-widest mt-1">{{ getPermanentSummary(pass) }}</p>
                         </div>
                         
                         <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-sm shrink-0" :class="getStatusConfig(pass.status).badge">
@@ -333,8 +334,18 @@ const props = defineProps({
 const activeTab = ref('pases')
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica', 6: 'Permiso especial permanente' }
   return map[id] || 'Otro'
+}
+
+const formatPermanentWeekdays = (value) => {
+  const labels = { '1': 'Lun', '2': 'Mar', '3': 'Mié', '4': 'Jue', '5': 'Vie', '6': 'Sáb', '7': 'Dom' }
+  return String(value || '').split(',').map((day) => labels[day.trim()] || day.trim()).filter(Boolean).join(', ') || 'Sin días'
+}
+
+const getPermanentSummary = (pass) => {
+  const time = pass.time ? String(pass.time).slice(0, 5) : 'N/A'
+  return `${formatPermanentWeekdays(pass.permanent_weekdays)} · ${time}`
 }
 
 const getCategoryConfig = (id) => {
@@ -343,7 +354,8 @@ const getCategoryConfig = (id) => {
     2: { bg: 'bg-[#007F92]', border: 'border-[#007F92]/60' },
     3: { bg: 'bg-[#E83F4B]', border: 'border-[#E83F4B]/60' },
     4: { bg: 'bg-[#FCBF2C]', border: 'border-[#FCBF2C]/60' },
-    5: { bg: 'bg-[#5FB4A9]', border: 'border-[#5FB4A9]/60' }
+    5: { bg: 'bg-[#5FB4A9]', border: 'border-[#5FB4A9]/60' },
+    6: { bg: 'bg-violet-500', border: 'border-violet-300' }
   }
   return map[id] || { bg: 'bg-[#86888C]', border: 'border-[#86888C]/60' }
 }

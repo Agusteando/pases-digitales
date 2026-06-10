@@ -68,7 +68,7 @@
                 <p class="text-slate-400 text-sm mt-1">Ajusta los filtros o intenta con otra búsqueda.</p>
               </td>
             </tr>
-            <tr v-else v-for="pass in passes" :key="pass.id" class="transition-colors group" :class="pass.status === 'cancelado' ? 'bg-casita-red/5 hover:bg-casita-red/10' : 'bg-transparent hover:bg-white/50'">
+            <tr v-else v-for="pass in passes" :key="pass.id" class="transition-colors group" :class="getRowClass(pass)">
               <td class="px-6 py-5">
                 <div class="flex items-center gap-2">
                   <NuxtLink :to="`/pass/${pass.id}`" class="font-mono text-sm font-black text-brand-600 hover:text-brand-900 tracking-tight transition-colors">
@@ -83,8 +83,9 @@
                 <span class="text-sm font-black text-slate-800">{{ pass.employee_name }}</span>
               </td>
               <td class="px-6 py-5">
-                <span class="text-xs font-bold text-slate-600 bg-white/60 px-2.5 py-1 rounded-lg border border-white shadow-sm">{{ getCategoryName(pass.category_id) }}</span>
-                <span v-if="pass.tipo_permiso" class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mt-1.5">{{ pass.tipo_permiso }}</span>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-lg border shadow-sm" :class="getCategoryBadgeClass(pass)">{{ getCategoryName(pass.category_id) }}</span>
+                <span v-if="Number(pass.category_id) === 6" class="text-[9px] font-black text-violet-500 uppercase tracking-widest block mt-1.5">{{ getPermanentSummary(pass) }}</span>
+                <span v-else-if="pass.tipo_permiso" class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mt-1.5">{{ pass.tipo_permiso }}</span>
               </td>
               <td class="px-6 py-5">
                 <span class="text-sm font-bold text-slate-600">{{ formatDate(pass.date) }}</span>
@@ -158,8 +159,30 @@ const actionType = ref(null)
 let searchTimeout = null
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica', 6: 'Permiso especial permanente' }
   return map[id] || 'Otro'
+}
+
+const formatPermanentWeekdays = (value) => {
+  const labels = { '1': 'Lun', '2': 'Mar', '3': 'Mié', '4': 'Jue', '5': 'Vie', '6': 'Sáb', '7': 'Dom' }
+  return String(value || '').split(',').map((day) => labels[day.trim()] || day.trim()).filter(Boolean).join(', ') || 'Sin días'
+}
+
+const formatTime = (timeStr) => timeStr ? String(timeStr).slice(0, 5) : 'N/A'
+
+const getPermanentSummary = (pass) => {
+  return [pass.tipo_permiso, formatPermanentWeekdays(pass.permanent_weekdays), formatTime(pass.time)].filter(Boolean).join(' · ')
+}
+
+const getRowClass = (pass) => {
+  if (pass.status === 'cancelado') return 'bg-casita-red/5 hover:bg-casita-red/10'
+  if (Number(pass.category_id) === 6) return 'bg-violet-50/30 hover:bg-violet-50/60'
+  return 'bg-transparent hover:bg-white/50'
+}
+
+const getCategoryBadgeClass = (pass) => {
+  if (Number(pass.category_id) === 6) return 'text-violet-700 bg-violet-50/80 border-violet-200/70'
+  return 'text-slate-600 bg-white/60 border-white'
 }
 
 const formatDate = (dateStr) => {

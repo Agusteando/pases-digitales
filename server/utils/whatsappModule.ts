@@ -47,7 +47,7 @@ export const editWhatsAppMessage = async (payload: EditMessagePayload): Promise<
 
 export const buildWhatsAppTemplate = (data: any, isCancelled = false): string => {
   const categoryNames: Record<number, string> = {
-    1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad Médica'
+    1: 'Llegada Tarde', 2: 'Salida Anticipada', 3: 'Ausencia', 4: 'Cambio de Horario', 5: 'Incapacidad Médica', 6: 'Permiso Especial Permanente'
   }
   const statusMark = isCancelled ? '🚫 *ANULADO*' : '✅ *AUTORIZADO*'
   const categoryStr = categoryNames[data.categoryId] || 'Operación'
@@ -57,15 +57,18 @@ export const buildWhatsAppTemplate = (data: any, isCancelled = false): string =>
   const plantelStr = cleanPlantel ? `\n🏢 *Plantel:* ${cleanPlantel}` : ''
   
   const isCambioHorario = data.categoryId === 4;
+  const isPermanentSpecial = data.categoryId === 6;
   const cambioHorarioMsg = isCambioHorario && data.horarioEntrada && data.horarioSalida 
     ? `\n⏰ *Nuevo Horario:* ${data.horarioEntrada} a ${data.horarioSalida}` 
     : '';
+
+  const permanentMsg = isPermanentSpecial ? `\n🔔 *Recordatorio Telegram:* ${data.time || 'N/A'}` : ''
 
   return `🎫 *PASE DIGITAL | #${String(data.id).padStart(5, '0')}*
 ${statusMark}
 
 👤 *Colaborador:* ${data.employeeName}${plantelStr}
-📋 *Movimiento:* ${categoryStr}${cambioHorarioMsg}
-⏰ *Fecha:* ${data.date}${data.time && !isCambioHorario ? ' | Hora: ' + data.time : ''}${motivoStr}
+📋 *Movimiento:* ${categoryStr}${cambioHorarioMsg}${permanentMsg}
+⏰ *Fecha:* ${data.date}${data.time && !isCambioHorario && !isPermanentSpecial ? ' | Hora: ' + data.time : ''}${motivoStr}
 🧑‍💻 *Emitido por:* ${data.user}`;
 }

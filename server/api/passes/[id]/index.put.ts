@@ -11,6 +11,22 @@ import { defineEventHandler, getRouterParam, readBody, getCookie, createError } 
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+
+const PERMANENT_SPECIAL_CATEGORY_ID = 6
+const VALID_PERMANENT_WEEKDAYS = new Set(['1', '2', '3', '4', '5', '6', '7'])
+
+const normalizePermanentWeekdays = (value: any) => {
+  const raw = Array.isArray(value) ? value : String(value || '').split(',')
+  const unique = Array.from(new Set(
+    raw
+      .map((day: any) => String(day).trim())
+      .filter((day: string) => VALID_PERMANENT_WEEKDAYS.has(day))
+  ))
+  return unique.sort((a, b) => Number(a) - Number(b)).join(',')
+}
+
+const isValidTime = (value: any) => /^\d{2}:\d{2}(:\d{2})?$/.test(String(value || '').trim())
+
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const body = await readBody(event)
@@ -64,9 +80,33 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'No se permite actualizar pases con fechas en el pasado.' })
     }
 
+    if (mysqlEndDate.isBefore(mysqlDate)) {
+      throw createError({ statusCode: 400, message: 'La fecha de término no puede ser anterior al inicio.' })
+    }
+
+    const categoryId = Number(body.categoryId)
+    const normalizedPermanentWeekdays = categoryId === PERMANENT_SPECIAL_CATEGORY_ID
+      ? normalizePermanentWeekdays(body.permanentWeekdays || body.permanent_weekdays)
+      : null
+
+    if (categoryId === PERMANENT_SPECIAL_CATEGORY_ID) {
+      if (!body.endDate) {
+        throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere fecha de término.' })
+      }
+      if (!isValidTime(body.time)) {
+        throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere una hora diaria de aviso válida.' })
+      }
+      if (!body.tipoPermiso) {
+        throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere tipo de permiso.' })
+      }
+      if (!normalizedPermanentWeekdays) {
+        throw createError({ statusCode: 400, message: 'Selecciona al menos un día de ejecución para el permiso especial permanente.' })
+      }
+    }
+
     const sql = `
       UPDATE hr_entries
-      SET date = ?, fecha_fin = ?, time = ?, comentarios = ?, category_id = ?, plantel = ?, regreso = ?, hora_regreso = ?, IMSS = ?, tipo_incapacidad = ?, tipo_permiso = ?, horario_entrada = ?, horario_salida = ?
+      SET date = ?, fecha_fin = ?, time = ?, comentarios = ?, category_id = ?, plantel = ?, regreso = ?, hora_regreso = ?, IMSS = ?, tipo_incapacidad = ?, tipo_permiso = ?, horario_entrada = ?, horario_salida = ?, permanent_weekdays = ?
       WHERE id = ?
     `
     await db.execute(sql, [
@@ -74,7 +114,7 @@ export default defineEventHandler(async (event) => {
        mysqlEndDate.format('YYYY-MM-DD 23:59:59'),
        body.time || null,
        body.comentarios || null,
-       body.categoryId,
+       categoryId,
        cleanPlantelName(body.plantel) || null,
        body.regreso ? 1 : 0,
        body.horaRegreso || null,
@@ -83,6 +123,7 @@ export default defineEventHandler(async (event) => {
        body.tipoPermiso || null,
        body.horarioEntrada || null,
        body.horarioSalida || null,
+       normalizedPermanentWeekdays,
        id
     ])
 

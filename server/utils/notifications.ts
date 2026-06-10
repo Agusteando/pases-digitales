@@ -20,24 +20,50 @@ const toWhatsAppChatId = (phone: string) => {
   return cleaned ? `${cleaned}@c.us` : ''
 }
 
+
+const formatPermanentWeekdays = (value: any) => {
+  const labels: Record<string, string> = {
+    '1': 'lunes',
+    '2': 'martes',
+    '3': 'miércoles',
+    '4': 'jueves',
+    '5': 'viernes',
+    '6': 'sábado',
+    '7': 'domingo'
+  }
+  return String(value || '')
+    .split(',')
+    .map((day) => labels[day.trim()] || day.trim())
+    .filter(Boolean)
+    .join(', ')
+}
+
 const getPassCopy = (pass: any) => {
   const categories: Record<number, string> = {
     1: 'Pase de entrada',
     2: 'Pase de salida',
     3: 'Pase para faltar',
     4: 'Pase cambio de horario',
-    5: 'Incapacidad'
+    5: 'Incapacidad',
+    6: 'Permiso especial permanente'
   }
 
   const categoryName = categories[pass.category_id] || 'Pase'
   const paddedId = String(pass.id).padStart(5, '0')
   const formattedDate = new Date(pass.date).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })
-  const isCambioHorario = pass.category_id === 4
+  const isCambioHorario = Number(pass.category_id) === 4
+  const isPermanentSpecial = Number(pass.category_id) === 6
   const cambioHorarioMsg = isCambioHorario && pass.horario_entrada && pass.horario_salida
     ? `\n⏰ *Nuevo Horario:* ${pass.horario_entrada} a ${pass.horario_salida}`
     : ''
   const endDateFormatted = pass.fecha_fin ? new Date(pass.fecha_fin).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' }) : ''
-  const dateRangeMsg = isCambioHorario
+  const permanentWeekdaysMsg = isPermanentSpecial && pass.permanent_weekdays
+    ? `\n🗓️ *Días:* ${formatPermanentWeekdays(pass.permanent_weekdays)}`
+    : ''
+  const permanentTimeMsg = isPermanentSpecial && pass.time
+    ? `\n🔔 *Aviso Telegram:* ${String(pass.time).slice(0, 5)}`
+    : ''
+  const dateRangeMsg = (isCambioHorario || isPermanentSpecial)
     ? `Vigencia: ${formattedDate} al ${endDateFormatted || formattedDate}`
     : `Fecha: ${formattedDate}`
 
@@ -52,8 +78,11 @@ const getPassCopy = (pass: any) => {
     formattedDate,
     endDateFormatted,
     isCambioHorario,
+    isPermanentSpecial,
     cambioHorarioMsg,
     dateRangeMsg,
+    permanentWeekdaysMsg,
+    permanentTimeMsg,
     tipoPermisoMsg,
     motivoMsg,
     returnMessage,
@@ -88,10 +117,10 @@ async function sendTelegramAudit(db: any, pass: any, options: { scheduleTg?: boo
   else if (isRejected) { statusIcon = '❌'; statusTitle = 'Pase Rechazado' }
   else if (isCancelled) { statusIcon = '🚫'; statusTitle = 'Pase Anulado' }
 
-  const tgMessage = `${statusIcon} ${statusTitle}\n${copy.categoryName} de *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario ? copy.timeMsg : ''} - Folio *${copy.paddedId}*`
+  const tgMessage = `${statusIcon} ${statusTitle}\n${copy.categoryName} de *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.permanentWeekdaysMsg}${copy.permanentTimeMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario && !copy.isPermanentSpecial ? copy.timeMsg : ''} - Folio *${copy.paddedId}*`
 
   let tgTriggerAt: string | undefined
-  if (options.scheduleTg && isAuthorized) {
+  if (options.scheduleTg && isAuthorized && !copy.isPermanentSpecial) {
     const passDateStr = typeof pass.date === 'string' ? pass.date.substring(0, 10) : dayjs(pass.date).format('YYYY-MM-DD')
     let passTimeStr = pass.time ? String(pass.time).trim() : '08:00:00'
     if (copy.isCambioHorario && pass.horario_entrada) passTimeStr = String(pass.horario_entrada).trim()
@@ -119,7 +148,7 @@ async function sendTelegramAudit(db: any, pass: any, options: { scheduleTg?: boo
   }
 
   if (tgTriggerAt) {
-    const tgScheduledMessage = `⏰ *Recordatorio de Pase*\n${copy.categoryName} de *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario ? copy.timeMsg : ''} - Folio *${copy.paddedId}*`
+    const tgScheduledMessage = `⏰ *Recordatorio de Pase*\n${copy.categoryName} de *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.permanentWeekdaysMsg}${copy.permanentTimeMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario && !copy.isPermanentSpecial ? copy.timeMsg : ''} - Folio *${copy.paddedId}*`
 
     try {
       await $fetch('https://tgbot.casitaapps.com/scheduleMessage', {
@@ -194,7 +223,7 @@ async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget,
   if (target.channels.includes('WHATSAPP')) {
     const chatId = toWhatsAppChatId(target.phone)
     if (chatId && chatId.length > 10) {
-      const waMessage = `${labels.headerTitle}\n\n${copy.categoryName} para *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario ? copy.timeMsg : ''} - Folio *${copy.paddedId}*${exclusiveLine ? `\n\n${exclusiveLine}` : ''}\n\nHola ${target.name.split(' ')[0]}, ${labels.actionPhrase}\n${targetAuthUrl}`
+      const waMessage = `${labels.headerTitle}\n\n${copy.categoryName} para *${pass.employee_name}*${copy.tipoPermisoMsg}${copy.cambioHorarioMsg}${copy.permanentWeekdaysMsg}${copy.permanentTimeMsg}${copy.motivoMsg}${copy.returnMessage}\n${copy.dateRangeMsg}${copy.timeMsg && !copy.isCambioHorario && !copy.isPermanentSpecial ? copy.timeMsg : ''} - Folio *${copy.paddedId}*${exclusiveLine ? `\n\n${exclusiveLine}` : ''}\n\nHola ${target.name.split(' ')[0]}, ${labels.actionPhrase}\n${targetAuthUrl}`
 
       try {
         const waRes = await sendWhatsAppMessage({ chatId, message: waMessage })
@@ -221,7 +250,8 @@ async function dispatchToTarget(db: any, pass: any, target: AuthorizationTarget,
            <div style="text-align: left; background-color: #f8fafc; padding: 24px; border-radius: 16px; margin-bottom: 32px; border: 1px solid #f1f5f9;">
               <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Colaborador:</strong><br><span style="color: #0f172a; font-size: 16px; font-weight: 600;">${pass.employee_name}</span></p>
               ${copy.isCambioHorario ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Vigencia:</strong><br><span style="color: #0f172a; font-weight: 600;">Del ${copy.formattedDate} al ${copy.endDateFormatted || copy.formattedDate}</span></p>
-              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Nuevo Horario:</strong><br><span style="color: #0f172a; font-weight: 600;">${pass.horario_entrada} a ${pass.horario_salida}</span></p>` : `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${copy.formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>`}
+              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Nuevo Horario:</strong><br><span style="color: #0f172a; font-weight: 600;">${pass.horario_entrada} a ${pass.horario_salida}</span></p>` : copy.isPermanentSpecial ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Vigencia:</strong><br><span style="color: #0f172a; font-weight: 600;">Del ${copy.formattedDate} al ${copy.endDateFormatted || copy.formattedDate}</span></p>
+              <p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Recordatorio Telegram:</strong><br><span style="color: #0f172a; font-weight: 600;">${formatPermanentWeekdays(pass.permanent_weekdays)} a las ${String(pass.time || '').slice(0, 5)}</span></p>` : `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Fecha y Hora:</strong><br><span style="color: #0f172a; font-weight: 600;">${copy.formattedDate} ${pass.time ? 'a las ' + pass.time : ''}</span></p>`}
               ${pass.tipo_permiso ? `<p style="margin: 0 0 12px; color: #334155; font-size: 14px;"><strong>Tipo de Permiso:</strong><br><span style="color: #0f172a;">${pass.tipo_permiso}</span></p>` : ''}
               ${pass.comentarios ? `<p style="margin: 0; color: #334155; font-size: 14px;"><strong>Motivo:</strong><br><span style="color: #0f172a;">${pass.comentarios}</span></p>` : ''}
               ${(pass.status === 'autorizado' || pass.status === 'rechazado') && pass.authorized_by ? `<p style="margin: 12px 0 0; color: ${pass.status === 'autorizado' ? '#059669' : '#dc2626'}; font-size: 14px;"><strong>${pass.status === 'autorizado' ? 'Autorizado' : 'Rechazado'} por:</strong><br><span style="color: ${pass.status === 'autorizado' ? '#064e3b' : '#991b1b'}; font-weight: 600;">${pass.authorized_by}</span></p>` : ''}

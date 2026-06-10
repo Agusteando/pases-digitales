@@ -12,6 +12,22 @@ import crypto from 'crypto'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+
+const PERMANENT_SPECIAL_CATEGORY_ID = 6
+const VALID_PERMANENT_WEEKDAYS = new Set(['1', '2', '3', '4', '5', '6', '7'])
+
+const normalizePermanentWeekdays = (value: any) => {
+  const raw = Array.isArray(value) ? value : String(value || '').split(',')
+  const unique = Array.from(new Set(
+    raw
+      .map((day: any) => String(day).trim())
+      .filter((day: string) => VALID_PERMANENT_WEEKDAYS.has(day))
+  ))
+  return unique.sort((a, b) => Number(a) - Number(b)).join(',')
+}
+
+const isValidTime = (value: any) => /^\d{2}:\d{2}(:\d{2})?$/.test(String(value || '').trim())
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const db = useDB()
@@ -33,7 +49,7 @@ export default defineEventHandler(async (event) => {
   const { 
     employeeName, curp, ingressioId, categoryId, date, endDate, time, comentarios, 
     plantel, puesto, regreso, horaRegreso, imss, tipoIncapacidad, tipoPermiso, autoAuthorize, scheduleTg,
-    horarioEntrada, horarioSalida
+    horarioEntrada, horarioSalida, permanentWeekdays
   } = body
 
   logAuthorizationDebug('Inicio de registro de pase.', {
@@ -54,6 +70,29 @@ export default defineEventHandler(async (event) => {
   if (dateObj.isBefore(todayObj) || endDateObj.isBefore(todayObj)) {
     logAuthorizationDebug('Registro bloqueado por fecha en pasado.', { requestId, employeeName, date, endDate, actor: actingEmail }, 'warn')
     throw createError({ statusCode: 400, message: 'No se permite registrar pases con fechas en el pasado.' })
+  }
+
+  if (endDateObj.isBefore(dateObj)) {
+    throw createError({ statusCode: 400, message: 'La fecha de término no puede ser anterior al inicio.' })
+  }
+
+  const normalizedPermanentWeekdays = Number(categoryId) === PERMANENT_SPECIAL_CATEGORY_ID
+    ? normalizePermanentWeekdays(permanentWeekdays)
+    : null
+
+  if (Number(categoryId) === PERMANENT_SPECIAL_CATEGORY_ID) {
+    if (!endDate) {
+      throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere fecha de término.' })
+    }
+    if (!isValidTime(time)) {
+      throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere una hora diaria de aviso válida.' })
+    }
+    if (!tipoPermiso) {
+      throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere tipo de permiso.' })
+    }
+    if (!normalizedPermanentWeekdays) {
+      throw createError({ statusCode: 400, message: 'Selecciona al menos un día de ejecución para el permiso especial permanente.' })
+    }
   }
 
   const [lastGlobal]: any = await db.execute('SELECT id, employee_name FROM hr_entries ORDER BY id DESC LIMIT 1')
@@ -96,8 +135,8 @@ export default defineEventHandler(async (event) => {
   
   const sql = `
     INSERT INTO hr_entries 
-    (user, employee_name, curp, ingressioId, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, tipo_permiso, authorized_by, authorized_at, horario_entrada, horario_salida) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
+    (user, employee_name, curp, ingressioId, category_id, date, fecha_fin, time, comentarios, plantel, regreso, hora_regreso, status, auth_token, sync_request, IMSS, tipo_incapacidad, tipo_permiso, authorized_by, authorized_at, horario_entrada, horario_salida, permanent_weekdays) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
   `
   
   let insertId: number
@@ -118,12 +157,13 @@ export default defineEventHandler(async (event) => {
       initialStatus,
       authToken,
       imss || null,
-      categoryId === 5 ? tipoIncapacidad : null,
+      Number(categoryId) === 5 ? tipoIncapacidad : null,
       tipoPermiso || null,
       authorizedBy,
       authorizedAt,
       horarioEntrada || null,
-      horarioSalida || null
+      horarioSalida || null,
+      normalizedPermanentWeekdays
     ])
     insertId = result.insertId
   } catch (error: any) {

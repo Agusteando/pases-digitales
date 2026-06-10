@@ -37,6 +37,7 @@
               <option :value="3">Ausencia justificada</option>
               <option :value="4">Cambio de horario</option>
               <option :value="5">Incapacidad médica</option>
+              <option :value="6">Permiso especial permanente</option>
             </select>
           </div>
 
@@ -45,12 +46,12 @@
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Desde</label>
               <input type="date" v-model="form.date" :min="todayDate" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500" />
             </div>
-            <div v-if="[3, 5].includes(form.categoryId)" class="space-y-2">
+            <div v-if="[3, 5, 6].includes(form.categoryId)" class="space-y-2">
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Hasta</label>
-              <input type="date" v-model="form.endDate" :min="todayDate" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500" />
+              <input type="date" v-model="form.endDate" :min="form.date || todayDate" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500" />
             </div>
             <div v-if="![3].includes(form.categoryId)" class="space-y-2">
-              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Hora</label>
+              <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">{{ form.categoryId === 6 ? 'Hora diaria de aviso' : 'Hora' }}</label>
               <input type="time" v-model="form.time" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500" />
             </div>
           </div>
@@ -90,6 +91,48 @@
               >
                 {{ opt }}
               </button>
+            </div>
+          </div>
+
+          <!-- Edit Modal Opciones (Category 6) -->
+          <div v-if="form.categoryId === 6" class="space-y-5 rounded-3xl border border-violet-200/70 bg-gradient-to-br from-violet-50/80 via-white/80 to-slate-50 p-5 shadow-sm">
+            <div class="space-y-3">
+              <label class="block text-[11px] font-black text-violet-700 uppercase tracking-widest">Tipo de permiso especial</label>
+              <div class="flex flex-wrap gap-3">
+                <button
+                  v-for="opt in permanentPermissionTypes"
+                  :key="opt"
+                  type="button"
+                  :disabled="!isEditable"
+                  @click="form.tipoPermiso = form.tipoPermiso === opt ? '' : opt"
+                  class="px-4 py-2.5 text-xs font-bold rounded-xl transition-all border outline-none shadow-sm disabled:opacity-50"
+                  :class="form.tipoPermiso === opt
+                    ? 'bg-violet-100 text-violet-800 border-violet-300 ring-1 ring-violet-200'
+                    : 'bg-white/70 text-slate-600 border-white hover:border-violet-200 hover:bg-white'"
+                >
+                  {{ opt }}
+                </button>
+              </div>
+            </div>
+            <div class="space-y-3">
+              <label class="block text-[11px] font-black text-violet-700 uppercase tracking-widest">Días de ejecución</label>
+              <div class="grid grid-cols-7 gap-2">
+                <button
+                  v-for="day in permanentWeekdayOptions"
+                  :key="day.value"
+                  type="button"
+                  :disabled="!isEditable"
+                  :title="day.label"
+                  @click="togglePermanentWeekday(day.value)"
+                  class="aspect-square rounded-xl text-xs font-black border transition-all outline-none shadow-sm disabled:opacity-50"
+                  :class="form.permanentWeekdays.includes(day.value)
+                    ? 'bg-violet-600 text-white border-violet-600 shadow-violet-200'
+                    : 'bg-white/80 text-slate-500 border-white hover:border-violet-200 hover:text-violet-700'"
+                >
+                  {{ day.short }}
+                </button>
+              </div>
+              <p class="text-[11px] font-bold text-violet-700/80 leading-relaxed">El recordatorio se enviará por Telegram solo después de autorizar el pase.</p>
             </div>
           </div>
 
@@ -209,6 +252,17 @@ const emit = defineEmits(['close', 'updated'])
 const { user } = useAuth()
 const todayDate = dayjs().format('YYYY-MM-DD')
 
+const permanentPermissionTypes = ['Vehículo', 'Acceso', 'Equipo', 'Llaves', 'Otro']
+const permanentWeekdayOptions = [
+  { value: '1', label: 'Lunes', short: 'L' },
+  { value: '2', label: 'Martes', short: 'M' },
+  { value: '3', label: 'Miércoles', short: 'M' },
+  { value: '4', label: 'Jueves', short: 'J' },
+  { value: '5', label: 'Viernes', short: 'V' },
+  { value: '6', label: 'Sábado', short: 'S' },
+  { value: '7', label: 'Domingo', short: 'D' }
+]
+
 const isAdmin = computed(() => user.value?.is_admin || false)
 const isOwner = computed(() => user.value && props.pass && user.value.name === props.pass.user)
 const canManage = computed(() => isOwner.value || isAdmin.value)
@@ -234,10 +288,25 @@ const form = ref({
   imss: '',
   tipoIncapacidad: '',
   tipoPermiso: '',
-  evidenceUrl: null
+  evidenceUrl: null,
+  permanentWeekdays: []
 })
 
 const evidenceFile = ref(null)
+
+function parsePermanentWeekdays(value) {
+  if (Array.isArray(value)) return value.map(String)
+  return String(value || '').split(',').map((day) => day.trim()).filter(Boolean)
+}
+
+function togglePermanentWeekday(day) {
+  const current = form.value.permanentWeekdays || []
+  if (current.includes(day)) {
+    form.value.permanentWeekdays = current.filter((d) => d !== day)
+    return
+  }
+  form.value.permanentWeekdays = [...current, day].sort((a, b) => Number(a) - Number(b))
+}
 
 function onFileChange(e) {
   const file = e.target.files?.[0]
@@ -290,7 +359,8 @@ onMounted(() => {
       imss: props.pass.IMSS || '',
       tipoIncapacidad: props.pass.tipo_incapacidad || '',
       tipoPermiso: props.pass.tipo_permiso || '',
-      evidenceUrl: props.pass.evidence || null
+      evidenceUrl: props.pass.evidence || null,
+      permanentWeekdays: parsePermanentWeekdays(props.pass.permanent_weekdays)
     }
   }
 })
@@ -300,6 +370,14 @@ const isSaving = ref(false)
 const handleSave = async () => {
   if (!isEditable.value || isSaving.value) return
   isSaving.value = true
+
+  if (form.value.categoryId === 6) {
+    if (!form.value.endDate || !form.value.time || !form.value.tipoPermiso || !(form.value.permanentWeekdays || []).length) {
+      alert('Completa vigencia, tipo, días y hora diaria para el permiso especial permanente.')
+      isSaving.value = false
+      return
+    }
+  }
 
   let finalEvidenceUrl = form.value.evidenceUrl
 

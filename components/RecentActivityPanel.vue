@@ -63,12 +63,13 @@
                 <div class="flex flex-col gap-1 min-w-0">
                   <h4 class="text-sm font-black text-slate-900 tracking-tight truncate">{{ pass.employee_name }}</h4>
                   <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                    <span class="text-[10px] font-bold text-slate-600">{{ getCategoryName(pass.category_id) }}</span>
+                    <span class="text-[10px] font-bold" :class="Number(pass.category_id) === 6 ? 'text-violet-700' : 'text-slate-600'">{{ getCategoryName(pass.category_id) }}</span>
                     <span v-if="pass.plantel" class="text-slate-300">•</span>
                     <span v-if="pass.plantel" class="text-[9px] font-black text-slate-500 flex items-center gap-1 uppercase tracking-widest">
                       <Building2 class="w-2.5 h-2.5 text-slate-400" /> {{ pass.plantel }}
                     </span>
                   </div>
+                  <span v-if="Number(pass.category_id) === 6" class="text-[9px] font-black text-violet-500 uppercase tracking-widest truncate">{{ getPermanentSummary(pass) }}</span>
                 </div>
                 <div class="flex items-center gap-1.5 opacity-0 group-hover/card:opacity-100 -translate-x-2 group-hover/card:translate-x-0 transition-all">
                   <button @click.prevent="resendTelegram(pass.id)" :disabled="resendingId === pass.id" class="shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-brand-600 hover:bg-brand-50 hover:border-brand-200 transition-all outline-none shadow-sm disabled:opacity-50" title="Reenviar a Telegram">
@@ -97,7 +98,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, ArrowRight, AlertTriangle, Building2, Send, CheckCircle } from 'lucide-vue-next'
+import { RefreshCcw, Loader2, FileText, LogIn, LogOut, UserX, Clock, Stethoscope, KeyRound, ArrowRight, AlertTriangle, Building2, Send, CheckCircle } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
 const { data, pending, error, refresh } = useFetch('/api/passes/recent')
@@ -127,12 +128,12 @@ const resendTelegram = async (id) => {
 }
 
 const getCategoryIcon = (id) => {
-  const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope }
+  const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope, 6: KeyRound }
   return map[id] || Clock
 }
 
 const getCategoryColorText = (id) => {
-  const map = { 1: 'text-casita-peach', 2: 'text-iedis-blue', 3: 'text-casita-red', 4: 'text-casita-gold', 5: 'text-iedis-teal' }
+  const map = { 1: 'text-casita-peach', 2: 'text-iedis-blue', 3: 'text-casita-red', 4: 'text-casita-gold', 5: 'text-iedis-teal', 6: 'text-violet-700' }
   return map[id] || 'text-slate-400'
 }
 
@@ -147,8 +148,18 @@ const getStatusTextColor = (status) => {
 }
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica', 6: 'Permiso especial permanente' }
   return map[id] || 'Otro'
+}
+
+const formatPermanentWeekdays = (value) => {
+  const labels = { '1': 'Lun', '2': 'Mar', '3': 'Mié', '4': 'Jue', '5': 'Vie', '6': 'Sáb', '7': 'Dom' }
+  return String(value || '').split(',').map((day) => labels[day.trim()] || day.trim()).filter(Boolean).join(', ') || 'Sin días'
+}
+
+const getPermanentSummary = (pass) => {
+  const time = pass.time ? String(pass.time).slice(0, 5) : 'N/A'
+  return [pass.tipo_permiso, formatPermanentWeekdays(pass.permanent_weekdays), time].filter(Boolean).join(' · ')
 }
 
 const formatDateTime = (dateStr, timeStr) => {

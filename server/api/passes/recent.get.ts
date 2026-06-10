@@ -8,7 +8,7 @@ export default defineEventHandler(async () => {
   try {
     const db = useDB()
     const [rows]: any = await db.execute(
-      `SELECT id, employee_name, date, fecha_fin, time, category_id, status, user, plantel, horario_entrada, horario_salida 
+      `SELECT id, employee_name, date, fecha_fin, time, category_id, status, user, plantel, tipo_permiso, horario_entrada, horario_salida, permanent_weekdays 
        FROM hr_entries 
        ORDER BY id DESC 
        LIMIT 40`

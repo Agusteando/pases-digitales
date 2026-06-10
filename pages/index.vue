@@ -224,20 +224,20 @@
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5 col-span-2 sm:col-span-1">
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
-                      {{ activeScenario.categoryId === 4 ? 'Inicio de vigencia' : 'Fecha de inicio' }}
+                      {{ [4, 6].includes(activeScenario.categoryId) ? 'Inicio de vigencia' : 'Fecha de inicio' }}
                     </label>
                     <input type="date" v-model="form.date" :min="todayDate" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                   </div>
                   
                   <div v-if="activeScenario.needsEndDate" class="space-y-1.5 col-span-2 sm:col-span-1">
                     <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">
-                      {{ activeScenario.categoryId === 4 ? 'Fin de vigencia' : 'Fecha de término' }}
+                      {{ [4, 6].includes(activeScenario.categoryId) ? 'Fin de vigencia' : 'Fecha de término' }}
                     </label>
-                    <input type="date" v-model="form.endDate" :min="todayDate" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
+                    <input type="date" v-model="form.endDate" :min="form.date || todayDate" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                   </div>
 
                   <div v-if="activeScenario.needsTime" class="space-y-1.5 col-span-2 sm:col-span-1">
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Hora</label>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">{{ activeScenario.categoryId === 6 ? 'Hora diaria de aviso' : 'Hora' }}</label>
                     <input type="time" v-model="form.time" required class="w-full px-4 py-3.5 rounded-xl border border-white/80 focus:border-[#007F92] focus:ring-2 focus:ring-[#007F92]/20 outline-none text-base sm:text-sm font-bold text-slate-800 transition-all bg-white/70 backdrop-blur-sm shadow-sm" />
                   </div>
                 </div>
@@ -256,7 +256,7 @@
               </div>
 
               <!-- SECTION: Especificaciones (Conditional) -->
-              <div v-if="activeScenario.categoryId === 3 || activeScenario.categoryId === 4 || activeScenario.isMedical || activeScenario.categoryId === 2" class="relative group pt-6 border-t border-white/60">
+              <div v-if="activeScenario.categoryId === 3 || activeScenario.categoryId === 4 || activeScenario.categoryId === 6 || activeScenario.isMedical || activeScenario.categoryId === 2" class="relative group pt-6 border-t border-white/60">
                 <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest mb-4 block w-full">Clasificación y opciones</h3>
                 
                 <div v-if="activeScenario.categoryId === 3" class="space-y-3">
@@ -290,6 +290,45 @@
                     >
                       {{ opt }}
                     </button>
+                  </div>
+                </div>
+
+                <div v-if="activeScenario.categoryId === 6" class="space-y-5 rounded-[1.75rem] border border-violet-200/70 bg-gradient-to-br from-violet-50/80 via-white/80 to-slate-50 p-5 shadow-sm">
+                  <div class="space-y-3">
+                    <label class="block text-[10px] font-bold text-violet-700 uppercase tracking-widest px-1">Tipo de permiso especial</label>
+                    <div class="flex flex-wrap gap-2.5">
+                      <button 
+                        v-for="opt in permanentPermissionTypes" :key="opt"
+                        type="button"
+                        @click="form.tipoPermiso = form.tipoPermiso === opt ? '' : opt"
+                        class="px-4 py-3 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all border outline-none text-center shadow-sm backdrop-blur-md"
+                        :class="form.tipoPermiso === opt 
+                          ? 'bg-violet-100 text-violet-800 border-violet-300 ring-1 ring-violet-200' 
+                          : 'bg-white/80 text-slate-600 border-white hover:border-violet-200 hover:bg-white'"
+                      >
+                        {{ opt }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <label class="block text-[10px] font-bold text-violet-700 uppercase tracking-widest px-1">Días de ejecución</label>
+                    <div class="grid grid-cols-7 gap-2">
+                      <button
+                        v-for="day in permanentWeekdayOptions"
+                        :key="day.value"
+                        type="button"
+                        :title="day.label"
+                        @click="togglePermanentWeekday(day.value)"
+                        class="aspect-square rounded-xl text-xs font-black border transition-all outline-none shadow-sm"
+                        :class="form.permanentWeekdays.includes(day.value)
+                          ? 'bg-violet-600 text-white border-violet-600 shadow-violet-200'
+                          : 'bg-white/80 text-slate-500 border-white hover:border-violet-200 hover:text-violet-700'"
+                      >
+                        {{ day.short }}
+                      </button>
+                    </div>
+                    <p class="text-[11px] font-bold text-violet-700/80 leading-relaxed">El recordatorio se enviará diariamente por Telegram solo cuando el pase esté autorizado y el día coincida.</p>
                   </div>
                 </div>
 
@@ -399,7 +438,7 @@
               </div>
 
               <!-- Telegram Schedule Option -->
-              <div v-if="isFuture" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-center justify-between gap-3 shadow-inner">
+              <div v-if="isFuture && activeScenario.categoryId !== 6" class="bg-slate-50 rounded-2xl p-4 border border-slate-200 flex items-center justify-between gap-3 shadow-inner">
                  <div class="flex items-center gap-3">
                    <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-[#007F92] border border-slate-200 shrink-0">
                      <CalendarClock class="w-4 h-4" />
@@ -554,7 +593,7 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
-import { LogOut, LogIn, UserX, Stethoscope, Clock, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock, AlertCircle } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, KeyRound, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock, AlertCircle } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -573,6 +612,17 @@ const subcategories = [
   'Por Embarazo',
   'Por Definir',
   'Permiso de Paternidad'
+]
+
+const permanentPermissionTypes = ['Vehículo', 'Acceso', 'Equipo', 'Llaves', 'Otro']
+const permanentWeekdayOptions = [
+  { value: '1', label: 'Lunes', short: 'L' },
+  { value: '2', label: 'Martes', short: 'M' },
+  { value: '3', label: 'Miércoles', short: 'M' },
+  { value: '4', label: 'Jueves', short: 'J' },
+  { value: '5', label: 'Viernes', short: 'V' },
+  { value: '6', label: 'Sábado', short: 'S' },
+  { value: '7', label: 'Domingo', short: 'D' }
 ]
 
 const selectedEmployees = ref([])
@@ -632,6 +682,9 @@ const isFormComplete = computed(() => {
   if (activeScenario.value.categoryId === 4) { 
      if (!form.horarioEntrada || !form.horarioSalida) return false;
   }
+  if (activeScenario.value.categoryId === 6) {
+     if (!form.endDate || !form.time || !form.tipoPermiso || !form.permanentWeekdays.length) return false;
+  }
   return true;
 })
 
@@ -644,7 +697,7 @@ const isFuture = computed(() => {
 })
 
 const getScenarioIcon = (iconName) => {
-  const map = { LogOut, LogIn, UserX, Stethoscope, Clock }
+  const map = { LogOut, LogIn, UserX, Stethoscope, Clock, KeyRound }
   return map[iconName] || Clock
 }
 
@@ -860,7 +913,8 @@ const form = reactive({
   optInAuthorizer: false,
   authorizerPhone: '',
   tipoPermiso: '',
-  scheduleTg: true
+  scheduleTg: true,
+  permanentWeekdays: []
 })
 
 watch([() => form.date, () => form.endDate, () => form.horarioEntrada, () => form.horarioSalida], ([start, end, he, hs]) => {
@@ -875,11 +929,20 @@ watch([() => form.date, () => form.endDate, () => form.horarioEntrada, () => for
 
 const predefinedScenarios = [
   { id: 'cambio', title: 'Cambio de horario', icon: 'Clock', categoryId: 4, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
+  { id: 'permanente', title: 'Permiso especial permanente', icon: 'KeyRound', categoryId: 6, needsTime: true, canReturn: false, needsEndDate: true, isMedical: false },
   { id: 'llegada', title: 'Llegada tarde', icon: 'LogIn', categoryId: 1, needsTime: true, canReturn: false, isMedical: false },
   { id: 'salida', title: 'Salida anticipada', icon: 'LogOut', categoryId: 2, needsTime: true, canReturn: true, isMedical: false },
   { id: 'falta', title: 'Ausencia', icon: 'UserX', categoryId: 3, needsTime: false, canReturn: false, needsEndDate: true, isMedical: false },
   { id: 'imss', title: 'Incapacidad médica', icon: 'Stethoscope', categoryId: 5, needsTime: false, canReturn: false, needsEndDate: true, isMedical: true }
 ]
+
+function togglePermanentWeekday(day) {
+  if (form.permanentWeekdays.includes(day)) {
+    form.permanentWeekdays = form.permanentWeekdays.filter((d) => d !== day)
+    return
+  }
+  form.permanentWeekdays = [...form.permanentWeekdays, day].sort((a, b) => Number(a) - Number(b))
+}
 
 function selectScenario(scenario) {
   activeScenario.value = scenario
@@ -891,7 +954,8 @@ function selectScenario(scenario) {
     comentarios: '', destino: '', regreso: false, horaRegreso: '',
     imss: '', tipoIncapacidad: 'Enfermedad general',
     optInAuthorizer: false, authorizerPhone: '',
-    tipoPermiso: '', scheduleTg: true
+    tipoPermiso: '', scheduleTg: true,
+    permanentWeekdays: []
   })
   
   if (window.innerWidth < 1280) {
@@ -1046,7 +1110,8 @@ async function submitPass(autoAuthorize = false) {
           tipoPermiso: form.tipoPermiso,
           evidence: evidenceUrl,
           autoAuthorize,
-          scheduleTg: form.scheduleTg
+          scheduleTg: form.scheduleTg,
+          permanentWeekdays: form.permanentWeekdays
         }
       })
       if (createdPass?.notificationWarning) notificationWarnings.push(`${emp.name}: ${createdPass.notificationWarning}`)

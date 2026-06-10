@@ -118,21 +118,21 @@
             <div class="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               <div class="border-l-[3px] border-casita-green-light/50 pl-4 bg-white/40 py-2 rounded-r-xl">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                  {{ pass.category_id === 4 ? 'Inicio Vigencia' : 'Desde' }}
+                  {{ [4, 6].includes(Number(pass.category_id)) ? 'Inicio Vigencia' : 'Desde' }}
                 </span>
                 <span class="text-base font-black text-slate-800">{{ formatDateOnly(pass.date) }}</span>
               </div>
-              <div class="border-l-[3px] border-casita-peach/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="[3, 4, 5].includes(pass.category_id)">
+              <div class="border-l-[3px] border-casita-peach/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="[3, 4, 5, 6].includes(Number(pass.category_id))">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                  {{ pass.category_id === 4 ? 'Fin Vigencia' : 'Hasta' }}
+                  {{ [4, 6].includes(Number(pass.category_id)) ? 'Fin Vigencia' : 'Hasta' }}
                 </span>
                 <span class="text-base font-black text-slate-800">{{ pass.fecha_fin ? formatDateOnly(pass.fecha_fin) : 'N/A' }}</span>
               </div>
-              <div class="border-l-[3px] border-iedis-blue/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="![3, 4].includes(pass.category_id)">
-                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Hora</span>
+              <div class="border-l-[3px] border-iedis-blue/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="![3, 4].includes(Number(pass.category_id))">
+                <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{{ Number(pass.category_id) === 6 ? 'Hora diaria de aviso' : 'Hora' }}</span>
                 <span class="text-base font-black text-slate-800 font-mono">{{ formatTime(pass.time) }}</span>
               </div>
-              <div class="border-l-[3px] border-casita-gold/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="pass.category_id === 4">
+              <div class="border-l-[3px] border-casita-gold/50 pl-4 bg-white/40 py-2 rounded-r-xl" v-if="Number(pass.category_id) === 4">
                 <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Nuevo Horario</span>
                 <span class="text-base font-black text-slate-800 font-mono">{{ formatTime(pass.horario_entrada) }} a {{ formatTime(pass.horario_salida) }}</span>
               </div>
@@ -142,7 +142,7 @@
               </div>
             </div>
 
-            <div v-if="pass.category_id === 5" class="mb-8 p-6 bg-iedis-teal/10 rounded-2xl border border-iedis-teal/20 grid grid-cols-2 gap-6 shadow-sm">
+            <div v-if="Number(pass.category_id) === 5" class="mb-8 p-6 bg-iedis-teal/10 rounded-2xl border border-iedis-teal/20 grid grid-cols-2 gap-6 shadow-sm">
               <div>
                 <span class="block text-[10px] font-black text-iedis-teal-dark/70 uppercase tracking-widest mb-1.5">Folio IMSS</span>
                 <span class="text-base font-black text-iedis-teal-dark font-mono">{{ pass.IMSS || 'No registrado' }}</span>
@@ -153,7 +153,18 @@
               </div>
             </div>
 
-            <div v-if="pass.tipo_permiso" class="bg-white/60 p-6 rounded-[1.5rem] border border-white shadow-sm mb-6">
+            <div v-if="Number(pass.category_id) === 6" class="mb-8 p-6 bg-gradient-to-br from-violet-50/90 via-white/80 to-slate-50 rounded-2xl border border-violet-200/70 grid grid-cols-1 sm:grid-cols-2 gap-6 shadow-sm">
+              <div>
+                <span class="block text-[10px] font-black text-violet-700/80 uppercase tracking-widest mb-1.5">Tipo de permiso especial</span>
+                <span class="text-base font-black text-violet-900">{{ pass.tipo_permiso || 'N/A' }}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-black text-violet-700/80 uppercase tracking-widest mb-1.5">Recordatorio Telegram</span>
+                <span class="text-base font-black text-violet-900">{{ formatPermanentWeekdays(pass.permanent_weekdays) }} · {{ formatTime(pass.time) }}</span>
+              </div>
+            </div>
+
+            <div v-if="pass.tipo_permiso && Number(pass.category_id) !== 6" class="bg-white/60 p-6 rounded-[1.5rem] border border-white shadow-sm mb-6">
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Clasificación / Permiso</span>
               <p class="text-sm font-black text-slate-800">{{ pass.tipo_permiso }}</p>
             </div>
@@ -195,7 +206,7 @@
               El aviso de autorización ya fue enviado. Como administrador o creador, puedes resolver la solicitud directamente desde aquí.
             </p>
             
-            <div v-if="isFuture" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
+            <div v-if="isFuture && Number(pass.category_id) !== 6" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
                <div class="flex items-center gap-3">
                  <div class="w-8 h-8 rounded-lg bg-casita-green/10 flex items-center justify-center text-casita-green-dark shrink-0">
                    <CalendarClock class="w-4 h-4" />
@@ -358,7 +369,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, Send, Ban, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, KeyRound, Send, Ban, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
@@ -464,7 +475,7 @@ const getStatusLabel = (status) => {
 }
 
 const getCategoryIcon = (id) => {
-  const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope }
+  const map = { 1: LogIn, 2: LogOut, 3: UserX, 4: Clock, 5: Stethoscope, 6: KeyRound }
   return map[id] || Clock
 }
 
@@ -474,19 +485,24 @@ const getCategoryColorBox = (id) => {
     2: 'text-iedis-blue border-iedis-blue/20 bg-iedis-blue/10', 
     3: 'text-casita-red border-casita-red/20 bg-casita-red/10', 
     4: 'text-casita-gold border-casita-gold/20 bg-casita-gold/10', 
-    5: 'text-iedis-teal border-iedis-teal/20 bg-iedis-teal/10' 
+    5: 'text-iedis-teal border-iedis-teal/20 bg-iedis-teal/10',
+    6: 'text-violet-700 border-violet-200 bg-gradient-to-br from-violet-50 to-white' 
   }
   return map[id] || 'bg-white text-slate-600 border-white'
 }
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica', 6: 'Permiso especial permanente' }
   return map[id] || 'Otro'
 }
 
 const formatDateOnly = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMMM YYYY') : 'N/A'
 const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY, HH:mm') : 'N/A'
 const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : 'N/A'
+const formatPermanentWeekdays = (value) => {
+  const labels = { '1': 'Lun', '2': 'Mar', '3': 'Mié', '4': 'Jue', '5': 'Vie', '6': 'Sáb', '7': 'Dom' }
+  return String(value || '').split(',').map((day) => labels[day.trim()] || day.trim()).filter(Boolean).join(', ') || 'Sin días'
+}
 
 const isSystemLog = (text) => {
   return text && text.includes('Auditoría Global')

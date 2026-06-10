@@ -72,23 +72,41 @@
             </div>
             <div>
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                {{ pass.category_id === 4 ? 'Vigencia' : 'Fecha' }}
+                {{ [4, 6].includes(Number(pass.category_id)) ? 'Vigencia' : 'Fecha' }}
               </span>
-              <span class="text-sm font-bold text-slate-800" v-if="pass.category_id === 4">
+              <span class="text-sm font-bold text-slate-800" v-if="[4, 6].includes(Number(pass.category_id))">
                 Del {{ formatDate(pass.date) }} al {{ formatDate(pass.fecha_fin || pass.date) }}
               </span>
               <span class="text-sm font-bold text-slate-800" v-else>
                 {{ formatDate(pass.date) }} {{ pass.time ? '• ' + pass.time : '' }}
               </span>
             </div>
-            <div v-if="pass.category_id === 4" class="col-span-2">
+            <div v-if="Number(pass.category_id) === 4" class="col-span-2">
               <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Nuevo Horario</span>
               <span class="text-sm font-bold text-slate-800 font-mono">
                 {{ pass.horario_entrada }} a {{ pass.horario_salida }}
               </span>
             </div>
+
+            <div v-if="Number(pass.category_id) === 6" class="col-span-2 rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50/90 via-white/80 to-slate-50 p-5">
+              <span class="block text-[10px] font-black text-violet-700 uppercase tracking-widest mb-3">Recordatorio permanente</span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <span class="block text-[9px] font-black text-violet-700/70 uppercase tracking-widest mb-1">Tipo</span>
+                  <span class="text-sm font-bold text-violet-900">{{ pass.tipo_permiso || 'N/A' }}</span>
+                </div>
+                <div>
+                  <span class="block text-[9px] font-black text-violet-700/70 uppercase tracking-widest mb-1">Días</span>
+                  <span class="text-sm font-bold text-violet-900">{{ formatPermanentWeekdays(pass.permanent_weekdays) }}</span>
+                </div>
+                <div>
+                  <span class="block text-[9px] font-black text-violet-700/70 uppercase tracking-widest mb-1">Hora</span>
+                  <span class="text-sm font-bold text-violet-900 font-mono">{{ formatTime(pass.time) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div v-if="pass.tipo_permiso" class="pb-6 border-b border-slate-100">
+          <div v-if="pass.tipo_permiso && Number(pass.category_id) !== 6" class="pb-6 border-b border-slate-100">
              <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tipo de Permiso</span>
              <span class="text-sm font-bold text-slate-800">{{ pass.tipo_permiso }}</span>
           </div>
@@ -135,7 +153,7 @@
 
       <footer v-if="pass.status === 'pendiente' && pass._viewerAuthorized" class="flex flex-col gap-4 relative z-10">
         
-        <div v-if="isFuture" class="mb-2 bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200 shadow-sm w-full relative overflow-hidden group">
+        <div v-if="isFuture && Number(pass.category_id) !== 6" class="mb-2 bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200 shadow-sm w-full relative overflow-hidden group">
            <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-iedis-teal"></div>
            <div class="flex items-center justify-between gap-4">
              <div class="flex items-center gap-4">
@@ -191,7 +209,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import dayjs from 'dayjs'
-import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
+import { Loader2, ShieldCheck, CheckCircle2, XCircle, AlertTriangle, Check, X, LogIn, LogOut as LogOutIcon, UserX, Clock, Stethoscope, KeyRound, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
 
 definePageMeta({ layout: false })
 
@@ -243,17 +261,22 @@ const doAction = async (actionStr) => {
 }
 
 const getCategoryIcon = (id) => {
-  const map = { 1: LogIn, 2: LogOutIcon, 3: UserX, 4: Clock, 5: Stethoscope }
+  const map = { 1: LogIn, 2: LogOutIcon, 3: UserX, 4: Clock, 5: Stethoscope, 6: KeyRound }
   return map[id] || Clock
 }
 
 const getCategoryName = (id) => {
-  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica' }
+  const map = { 1: 'Llegada tarde', 2: 'Salida anticipada', 3: 'Ausencia justificada', 4: 'Cambio de horario', 5: 'Incapacidad médica', 6: 'Permiso especial permanente' }
   return map[id] || 'Otro'
 }
 
 const formatDate = (dateStr) => dayjs(dateStr).format('DD MMMM YYYY')
 const formatDateLong = (dateStr) => dateStr ? dayjs(dateStr).format('DD MMM YYYY, HH:mm') : 'N/A'
+const formatTime = (timeStr) => timeStr ? String(timeStr).slice(0, 5) : 'N/A'
+const formatPermanentWeekdays = (value) => {
+  const labels = { '1': 'Lun', '2': 'Mar', '3': 'Mié', '4': 'Jue', '5': 'Vie', '6': 'Sáb', '7': 'Dom' }
+  return String(value || '').split(',').map((day) => labels[day.trim()] || day.trim()).filter(Boolean).join(', ') || 'Sin días'
+}
 
 fetchPass()
 </script>
