@@ -1,6 +1,7 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { dispatchNotificationsForPass } from '~/server/utils/notifications'
+import { PASS_TIME_ZONE, categoryUsesEndDate, parseMexicoCityDateOnly } from '~/server/utils/passDates'
 import { resolveExclusiveAuthorizationForPass, isAuthorizedEmail, logAuthorizationDebug } from '~/server/utils/authorizationRules'
 import jwt from 'jsonwebtoken'
 import { getCookie, createError, defineEventHandler, readBody } from '#imports'
@@ -62,9 +63,22 @@ export default defineEventHandler(async (event) => {
     actor: actingEmail
   })
 
-  const nowTz = dayjs().tz('America/Mexico_City')
-  const dateObj = date ? dayjs.tz(date, 'America/Mexico_City').startOf('day') : nowTz.startOf('day')
-  const endDateObj = endDate ? dayjs.tz(endDate, 'America/Mexico_City').startOf('day') : dateObj
+  const categoryIdNumber = Number(categoryId)
+  const usesEndDate = categoryUsesEndDate(categoryIdNumber)
+  const nowTz = dayjs().tz(PASS_TIME_ZONE)
+  const dateObj = date ? parseMexicoCityDateOnly(date) : nowTz.startOf('day')
+
+  if (!dateObj) {
+    throw createError({ statusCode: 400, message: 'La fecha de inicio no es válida.' })
+  }
+
+  const parsedEndDate = usesEndDate && endDate ? parseMexicoCityDateOnly(endDate) : null
+  if (usesEndDate && endDate && !parsedEndDate) {
+    throw createError({ statusCode: 400, message: 'La fecha de término no es válida.' })
+  }
+
+  // Las categorías de un solo día ignoran cualquier fecha de término residual del cliente.
+  const endDateObj = parsedEndDate || dateObj
   const todayObj = nowTz.startOf('day')
 
   if (dateObj.isBefore(todayObj) || endDateObj.isBefore(todayObj)) {
@@ -76,11 +90,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'La fecha de término no puede ser anterior al inicio.' })
   }
 
-  const normalizedPermanentWeekdays = Number(categoryId) === PERMANENT_SPECIAL_CATEGORY_ID
+  const normalizedPermanentWeekdays = categoryIdNumber === PERMANENT_SPECIAL_CATEGORY_ID
     ? normalizePermanentWeekdays(permanentWeekdays)
     : null
 
-  if (Number(categoryId) === PERMANENT_SPECIAL_CATEGORY_ID) {
+  if (categoryIdNumber === PERMANENT_SPECIAL_CATEGORY_ID) {
     if (!endDate) {
       throw createError({ statusCode: 400, message: 'El permiso especial permanente requiere fecha de término.' })
     }
@@ -105,7 +119,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const mysqlDate = dateObj.format('YYYY-MM-DD 00:00:00')
-  const mysqlEndDate = endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
+  const mysqlEndDate = usesEndDate && endDate ? endDateObj.format('YYYY-MM-DD 23:59:59') : mysqlDate
   const normalizedPlantel = cleanPlantelName(plantel) || null
   const exclusiveAuthorization = await resolveExclusiveAuthorizationForPass({ employee_name: employeeName, curp, plantel: normalizedPlantel, puesto })
   
@@ -146,7 +160,7 @@ export default defineEventHandler(async (event) => {
       employeeName, 
       curp || null,
       ingressioId || null,
-      categoryId, 
+      categoryIdNumber, 
       mysqlDate, 
       mysqlEndDate, 
       time || null, 
@@ -157,7 +171,7 @@ export default defineEventHandler(async (event) => {
       initialStatus,
       authToken,
       imss || null,
-      Number(categoryId) === 5 ? tipoIncapacidad : null,
+      categoryIdNumber === 5 ? tipoIncapacidad : null,
       tipoPermiso || null,
       authorizedBy,
       authorizedAt,

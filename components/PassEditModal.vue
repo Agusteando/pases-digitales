@@ -46,7 +46,7 @@
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Desde</label>
               <input type="date" v-model="form.date" :min="todayDate" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500" />
             </div>
-            <div v-if="[3, 5, 6].includes(form.categoryId)" class="space-y-2">
+            <div v-if="requiresEndDate" class="space-y-2">
               <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Hasta</label>
               <input type="date" v-model="form.endDate" :min="form.date || todayDate" :disabled="!isEditable" class="w-full px-5 py-4 rounded-2xl border border-white/80 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold transition-all bg-white/70 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] disabled:bg-slate-50/50 disabled:text-slate-500" />
             </div>
@@ -239,7 +239,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { X, Lock, Loader2, Trash2, Paperclip, UploadCloud, FileText, ExternalLink } from 'lucide-vue-next'
 import dayjs from 'dayjs'
 
@@ -365,6 +365,18 @@ onMounted(() => {
   }
 })
 
+const requiresEndDate = computed(() => [3, 4, 5, 6].includes(Number(form.value.categoryId)))
+
+watch(
+  [() => form.value.date, () => form.value.categoryId],
+  ([start]) => {
+    if (!requiresEndDate.value || !start) return
+    if (!form.value.endDate || dayjs(form.value.endDate).isBefore(dayjs(start), 'day')) {
+      form.value.endDate = start
+    }
+  }
+)
+
 const isSaving = ref(false)
 
 const handleSave = async () => {
@@ -396,6 +408,7 @@ const handleSave = async () => {
       method: 'PUT',
       body: {
         ...form.value,
+        endDate: requiresEndDate.value ? form.value.endDate : null,
         evidence: finalEvidenceUrl
       }
     })

@@ -917,6 +917,13 @@ const form = reactive({
   permanentWeekdays: []
 })
 
+watch(() => form.date, (start) => {
+  if (!activeScenario.value?.needsEndDate || !start) return
+  if (!form.endDate || dayjs(form.endDate).isBefore(dayjs(start), 'day')) {
+    form.endDate = start
+  }
+})
+
 watch([() => form.date, () => form.endDate, () => form.horarioEntrada, () => form.horarioSalida], ([start, end, he, hs]) => {
   if (activeScenario.value?.categoryId === 4 && start && he && hs) {
     const fmtStartD = dayjs(start).format('DD/MM/YYYY')
@@ -1098,7 +1105,7 @@ async function submitPass(autoAuthorize = false) {
           puesto: emp.puesto || null,
           categoryId: activeScenario.value.categoryId, 
           date: form.date,
-          endDate: form.endDate,
+          endDate: activeScenario.value.needsEndDate ? form.endDate : null,
           time: form.time,
           horarioEntrada: form.horarioEntrada,
           horarioSalida: form.horarioSalida,

@@ -1,6 +1,7 @@
 declare global {
   const H3Error: typeof import('../../node_modules/h3').H3Error
   const H3Event: typeof import('../../node_modules/h3').H3Event
+  const PASS_TIME_ZONE: typeof import('../../server/utils/passDates').PASS_TIME_ZONE
   const __buildAssetsURL: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/paths').buildAssetsURL
   const __publicAssetsURL: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/paths').publicAssetsURL
   const appendCorsHeaders: typeof import('../../node_modules/h3').appendCorsHeaders
@@ -14,6 +15,7 @@ declare global {
   const cachedEventHandler: typeof import('../../node_modules/nitropack/dist/runtime/internal/cache').cachedEventHandler
   const cachedFunction: typeof import('../../node_modules/nitropack/dist/runtime/internal/cache').cachedFunction
   const callNodeListener: typeof import('../../node_modules/h3').callNodeListener
+  const categoryUsesEndDate: typeof import('../../server/utils/passDates').categoryUsesEndDate
   const cleanPlantelName: typeof import('../../server/utils/employee-engine').cleanPlantelName
   const clearResponseHeaders: typeof import('../../node_modules/h3').clearResponseHeaders
   const clearSession: typeof import('../../node_modules/h3').clearSession
@@ -109,6 +111,7 @@ declare global {
   const normalizePhoneDigits: typeof import('../../server/utils/authorizationRules').normalizePhoneDigits
   const normalizeRuleValue: typeof import('../../server/utils/authorizationRules').normalizeRuleValue
   const parseCookies: typeof import('../../node_modules/h3').parseCookies
+  const parseMexicoCityDateOnly: typeof import('../../server/utils/passDates').parseMexicoCityDateOnly
   const promisifyNodeListener: typeof import('../../node_modules/h3').promisifyNodeListener
   const proxyRequest: typeof import('../../node_modules/h3').proxyRequest
   const readBody: typeof import('../../node_modules/h3').readBody
@@ -194,6 +197,7 @@ export { useDB } from 'C:/Users/hp/pases-digitales/server/utils/db';
 export { normalizeName, cleanPlantelName, isGenericIdentity, getSigniaData, getFastSoapEmployees } from 'C:/Users/hp/pases-digitales/server/utils/employee-engine';
 export { getGmailClient, sendWorkspaceEmail, getWorkspaceUserPhoto, getWorkspaceUser, getCachedWorkspaceUser, updateWorkspaceUserPhone, searchWorkspaceUsers } from 'C:/Users/hp/pases-digitales/server/utils/googleWorkspace';
 export { dispatchNotificationsForPass } from 'C:/Users/hp/pases-digitales/server/utils/notifications';
+export { PASS_TIME_ZONE, categoryUsesEndDate, parseMexicoCityDateOnly } from 'C:/Users/hp/pases-digitales/server/utils/passDates';
 export { dispatchDuePermanentPassNotifications } from 'C:/Users/hp/pases-digitales/server/utils/permanentPassNotifications';
 export { signRecipientToken, verifyRecipientToken } from 'C:/Users/hp/pases-digitales/server/utils/token';
 export { sendWhatsAppMessage, editWhatsAppMessage, buildWhatsAppTemplate } from 'C:/Users/hp/pases-digitales/server/utils/whatsappModule';

@@ -2,6 +2,7 @@
 
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
+import { PASS_TIME_ZONE, categoryUsesEndDate, parseMexicoCityDateOnly } from '~/server/utils/passDates'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -65,15 +66,28 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 403, message: 'Operación denegada. No se permite modificar un pase que ya ha sido resuelto o anulado.' })
     }
 
-    const nowTz = dayjs().tz('America/Mexico_City')
-    const hoursDiff = nowTz.diff(dayjs.tz(pass.date, 'America/Mexico_City'), 'hour')
+    const nowTz = dayjs().tz(PASS_TIME_ZONE)
+    const hoursDiff = nowTz.diff(dayjs.tz(pass.date, PASS_TIME_ZONE), 'hour')
     
     if (hoursDiff > 48) {
       throw createError({ statusCode: 403, message: 'Operación denegada. El tiempo permitido para edición (48 horas) ha concluido.' })
     }
 
-    const mysqlDate = body.date ? dayjs.tz(body.date, 'America/Mexico_City').startOf('day') : nowTz.startOf('day')
-    const mysqlEndDate = body.endDate ? dayjs.tz(body.endDate, 'America/Mexico_City').startOf('day') : mysqlDate
+    const categoryId = Number(body.categoryId)
+    const usesEndDate = categoryUsesEndDate(categoryId)
+    const mysqlDate = body.date ? parseMexicoCityDateOnly(body.date) : nowTz.startOf('day')
+
+    if (!mysqlDate) {
+      throw createError({ statusCode: 400, message: 'La fecha de inicio no es válida.' })
+    }
+
+    const parsedEndDate = usesEndDate && body.endDate ? parseMexicoCityDateOnly(body.endDate) : null
+    if (usesEndDate && body.endDate && !parsedEndDate) {
+      throw createError({ statusCode: 400, message: 'La fecha de término no es válida.' })
+    }
+
+    // Las categorías de un solo día ignoran cualquier fecha de término residual del cliente.
+    const mysqlEndDate = parsedEndDate || mysqlDate
     const todayObj = nowTz.startOf('day')
 
     if (mysqlDate.isBefore(todayObj) || mysqlEndDate.isBefore(todayObj)) {
@@ -84,7 +98,6 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: 'La fecha de término no puede ser anterior al inicio.' })
     }
 
-    const categoryId = Number(body.categoryId)
     const normalizedPermanentWeekdays = categoryId === PERMANENT_SPECIAL_CATEGORY_ID
       ? normalizePermanentWeekdays(body.permanentWeekdays || body.permanent_weekdays)
       : null
@@ -111,7 +124,7 @@ export default defineEventHandler(async (event) => {
     `
     await db.execute(sql, [
        mysqlDate.format('YYYY-MM-DD 00:00:00'),
-       mysqlEndDate.format('YYYY-MM-DD 23:59:59'),
+       usesEndDate && body.endDate ? mysqlEndDate.format('YYYY-MM-DD 23:59:59') : mysqlDate.format('YYYY-MM-DD 00:00:00'),
        body.time || null,
        body.comentarios || null,
        categoryId,

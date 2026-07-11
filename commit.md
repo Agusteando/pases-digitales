@@ -1,1 +1,1 @@
-feat: agregar permisos especiales permanentes con recordatorios recurrentes en Telegram
+fix: corregir la validación de fechas en pases de un solo día
