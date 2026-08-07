@@ -198,23 +198,32 @@
         <div class="space-y-8">
 
           <!-- Autorización Directa -->
-          <div v-if="pass.status === 'pendiente' && canSeeResolvePanel" class="glass-panel p-8 rounded-[2.5rem] border shadow-lg" :class="canResolvePass ? 'bg-casita-green-light/10 border-casita-green/30' : 'bg-violet-50/70 border-violet-200/70'">
-            <h3 class="text-xs font-black uppercase tracking-widest mb-5 flex items-center gap-2" :class="canResolvePass ? 'text-casita-green-dark' : 'text-violet-700'">
-              <CheckCircle2 class="w-4 h-4" :class="canResolvePass ? 'text-casita-green' : 'text-violet-500'" /> Resolver solicitud
-            </h3>
+          <div v-if="pass.status === 'pendiente'" class="glass-panel p-8 rounded-[2.5rem] border shadow-lg transition-colors" :class="resolutionBlocked ? 'bg-amber-50/70 border-amber-200/70' : 'bg-casita-green-light/10 border-casita-green/30'">
+            <div class="flex items-center justify-between gap-4 mb-5">
+              <h3 class="text-xs font-black uppercase tracking-widest flex items-center gap-2" :class="resolutionBlocked ? 'text-amber-800' : 'text-casita-green-dark'">
+                <CheckCircle2 class="w-4 h-4" /> Resolver solicitud
+              </h3>
+              <span v-if="pass.authorization_policy?.isExclusive" class="px-2.5 py-1 rounded-full bg-white/80 border border-white text-[9px] font-black uppercase tracking-widest text-slate-500 shadow-sm">Asignado</span>
+            </div>
 
-            <div v-if="pass.authorization_policy?.isExclusive" class="mb-5 p-3.5 bg-white/85 rounded-2xl border border-white shadow-sm flex items-center gap-3">
-              <div class="flex items-center shrink-0">
-                <PremiumAvatar v-for="(target, index) in (pass.authorization_policy.targets || []).slice(0, 3)" :key="target.email" :src="target.photoUrl" :name="target.name || target.email" size="xs" class="ring-2 ring-white shadow-sm bg-white" :class="index ? '-ml-2' : ''" />
+            <div v-if="pass.authorization_policy?.isExclusive" class="mb-5 p-4 rounded-2xl bg-white/85 border border-white shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="flex -space-x-2 shrink-0">
+                  <PremiumAvatar v-for="target in pass.authorization_policy.targets.slice(0, 3)" :key="target.email" :src="target.photoUrl" :name="target.name || target.email" size="sm" class="ring-2 ring-white bg-white" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-black text-slate-900 leading-snug">Solo {{ pass.authorization_policy.requiredText }} puede autorizar este pase.</p>
+                  <p v-if="resolutionBlocked" class="text-[10px] font-bold text-slate-500 mt-1">Compártelo con {{ pass.authorization_policy.targets.length === 1 ? 'esta persona' : 'estas personas' }}.</p>
+                </div>
+                <button v-if="resolutionBlocked" @click="sharePass" class="shrink-0 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black transition-all flex items-center gap-2 shadow-sm outline-none">
+                  <Check v-if="shareDone" class="w-3.5 h-3.5" />
+                  <Share2 v-else class="w-3.5 h-3.5" />
+                  {{ shareDone ? 'Copiado' : 'Compartir' }}
+                </button>
               </div>
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-black text-slate-900 truncate">{{ authorizationTargetNames }}</p>
-                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">{{ pass.authorization_policy.sourceLabel }}</p>
-              </div>
-              <ShieldCheck class="w-4 h-4 shrink-0" :class="canResolvePass ? 'text-casita-green' : 'text-violet-500'" />
             </div>
             
-            <div v-if="canResolvePass && isFuture && Number(pass.category_id) !== 6" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
+            <div v-if="canManage && isFuture && Number(pass.category_id) !== 6" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
                <div class="flex items-center gap-3">
                  <div class="w-8 h-8 rounded-lg bg-casita-green/10 flex items-center justify-center text-casita-green-dark shrink-0">
                    <CalendarClock class="w-4 h-4" />
@@ -230,8 +239,8 @@
                </label>
             </div>
 
-            <div v-if="canResolvePass" class="flex flex-col gap-3">
-              <button @click="handleInAppAuth('authorize')" :disabled="isResolving" class="w-full relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white text-sm font-black rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
+            <div class="flex flex-col gap-3">
+              <button @click="handleInAppAuth('authorize')" :disabled="isResolving || resolutionBlocked" class="w-full relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white text-sm font-black rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
                 <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
                 <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
                   <Loader2 v-if="isResolving" class="w-4 h-4 animate-spin text-white/80" />
@@ -240,7 +249,7 @@
                 </div>
               </button>
               
-              <button @click="handleInAppAuth('reject')" :disabled="isResolving" class="w-full relative group overflow-hidden bg-white hover:bg-slate-50 text-casita-red-dark font-black text-sm rounded-[1.25rem] transition-all border-2 border-casita-red/20 hover:border-casita-red/40 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none">
+              <button @click="handleInAppAuth('reject')" :disabled="isResolving || resolutionBlocked" class="w-full relative group overflow-hidden bg-white hover:bg-slate-50 text-casita-red-dark font-black text-sm rounded-[1.25rem] transition-all border-2 border-casita-red/20 hover:border-casita-red/40 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none">
                 <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02]">
                   <Loader2 v-if="isResolving" class="w-4 h-4 animate-spin text-casita-red/50" />
                   <X v-else class="w-4 h-4 text-casita-red/70 group-hover:text-casita-red transition-colors" /> 
@@ -377,7 +386,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, KeyRound, Send, Ban, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock } from 'lucide-vue-next'
+import { ArrowLeft, Loader2, Edit2, AlertTriangle, User, Building2, Calendar, ShieldCheck, Bell, MessageCircle, Mail, Server, LogIn, LogOut, UserX, Clock, Stethoscope, KeyRound, Send, Ban, Zap, Lock, Briefcase, CheckCircle2, X, Check, Paperclip, ExternalLink, CalendarClock, Share2 } from 'lucide-vue-next'
 import PassEditModal from '~/components/PassEditModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 import dayjs from 'dayjs'
@@ -401,23 +410,13 @@ const showEditModal = ref(false)
 const isResending = ref(false)
 const isCancelling = ref(false)
 const isResolving = ref(false)
+const shareDone = ref(false)
 
 const isAdmin = computed(() => user.value?.is_admin || false)
 const isOwner = computed(() => user.value && pass.value && user.value.name === pass.value.user)
 const canManage = computed(() => isOwner.value || isAdmin.value)
-const canResolvePass = computed(() => {
-  if (pass.value?.authorization_policy?.isExclusive) return pass.value.authorization_policy.viewerCanResolve === true
-  return canManage.value
-})
-const canSeeResolvePanel = computed(() => canManage.value || (pass.value?.authorization_policy?.isExclusive && pass.value.authorization_policy.viewerCanResolve === true))
-const authorizationTargetNames = computed(() => {
-  const targets = pass.value?.authorization_policy?.targets || []
-  const names = targets.map((target) => target.name || target.email).filter(Boolean)
-  if (!names.length) return 'Autorizador configurado'
-  if (names.length <= 2) return names.join(', ')
-  return `${names.slice(0, 2).join(', ')} +${names.length - 2}`
-})
 const canCancelPass = computed(() => ['pendiente', 'autorizado'].includes(pass.value?.status))
+const resolutionBlocked = computed(() => Boolean(pass.value?.authorization_policy?.isExclusive && !pass.value?.authorization_policy?.canAuthorize))
 
 const isExpired = computed(() => {
   if (!pass.value) return true
@@ -469,6 +468,24 @@ Estado actual: ${previousStatus}.`
     alert(err.data?.message || 'Error al intentar anular el registro.')
   } finally {
     isCancelling.value = false
+  }
+}
+
+const sharePass = async () => {
+  if (!pass.value || typeof window === 'undefined') return
+  const url = window.location.href
+  const text = `Pase #${String(pass.value.id).padStart(5, '0')} de ${pass.value.employee_name}. Solo ${pass.value.authorization_policy?.requiredText || 'el autorizador asignado'} puede resolverlo.`
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: `Pase #${String(pass.value.id).padStart(5, '0')}`, text, url })
+      return
+    }
+    await navigator.clipboard.writeText(`${text} ${url}`)
+    shareDone.value = true
+    window.setTimeout(() => { shareDone.value = false }, 1800)
+  } catch (error) {
+    if (error?.name !== 'AbortError') console.error('Share pass error', error)
   }
 }
 

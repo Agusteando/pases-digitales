@@ -4,7 +4,7 @@ import { useRuntimeConfig } from '#imports'
 
 type QueryParams = any[] | Record<string, any> | undefined
 
-export interface DBClient {
+interface DBClient {
   execute<T extends mysql.QueryResult = mysql.QueryResult>(
     sql: string,
     params?: QueryParams
@@ -112,37 +112,6 @@ async function run<T extends mysql.QueryResult>(
     }
 
     throw error
-  }
-}
-
-
-export async function withDBTransaction<T>(callback: (db: DBClient) => Promise<T>): Promise<T> {
-  const pool = await getPool()
-  const connection = await pool.getConnection()
-
-  const transactionalClient: DBClient = {
-    execute<TQuery extends mysql.QueryResult = mysql.QueryResult>(sql: string, params?: QueryParams) {
-      return connection.execute<TQuery>(sql, params as any)
-    },
-    query<TQuery extends mysql.QueryResult = mysql.QueryResult>(sql: string, params?: QueryParams) {
-      return connection.query<TQuery>(sql, params as any)
-    }
-  }
-
-  try {
-    await connection.beginTransaction()
-    const result = await callback(transactionalClient)
-    await connection.commit()
-    return result
-  } catch (error) {
-    try {
-      await connection.rollback()
-    } catch {
-      // Preserve the original transaction error.
-    }
-    throw error
-  } finally {
-    connection.release()
   }
 }
 

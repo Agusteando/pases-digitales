@@ -2,9 +2,9 @@
 
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-engine'
-import jwt from 'jsonwebtoken'
-import { defineEventHandler, getRouterParam, getCookie, useRuntimeConfig, createError } from '#imports'
 import { resolveExclusiveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
+import jwt from 'jsonwebtoken'
+import { defineEventHandler, getRouterParam, getCookie, createError } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -20,46 +20,50 @@ export default defineEventHandler(async (event) => {
     if (!passRows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado.' })
 
     const pass = passRows[0]
+    const storedCurp = pass.curp
 
     // Fetch curp deterministically from SOAP by exact name string
     const dataset = await getFastSoapEmployees()
     const soapEmp = dataset.find(e => e.name === pass.employee_name)
     pass.curp = soapEmp?.curp || null
 
-    const normalizedPlantel = cleanPlantelName(pass.plantel)
-    const authorization = await resolveExclusiveAuthorizationForPass({ ...pass, plantel: normalizedPlantel })
-
-    let viewerEmail = ''
-    let hasAuthenticatedViewer = false
-    try {
-      const token = getCookie(event, 'auth-token')
-      const decoded: any = token ? jwt.verify(token, useRuntimeConfig().jwtSecret) : null
-      viewerEmail = String(decoded?.email || '').trim().toLowerCase()
-      hasAuthenticatedViewer = Boolean(viewerEmail)
-    } catch {}
-
     const [logRows]: any = await db.execute('SELECT chat_id, status, error_text, created_at FROM notification_logs WHERE pass_id = ? ORDER BY id DESC', [id])
 
-    return {
-      ...pass,
-      plantel: normalizedPlantel,
-      notifications: logRows,
-      authorization_policy: {
-        source: authorization.source,
-        sourceLabel: authorization.sourceLabel,
+    const token = getCookie(event, 'auth-token')
+    const decoded: any = token ? jwt.decode(token) : null
+    const actingEmail = String(decoded?.email || '').trim().toLowerCase()
+    let authorizationPolicy: any = {
+      isExclusive: false,
+      canAuthorize: true,
+      source: 'UNAVAILABLE',
+      requiredText: '',
+      targets: []
+    }
+
+    try {
+      const authorization = await resolveExclusiveAuthorizationForPass({ ...pass, curp: storedCurp || soapEmp?.curp || null })
+      authorizationPolicy = {
         isExclusive: authorization.isExclusive,
-        viewerCanResolve: !authorization.isExclusive || isAuthorizedEmail(authorization, viewerEmail),
-        employeePuesto: authorization.employeePuesto,
-        employeeArea: authorization.employeeArea,
-        targets: hasAuthenticatedViewer
+        canAuthorize: !authorization.isExclusive || (actingEmail ? isAuthorizedEmail(authorization, actingEmail) : false),
+        source: authorization.source,
+        requiredText: actingEmail && authorization.isExclusive ? authorization.requiredText : '',
+        targets: actingEmail && authorization.isExclusive
           ? authorization.targets.map((target) => ({
-              email: target.email,
               name: target.name,
-              photoUrl: target.photoUrl,
-              channels: target.channels
+              email: target.email,
+              photoUrl: target.photoUrl || null
             }))
           : []
       }
+    } catch (authorizationError) {
+      console.warn('Authorization policy preview unavailable for pass detail:', authorizationError)
+    }
+
+    return {
+      ...pass,
+      plantel: cleanPlantelName(pass.plantel),
+      notifications: logRows,
+      authorization_policy: authorizationPolicy
     }
   } catch (error: any) {
     console.error('Fetch pass error:', error)

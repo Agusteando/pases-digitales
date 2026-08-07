@@ -74,10 +74,6 @@
                           
                           <button v-if="!emp._editingActual" @click.stop="emp._editingActual = true" class="text-slate-400 hover:text-[#007F92] transition-colors uppercase tracking-widest ml-1 text-[9px] bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-sm">Cambiar</button>
                         </div>
-                        <div v-if="emp._authorization?.isExclusive" class="mt-2 flex items-center gap-1.5 min-w-0 text-[9px] font-black text-violet-700">
-                          <LockKeyhole class="w-3 h-3 shrink-0" />
-                          <span class="truncate">{{ authorizationTargetSummary(emp) }}</span>
-                        </div>
                       </div>
                     </div>
                     <button @click="removeEmployee(getEmpKey(emp))" class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 hover:text-red-500 shadow-sm border border-slate-100 transition-colors shrink-0 outline-none">
@@ -458,13 +454,14 @@
                  </label>
               </div>
               
-              <div v-if="restrictedEmployees.length" class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-50/80 border border-violet-100">
-                <div class="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-violet-700 shadow-sm shrink-0">
-                  <LockKeyhole class="w-4 h-4" />
+              <div v-if="directAuthorizationBlocked" class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/70 shadow-sm flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
+                  <KeyRound class="w-4 h-4" />
                 </div>
-                <div class="min-w-0 flex-1">
-                  <p class="text-[10px] font-black uppercase tracking-widest text-violet-700">Autorización directa restringida</p>
-                  <p class="text-[10px] font-bold text-violet-500 truncate mt-0.5">{{ directRestrictionSummary }}</p>
+                <div class="min-w-0">
+                  <p v-for="restriction in blockedAuthorizationPreviews" :key="restriction.key" class="text-xs font-black text-slate-800 leading-snug">
+                    {{ restriction.employeeName }} · Solo {{ restriction.requiredText }} puede autorizar.
+                  </p>
                 </div>
               </div>
 
@@ -485,7 +482,7 @@
                 <button 
                   type="button" 
                   @click="submitPass(true)" 
-                  :disabled="isSubmitting || !isFormComplete || !canDirectAuthorize" 
+                  :disabled="isSubmitting || !isFormComplete || directAuthorizationBlocked" 
                   class="w-full relative group overflow-hidden bg-gradient-to-b from-[#007F92] to-[#006575] text-white font-black text-base sm:text-sm rounded-[1.25rem] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-[#00497B]/50"
                 >
                   <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
@@ -607,7 +604,7 @@
 <script setup>
 import { ref, reactive, computed, watch, nextTick } from 'vue'
 import dayjs from 'dayjs'
-import { LogOut, LogIn, UserX, Stethoscope, Clock, KeyRound, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock, AlertCircle, LockKeyhole } from 'lucide-vue-next'
+import { LogOut, LogIn, UserX, Stethoscope, Clock, KeyRound, Loader2, X as XIcon, Cake, Send, Building2, Briefcase, MapPin, Plus, CheckCircle, UploadCloud, Paperclip, FileText, RotateCcw, Check, Info, ArrowLeft, Users, CalendarClock, AlertCircle } from 'lucide-vue-next'
 import EmployeeSearch from '~/components/EmployeeSearch.vue'
 import ScenarioCard from '~/components/ScenarioCard.vue'
 import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
@@ -648,8 +645,6 @@ const evidenceFile = ref(null)
 const duplicatePassInfo = ref(null)
 const isResendingDuplicate = ref(false)
 const requestIssue = ref(null)
-const authorizationChecking = ref(false)
-let authorizationRequestSeq = 0
 
 const checkingCoverage = ref(false)
 const coverageQueue = ref([])
@@ -683,16 +678,46 @@ const isAuthorizerForCurrent = computed(() => {
   return myProfile.value.authorizedPlanteles.includes(targetPlantel);
 })
 
+const authorizationPreview = ref([])
+let authorizationPreviewTimer = null
+
+const blockedAuthorizationPreviews = computed(() => authorizationPreview.value.filter((item) => item.isExclusive && !item.canAuthorize))
+const directAuthorizationBlocked = computed(() => blockedAuthorizationPreviews.value.length > 0)
+
+const loadAuthorizationPreview = async () => {
+  const employees = (selectedEmployees.value || []).filter((employee) => !employee._enriching)
+  if (!employees.length) {
+    authorizationPreview.value = []
+    return
+  }
+
+  try {
+    const data = await $fetch('/api/authorizations/preview', {
+      method: 'POST',
+      body: {
+        employees: employees.map((employee) => ({
+          key: getEmpKey(employee),
+          name: employee.name,
+          curp: employee.curp || null,
+          plantel: employee.plantelActual || employee.plantelBase || null,
+          puesto: employee.puesto || null
+        }))
+      }
+    })
+    authorizationPreview.value = data?.results || []
+  } catch (error) {
+    console.warn('Authorization preview unavailable', error)
+    authorizationPreview.value = []
+  }
+}
+
+watch(selectedEmployees, () => {
+  if (authorizationPreviewTimer) clearTimeout(authorizationPreviewTimer)
+  authorizationPreviewTimer = setTimeout(loadAuthorizationPreview, 250)
+}, { deep: true })
+
 const hasSelfPass = computed(() => {
   return myProfile.value && (selectedEmployees.value || []).some(e => e.name === myProfile.value.name)
-})
-
-const restrictedEmployees = computed(() => (selectedEmployees.value || []).filter((employee) => employee._authorization?.isExclusive && !employee._authorization?.canDirectAuthorize))
-const canDirectAuthorize = computed(() => !authorizationChecking.value && restrictedEmployees.value.length === 0)
-const directRestrictionSummary = computed(() => {
-  if (!restrictedEmployees.value.length) return ''
-  if (restrictedEmployees.value.length === 1) return authorizationTargetSummary(restrictedEmployees.value[0])
-  return `${restrictedEmployees.value.length} colaboradores requieren otro autorizador`
 })
 
 const isFormComplete = computed(() => {
@@ -797,37 +822,6 @@ async function uploadFileToServer(file) {
   return data.url
 }
 
-function authorizationTargetSummary(emp) {
-  const names = (emp?._authorization?.targets || []).map((target) => target.name || target.email).filter(Boolean)
-  if (!names.length) return 'Autorizador configurado'
-  if (names.length <= 2) return names.join(', ')
-  return `${names.slice(0, 2).join(', ')} +${names.length - 2}`
-}
-
-async function refreshAuthorizationPolicies() {
-  const employees = selectedEmployees.value || []
-  if (!employees.length) return
-  const seq = ++authorizationRequestSeq
-  authorizationChecking.value = true
-  try {
-    const payload = employees.map((employee) => ({
-      key: getEmpKey(employee),
-      name: employee.name,
-      curp: employee.curp || null,
-      plantel: employee.plantelActual || employee.plantelBase || null,
-      puesto: employee.puesto || null
-    }))
-    const policies = await $fetch('/api/authorizations/effective', { method: 'POST', body: { employees: payload } })
-    if (seq !== authorizationRequestSeq) return
-    const byKey = new Map((policies || []).map((policy) => [policy.key, policy]))
-    for (const employee of selectedEmployees.value || []) employee._authorization = byKey.get(String(getEmpKey(employee))) || null
-  } catch (error) {
-    console.warn('Authorization preview unavailable; server enforcement remains authoritative.', error)
-  } finally {
-    if (seq === authorizationRequestSeq) authorizationChecking.value = false
-  }
-}
-
 async function checkCoverageQueue(emp) {
   const plantel = emp.plantelActual || emp.plantelBase
   if (!plantel || plantel === 'N/A') return
@@ -903,7 +897,6 @@ async function addEmployee(emp) {
       actualEmp._enriching = false
 
       await checkCoverageQueue(actualEmp)
-      await refreshAuthorizationPolicies()
     }
   }
 }
@@ -932,14 +925,12 @@ function goBack() {
 async function onPlantelActualSelected(emp) {
   emp._editingActual = false
   await checkCoverageQueue(emp)
-  await refreshAuthorizationPolicies()
 }
 
 async function resetPlantelActual(emp) {
   emp.plantelActual = emp.plantelBase
   emp._editingActual = false
   await checkCoverageQueue(emp)
-  await refreshAuthorizationPolicies()
 }
 
 const getCurrentTime = () => {

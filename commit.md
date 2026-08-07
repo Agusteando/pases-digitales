@@ -1,1 +1,1 @@
-Rediseña autorizaciones con gestión por usuario y alcances seguros
+Rediseña autorizaciones con vista por autorizador y reglas individuales
