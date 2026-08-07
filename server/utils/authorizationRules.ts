@@ -2,6 +2,13 @@ import { useDB } from '~/server/utils/db'
 import { cleanPlantelName, getFastSoapEmployees, getSigniaData, normalizeName } from '~/server/utils/employee-engine'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { useRuntimeConfig } from '#imports'
+import {
+  extractAreaFromSigniaRow,
+  getAuthorizationScopeGrants,
+  selectAreaScopeGrants,
+  selectPersonScopeGrants,
+  type AuthorizationScopeGrantRow
+} from '~/server/utils/authorizationScopeGrants'
 
 type TargetRow = {
   id?: number
@@ -9,6 +16,7 @@ type TargetRow = {
   channel?: string
   role?: string
   source?: string
+  grantId?: number
 }
 
 export type AuthorizationTarget = {
@@ -18,13 +26,16 @@ export type AuthorizationTarget = {
   photoUrl?: string | null
   channels: string[]
   ruleIds: number[]
+  grantIds: number[]
   role?: string
 }
 
 export type AuthorizationResolution = {
   employeePlantel: string
   employeePuesto: string
-  source: 'EXACT_PUESTO' | 'GLOBAL_PUESTO' | 'PLANTEL_DEFAULT' | 'STANDARD_DIRECTORY' | 'LEGACY_NOTIFICATION' | 'UNCONFIGURED'
+  employeeArea: string
+  employeeCurp: string
+  source: 'PERSON' | 'EXACT_PUESTO' | 'EXACT_AREA' | 'GLOBAL_PUESTO' | 'GLOBAL_AREA' | 'PLANTEL_DEFAULT' | 'STANDARD_DIRECTORY' | 'LEGACY_NOTIFICATION' | 'UNCONFIGURED'
   sourceLabel: string
   isExclusive: boolean
   hasTargets: boolean
@@ -101,6 +112,35 @@ async function resolvePuestoFromSignia(pass: any) {
   return ''
 }
 
+async function resolveAreaFromSignia(pass: any) {
+  const passCurp = normalizeComparable(pass?.curp)
+  const passName = normalizeName(pass?.employee_name)
+  const signiaRows = await getSigniaData()
+
+  if (passCurp) {
+    const byCurp = signiaRows.find((row: any) => normalizeComparable(row.curp || row.CURP) === passCurp)
+    const area = extractAreaFromSigniaRow(byCurp)
+    if (area) return area
+  }
+
+  if (passName) {
+    const byName = signiaRows.find((row: any) => {
+      const candidates = [row.nombre, row.Nombre, row.NombreCompleto, row.employee_name, row.name]
+      return candidates.some((candidate: any) => normalizeName(candidate) === passName)
+    })
+    const area = extractAreaFromSigniaRow(byName)
+    if (area) return area
+  }
+
+  return ''
+}
+
+export async function resolveEmployeeArea(pass: any) {
+  const direct = normalizeRuleValue(pass?.area)
+  if (direct) return direct
+  return resolveAreaFromSignia(pass)
+}
+
 export async function resolveEmployeePuesto(pass: any) {
   const direct = normalizeRuleValue(pass?.puesto)
   if (direct) return direct
@@ -165,6 +205,7 @@ export async function enrichTargets(rows: TargetRow[]): Promise<AuthorizationTar
         photoUrl: gw?.photoUrl || null,
         channels: [],
         ruleIds: [],
+        grantIds: [],
         role: row.role
       }
       byEmail.set(email, current)
@@ -175,6 +216,7 @@ export async function enrichTargets(rows: TargetRow[]): Promise<AuthorizationTar
       current.channels.push(channel)
     }
     if (row.id && !current.ruleIds.includes(Number(row.id))) current.ruleIds.push(Number(row.id))
+    if (row.grantId && !current.grantIds.includes(Number(row.grantId))) current.grantIds.push(Number(row.grantId))
     if (row.role && !current.role) current.role = row.role
   }
 
@@ -209,6 +251,15 @@ function rulesToTargetRows(rows: any[]): TargetRow[] {
   }))
 }
 
+function grantsToTargetRows(rows: AuthorizationScopeGrantRow[]): TargetRow[] {
+  return rows.map((row) => ({
+    grantId: row.id,
+    email: row.authorizer_email,
+    channel: row.channel || 'EMAIL',
+    source: 'SCOPE_GRANT'
+  }))
+}
+
 export function selectEffectiveRules(rules: any[], plantel: string, puesto: string) {
   const plantelKey = normalizeComparable(plantel)
   const puestoKey = normalizeComparable(puesto)
@@ -235,6 +286,35 @@ export function selectEffectiveRules(rules: any[], plantel: string, puesto: stri
   return { source: 'STANDARD_DIRECTORY' as const, rows: [] }
 }
 
+function selectExactPuestoRules(rules: any[], plantel: string, puesto: string) {
+  if (!plantel || !puesto || isAllRuleValue(plantel)) return []
+  const plantelKey = normalizeComparable(plantel)
+  const puestoKey = normalizeComparable(puesto)
+  return rules.filter((rule) =>
+    normalizeComparable(rule.condition_plantel) === plantelKey &&
+    normalizeComparable(rule.condition_puesto) === puestoKey &&
+    !isAllRuleValue(rule.condition_puesto)
+  )
+}
+
+function selectGlobalPuestoRules(rules: any[], puesto: string) {
+  if (!puesto) return []
+  const puestoKey = normalizeComparable(puesto)
+  return rules.filter((rule) =>
+    isAllRuleValue(rule.condition_plantel) &&
+    normalizeComparable(rule.condition_puesto) === puestoKey &&
+    !isAllRuleValue(rule.condition_puesto)
+  )
+}
+
+function selectPlantelDefaultRules(rules: any[], plantel: string) {
+  if (!plantel) return []
+  const plantelKey = normalizeComparable(plantel)
+  return rules.filter((rule) =>
+    normalizeComparable(rule.condition_plantel) === plantelKey && isAllRuleValue(rule.condition_puesto)
+  )
+}
+
 function selectLegacyNotificationRules(rules: any[], plantel: string, puesto: string) {
   const plantelKey = normalizeComparable(plantel)
   const puestoKey = normalizeComparable(puesto)
@@ -249,9 +329,12 @@ function selectLegacyNotificationRules(rules: any[], plantel: string, puesto: st
 
 export function getSourceLabel(source: AuthorizationResolution['source']) {
   const labels = {
-    EXACT_PUESTO: 'Override de puesto por plantel',
-    GLOBAL_PUESTO: 'Override global de puesto',
-    PLANTEL_DEFAULT: 'Regla general del plantel',
+    PERSON: 'Autorización individual',
+    EXACT_PUESTO: 'Puesto en plantel',
+    EXACT_AREA: 'Área en plantel',
+    GLOBAL_PUESTO: 'Puesto institucional',
+    GLOBAL_AREA: 'Área institucional',
+    PLANTEL_DEFAULT: 'Plantel',
     STANDARD_DIRECTORY: 'Comportamiento estándar',
     LEGACY_NOTIFICATION: 'Notificación autorizada existente',
     UNCONFIGURED: 'Sin autorizadores configurados'
@@ -259,30 +342,116 @@ export function getSourceLabel(source: AuthorizationResolution['source']) {
   return labels[source]
 }
 
+function exclusiveResolution(input: {
+  employeePlantel: string
+  employeePuesto: string
+  employeeArea: string
+  employeeCurp: string
+  source: AuthorizationResolution['source']
+  rows: TargetRow[]
+}) {
+  return enrichTargets(input.rows).then((targets) => ({
+    employeePlantel: input.employeePlantel,
+    employeePuesto: input.employeePuesto,
+    employeeArea: input.employeeArea,
+    employeeCurp: input.employeeCurp,
+    source: input.source,
+    sourceLabel: getSourceLabel(input.source),
+    isExclusive: true,
+    hasTargets: targets.length > 0,
+    targets,
+    authorizedEmails: targets.map((target) => target.email.toLowerCase()),
+    requiredText: formatAuthorizationTargetList(targets)
+  } as AuthorizationResolution))
+}
+
 export async function resolveExclusiveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
   const employeePlantel = cleanPlantelName(pass?.plantel) || ''
-  const employeePuesto = await resolveEmployeePuesto(pass)
-  const rules = await getNotificationRules()
-  const selected = selectEffectiveRules(rules, employeePlantel, employeePuesto)
+  const employeeCurp = normalizeRuleValue(pass?.curp)
+  const [employeePuesto, employeeArea, rules, grants] = await Promise.all([
+    resolveEmployeePuesto(pass),
+    resolveEmployeeArea(pass),
+    getNotificationRules(),
+    getAuthorizationScopeGrants()
+  ])
 
-  if (selected.rows.length) {
-    const targets = await enrichTargets(rulesToTargetRows(selected.rows))
-    return {
+  const personGrants = selectPersonScopeGrants(grants, employeeCurp)
+  if (personGrants.length) {
+    return exclusiveResolution({
       employeePlantel,
       employeePuesto,
-      source: selected.source,
-      sourceLabel: getSourceLabel(selected.source),
-      isExclusive: true,
-      hasTargets: targets.length > 0,
-      targets,
-      authorizedEmails: targets.map((target) => target.email.toLowerCase()),
-      requiredText: formatAuthorizationTargetList(targets)
-    }
+      employeeArea,
+      employeeCurp,
+      source: 'PERSON',
+      rows: grantsToTargetRows(personGrants)
+    })
+  }
+
+  const exactPuesto = selectExactPuestoRules(rules, employeePlantel, employeePuesto)
+  if (exactPuesto.length) {
+    return exclusiveResolution({
+      employeePlantel,
+      employeePuesto,
+      employeeArea,
+      employeeCurp,
+      source: 'EXACT_PUESTO',
+      rows: rulesToTargetRows(exactPuesto)
+    })
+  }
+
+  const exactArea = selectAreaScopeGrants(grants, employeePlantel, employeeArea, false)
+  if (exactArea.length) {
+    return exclusiveResolution({
+      employeePlantel,
+      employeePuesto,
+      employeeArea,
+      employeeCurp,
+      source: 'EXACT_AREA',
+      rows: grantsToTargetRows(exactArea)
+    })
+  }
+
+  const globalPuesto = selectGlobalPuestoRules(rules, employeePuesto)
+  if (globalPuesto.length) {
+    return exclusiveResolution({
+      employeePlantel,
+      employeePuesto,
+      employeeArea,
+      employeeCurp,
+      source: 'GLOBAL_PUESTO',
+      rows: rulesToTargetRows(globalPuesto)
+    })
+  }
+
+  const globalArea = selectAreaScopeGrants(grants, employeePlantel, employeeArea, true)
+  if (globalArea.length) {
+    return exclusiveResolution({
+      employeePlantel,
+      employeePuesto,
+      employeeArea,
+      employeeCurp,
+      source: 'GLOBAL_AREA',
+      rows: grantsToTargetRows(globalArea)
+    })
+  }
+
+  const plantelDefault = selectPlantelDefaultRules(rules, employeePlantel)
+  if (plantelDefault.length) {
+    return exclusiveResolution({
+      employeePlantel,
+      employeePuesto,
+      employeeArea,
+      employeeCurp,
+      source: 'PLANTEL_DEFAULT',
+      rows: rulesToTargetRows(plantelDefault)
+    })
   }
 
   return {
     employeePlantel,
     employeePuesto,
+    employeeArea,
+    employeeCurp,
     source: 'UNCONFIGURED',
     sourceLabel: getSourceLabel('UNCONFIGURED'),
     isExclusive: false,
@@ -327,6 +496,8 @@ export async function resolveAuthorizationForPass(pass: any): Promise<Authorizat
   return {
     employeePlantel,
     employeePuesto,
+    employeeArea: exclusive.employeeArea,
+    employeeCurp: exclusive.employeeCurp,
     source,
     sourceLabel: getSourceLabel(source),
     isExclusive: false,

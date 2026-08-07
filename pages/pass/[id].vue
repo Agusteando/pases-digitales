@@ -198,15 +198,23 @@
         <div class="space-y-8">
 
           <!-- Autorización Directa -->
-          <div v-if="pass.status === 'pendiente' && canManage" class="glass-panel bg-casita-green-light/10 p-8 rounded-[2.5rem] border border-casita-green/30 shadow-lg">
-            <h3 class="text-xs font-black text-casita-green-dark uppercase tracking-widest mb-4 flex items-center gap-2">
-              <CheckCircle2 class="w-4 h-4 text-casita-green" /> Resolver solicitud
+          <div v-if="pass.status === 'pendiente' && canSeeResolvePanel" class="glass-panel p-8 rounded-[2.5rem] border shadow-lg" :class="canResolvePass ? 'bg-casita-green-light/10 border-casita-green/30' : 'bg-violet-50/70 border-violet-200/70'">
+            <h3 class="text-xs font-black uppercase tracking-widest mb-5 flex items-center gap-2" :class="canResolvePass ? 'text-casita-green-dark' : 'text-violet-700'">
+              <CheckCircle2 class="w-4 h-4" :class="canResolvePass ? 'text-casita-green' : 'text-violet-500'" /> Resolver solicitud
             </h3>
-            <p class="text-xs text-casita-green-dark/70 font-bold mb-6 leading-relaxed">
-              El aviso de autorización ya fue enviado. Como administrador o creador, puedes resolver la solicitud directamente desde aquí.
-            </p>
+
+            <div v-if="pass.authorization_policy?.isExclusive" class="mb-5 p-3.5 bg-white/85 rounded-2xl border border-white shadow-sm flex items-center gap-3">
+              <div class="flex items-center shrink-0">
+                <PremiumAvatar v-for="(target, index) in (pass.authorization_policy.targets || []).slice(0, 3)" :key="target.email" :src="target.photoUrl" :name="target.name || target.email" size="xs" class="ring-2 ring-white shadow-sm bg-white" :class="index ? '-ml-2' : ''" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-black text-slate-900 truncate">{{ authorizationTargetNames }}</p>
+                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400 mt-1">{{ pass.authorization_policy.sourceLabel }}</p>
+              </div>
+              <ShieldCheck class="w-4 h-4 shrink-0" :class="canResolvePass ? 'text-casita-green' : 'text-violet-500'" />
+            </div>
             
-            <div v-if="isFuture && Number(pass.category_id) !== 6" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
+            <div v-if="canResolvePass && isFuture && Number(pass.category_id) !== 6" class="mb-5 bg-white/90 rounded-2xl p-4 border border-casita-green/20 shadow-sm flex items-center justify-between gap-4">
                <div class="flex items-center gap-3">
                  <div class="w-8 h-8 rounded-lg bg-casita-green/10 flex items-center justify-center text-casita-green-dark shrink-0">
                    <CalendarClock class="w-4 h-4" />
@@ -222,7 +230,7 @@
                </label>
             </div>
 
-            <div class="flex flex-col gap-3">
+            <div v-if="canResolvePass" class="flex flex-col gap-3">
               <button @click="handleInAppAuth('authorize')" :disabled="isResolving" class="w-full relative group overflow-hidden bg-gradient-to-b from-casita-green to-casita-green-dark text-white text-sm font-black rounded-[1.25rem] transition-all shadow-[0_4px_20px_-4px_rgba(97,139,47,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_8px_24px_-4px_rgba(97,139,47,0.6),inset_0_1px_0_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-casita-green-dark/50">
                 <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
                 <div class="absolute inset-0 flex items-center justify-center gap-2.5 transition-transform duration-300 group-hover:scale-[1.02] z-10">
@@ -397,6 +405,18 @@ const isResolving = ref(false)
 const isAdmin = computed(() => user.value?.is_admin || false)
 const isOwner = computed(() => user.value && pass.value && user.value.name === pass.value.user)
 const canManage = computed(() => isOwner.value || isAdmin.value)
+const canResolvePass = computed(() => {
+  if (pass.value?.authorization_policy?.isExclusive) return pass.value.authorization_policy.viewerCanResolve === true
+  return canManage.value
+})
+const canSeeResolvePanel = computed(() => canManage.value || (pass.value?.authorization_policy?.isExclusive && pass.value.authorization_policy.viewerCanResolve === true))
+const authorizationTargetNames = computed(() => {
+  const targets = pass.value?.authorization_policy?.targets || []
+  const names = targets.map((target) => target.name || target.email).filter(Boolean)
+  if (!names.length) return 'Autorizador configurado'
+  if (names.length <= 2) return names.join(', ')
+  return `${names.slice(0, 2).join(', ')} +${names.length - 2}`
+})
 const canCancelPass = computed(() => ['pendiente', 'autorizado'].includes(pass.value?.status))
 
 const isExpired = computed(() => {

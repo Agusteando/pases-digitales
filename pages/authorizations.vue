@@ -1,662 +1,851 @@
 <template>
-  <div class="p-6 md:p-10 max-w-[1800px] mx-auto h-full flex flex-col relative z-10">
-    <header class="mb-6 shrink-0 flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-      <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 border border-white shadow-sm mb-4 text-[10px] font-black text-iedis-teal-dark uppercase tracking-widest">
-          <LockKeyhole class="w-3.5 h-3.5" /> Autorización exclusiva
+  <div class="h-full min-h-[100dvh] md:min-h-0 p-4 sm:p-6 lg:p-8 2xl:p-10 relative z-10 flex flex-col overflow-hidden">
+    <header class="shrink-0 max-w-[1800px] w-full mx-auto mb-5">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-slate-950 text-white flex items-center justify-center shadow-sm">
+              <ShieldCheck class="w-5 h-5" />
+            </div>
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">Autorizaciones</h1>
+              <p class="text-xs font-bold text-slate-400 mt-0.5">{{ authorizerSummary.authorizers }} autorizadores · {{ authorizerSummary.scopes }} alcances</p>
+            </div>
+          </div>
         </div>
-        <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Autorizaciones críticas</h1>
-        <p class="text-slate-500 mt-2 text-sm font-bold max-w-3xl">
-          Define por plantel y puesto quién puede recibir el enlace y resolver un pase. Las notificaciones ahora son enlaces de autorización; no se envían a destinatarios no autorizados.
-        </p>
-      </div>
 
-      <div class="flex items-center gap-3">
-        <button @click="openPlantelDefault" :disabled="selectedPlantel === 'ALL'" class="px-5 py-3 bg-white/80 border border-white text-slate-700 text-xs font-black rounded-2xl shadow-sm hover:border-brand-300 hover:text-brand-700 transition-all flex items-center gap-2 outline-none disabled:opacity-50 disabled:cursor-not-allowed">
-          <Building2 class="w-4 h-4" /> Default del plantel
-        </button>
-        <button @click="openBulkAssignment" class="px-5 py-3 bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white text-xs font-black rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 outline-none">
-          <Plus class="w-4 h-4" /> Asignación masiva
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="p-1 bg-white/75 border border-white rounded-2xl shadow-sm flex items-center">
+            <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              @click="activeTab = tab.id"
+              class="px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 outline-none"
+              :class="activeTab === tab.id ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-white/70'"
+            >
+              <component :is="tab.icon" class="w-4 h-4" />
+              {{ tab.label }}
+            </button>
+          </div>
+          <button
+            @click="openNewAuthorizer"
+            class="w-11 h-11 sm:w-auto sm:px-4 rounded-2xl bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 outline-none"
+            title="Agregar autorizador"
+          >
+            <Plus class="w-4 h-4" />
+            <span class="hidden sm:inline text-xs font-black">Autorizador</span>
+          </button>
+        </div>
       </div>
     </header>
 
-    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6 shrink-0">
-      <div v-for="card in summaryCards" :key="card.label" class="glass-panel p-5 rounded-[2rem] border border-white/80 shadow-sm">
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{{ card.label }}</p>
-        <div class="flex items-end justify-between gap-3">
-          <p class="text-3xl font-black text-slate-900 tracking-tight">{{ card.value }}</p>
-          <component :is="card.icon" class="w-6 h-6 text-iedis-teal" />
-        </div>
-      </div>
-    </div>
-
-    <div class="flex-1 flex flex-col xl:flex-row gap-6 min-h-0">
-      <aside class="w-full xl:w-72 2xl:w-80 flex flex-col shrink-0 min-h-0 glass-panel rounded-[2.5rem] overflow-hidden shadow-sm">
-        <div class="p-6 border-b border-white/60 bg-white/40">
-          <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-            <Building2 class="w-4 h-4 text-brand-500" /> Planteles
-          </h2>
-          <p class="text-[11px] font-bold text-slate-500 mt-2">El puesto específico siempre puede reemplazar el default del plantel.</p>
-        </div>
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1 bg-white/20">
-          <button
-            @click="setPlantel('ALL')"
-            class="w-full text-left px-5 py-3.5 rounded-2xl font-bold text-sm transition-all outline-none flex items-center justify-between group"
-            :class="selectedPlantel === 'ALL' ? 'bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white shadow-md' : 'text-slate-700 hover:bg-white/60 hover:text-slate-900 hover:shadow-sm'"
-          >
-            <div class="flex items-center gap-3">
-              <Globe class="w-4 h-4" :class="selectedPlantel === 'ALL' ? 'text-white/70' : 'text-slate-400 group-hover:text-brand-500'" />
-              Toda la institución
+    <main class="flex-1 min-h-0 max-w-[1800px] w-full mx-auto">
+      <section v-show="activeTab === 'AUTHORIZERS'" class="h-full min-h-0 grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] gap-4 lg:gap-5">
+        <aside class="glass-panel rounded-[2rem] overflow-hidden min-h-[260px] lg:min-h-0 flex flex-col shadow-sm">
+          <div class="p-4 border-b border-white/70 bg-white/45">
+            <div class="relative">
+              <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                v-model="authorizerSearch"
+                type="search"
+                placeholder="Buscar"
+                class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/85 border border-white text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-iedis-teal/20 focus:border-iedis-teal shadow-sm"
+              />
             </div>
-          </button>
+          </div>
 
-          <div class="my-3 border-t border-white/60 mx-4"></div>
+          <div v-if="authorizersLoading" class="flex-1 flex items-center justify-center p-10">
+            <Loader2 class="w-7 h-7 animate-spin text-iedis-teal" />
+          </div>
 
-          <button
-            v-for="plantel in planteles"
-            :key="plantel"
-            @click="setPlantel(plantel)"
-            class="w-full text-left px-5 py-3.5 rounded-2xl font-bold text-sm transition-all outline-none flex items-center justify-between group"
-            :class="selectedPlantel === plantel ? 'bg-white shadow-md text-brand-800 border-white' : 'text-slate-600 hover:bg-white/60 border border-transparent hover:shadow-sm'"
-          >
-            <span class="truncate">{{ plantel }}</span>
-            <ChevronRight class="w-4 h-4" :class="selectedPlantel === plantel ? 'text-brand-500' : 'text-transparent group-hover:text-slate-300'" />
-          </button>
-        </div>
-      </aside>
-
-      <main class="flex-1 min-w-0 flex flex-col xl:flex-row gap-6 min-h-0">
-        <section class="flex-1 min-w-0 glass-panel rounded-[2.5rem] overflow-hidden flex flex-col shadow-sm">
-          <div class="p-6 border-b border-white/70 bg-white/50 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <h2 class="text-xl font-black text-slate-900 tracking-tight">
-                {{ selectedPlantel === 'ALL' ? 'Overrides globales por puesto' : selectedPlantel }}
-              </h2>
-              <p class="text-xs font-bold text-slate-500 mt-1">{{ selectedPlantel === 'ALL' ? 'Reglas de puesto aplicables a toda la institución.' : 'Matriz puesto × autorizador para este plantel.' }}</p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3">
-              <div class="relative min-w-[260px]">
-                <Search class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input v-model="searchQuery" type="search" placeholder="Buscar puesto, autorizador..." class="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/80 border border-white focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-800 shadow-sm" />
+          <div v-else-if="filteredAuthorizers.length" class="flex-1 overflow-y-auto custom-scrollbar p-2">
+            <button
+              v-for="authorizer in filteredAuthorizers"
+              :key="authorizer.email"
+              @click="selectedAuthorizerEmail = authorizer.email"
+              class="w-full p-3.5 rounded-2xl flex items-center gap-3 text-left transition-all outline-none group"
+              :class="selectedAuthorizerEmail === authorizer.email ? 'bg-slate-950 text-white shadow-md' : 'hover:bg-white/75 text-slate-800'"
+            >
+              <PremiumAvatar :src="authorizer.photoUrl" :name="authorizer.name" size="sm" class="shrink-0 ring-2 ring-white/80 shadow-sm bg-white" />
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-black truncate">{{ authorizer.name }}</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[10px] font-bold" :class="selectedAuthorizerEmail === authorizer.email ? 'text-white/55' : 'text-slate-400'">{{ authorizer.scopes.length }} {{ authorizer.scopes.length === 1 ? 'alcance' : 'alcances' }}</span>
+                  <span v-if="authorizer.channels.includes('WHATSAPP')" class="w-1 h-1 rounded-full" :class="selectedAuthorizerEmail === authorizer.email ? 'bg-white/30' : 'bg-slate-300'"></span>
+                  <MessageCircle v-if="authorizer.channels.includes('WHATSAPP')" class="w-3 h-3" :class="selectedAuthorizerEmail === authorizer.email ? 'text-white/55' : 'text-casita-green'" />
+                </div>
               </div>
-              <select v-model="statusFilter" class="px-4 py-3 rounded-2xl bg-white/80 border border-white focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-xs font-black text-slate-700 shadow-sm">
-                <option value="ALL">Todos</option>
-                <option value="PROTECTED">Solo protegidos</option>
-                <option value="INCOMPLETE">Incompletos</option>
-                <option value="OVERRIDES">Overrides</option>
-              </select>
+              <ChevronRight class="w-4 h-4 shrink-0 transition-transform" :class="selectedAuthorizerEmail === authorizer.email ? 'text-white/60 translate-x-0.5' : 'text-slate-300 group-hover:text-slate-500'" />
+            </button>
+          </div>
+
+          <div v-else class="flex-1 flex flex-col items-center justify-center p-10 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-white border border-white flex items-center justify-center shadow-sm mb-3">
+              <UserRoundCheck class="w-5 h-5 text-slate-400" />
             </div>
+            <p class="text-sm font-black text-slate-700">Sin autorizadores</p>
           </div>
+        </aside>
 
-          <div v-if="loading" class="flex-1 flex items-center justify-center p-16">
-            <Loader2 class="w-12 h-12 animate-spin text-iedis-teal" />
-          </div>
-
-          <div v-else class="flex-1 overflow-auto custom-scrollbar">
-            <table class="w-full min-w-[960px] text-left">
-              <thead class="sticky top-0 bg-white/90 backdrop-blur-md z-10 border-b border-slate-100">
-                <tr class="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  <th class="px-6 py-4 w-12">
-                    <input type="checkbox" :checked="allVisibleSelected" @change="toggleAllVisible" class="w-4 h-4 rounded border-slate-300 text-iedis-teal focus:ring-iedis-teal" />
-                  </th>
-                  <th class="px-4 py-4">Puesto</th>
-                  <th class="px-4 py-4">Usuarios</th>
-                  <th class="px-4 py-4">Autorizador obligatorio</th>
-                  <th class="px-4 py-4">Canal</th>
-                  <th class="px-4 py-4">Estado</th>
-                  <th class="px-4 py-4 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/70">
-                <tr
-                  v-for="row in rows"
-                  :key="row.key"
-                  @click="selectedRow = row"
-                  class="group transition-all cursor-pointer"
-                  :class="selectedRow?.key === row.key ? 'bg-iedis-teal/10' : 'hover:bg-white/60'"
-                >
-                  <td class="px-6 py-4" @click.stop>
-                    <input type="checkbox" :checked="selectedKeys.includes(row.key)" @change="toggleRow(row)" class="w-4 h-4 rounded border-slate-300 text-iedis-teal focus:ring-iedis-teal" />
-                  </td>
-                  <td class="px-4 py-4">
-                    <div class="max-w-[320px]">
-                      <p class="text-sm font-black text-slate-900 leading-tight">{{ row.puesto }}</p>
-                      <p class="text-[10px] font-bold text-slate-500 mt-1">{{ row.sourceLabel }}</p>
-                    </div>
-                  </td>
-                  <td class="px-4 py-4">
-                    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 border border-white shadow-sm text-xs font-black text-slate-700">
-                      <Users class="w-3.5 h-3.5 text-slate-400" /> {{ row.userCount }} usuarios
+        <section class="glass-panel rounded-[2rem] overflow-hidden min-h-0 flex flex-col shadow-sm">
+          <template v-if="selectedAuthorizer">
+            <div class="p-5 sm:p-6 lg:p-7 border-b border-white/70 bg-white/45 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-4 min-w-0">
+                <PremiumAvatar :src="selectedAuthorizer.photoUrl" :name="selectedAuthorizer.name" size="lg" class="shrink-0 ring-4 ring-white shadow-md bg-white" />
+                <div class="min-w-0">
+                  <h2 class="text-xl sm:text-2xl font-black text-slate-950 truncate">{{ selectedAuthorizer.name }}</h2>
+                  <p class="text-xs font-bold text-slate-400 truncate mt-0.5">{{ selectedAuthorizer.email }}</p>
+                  <div class="flex items-center gap-2 mt-2">
+                    <span v-if="selectedAuthorizer.channels.includes('EMAIL')" class="w-7 h-7 rounded-lg bg-white border border-white shadow-sm flex items-center justify-center text-iedis-blue-dark" title="Email">
+                      <Mail class="w-3.5 h-3.5" />
                     </span>
-                  </td>
-                  <td class="px-4 py-4">
-                    <div v-if="row.targets?.length" class="flex flex-col gap-1.5">
-                      <p class="text-sm font-black text-slate-800 truncate max-w-[280px]">{{ targetLabel(row) }}</p>
-                      <p class="text-[10px] font-bold text-slate-500 truncate max-w-[280px]">{{ targetEmails(row) }}</p>
-                    </div>
-                    <div v-else>
-                      <p class="text-sm font-black text-slate-500">Sin autorizador configurado</p>
-                      <p class="text-[10px] font-bold text-slate-400">No se enviará enlace de autorización.</p>
-                    </div>
-                  </td>
-                  <td class="px-4 py-4">
-                    <div class="flex flex-wrap gap-1.5">
-                      <span v-for="channel in rowChannels(row)" :key="channel" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border bg-white/80 shadow-sm" :class="channel === 'WHATSAPP' ? 'text-casita-green-dark border-casita-green/30' : 'text-iedis-blue-dark border-iedis-blue/20'">
-                        <MessageCircle v-if="channel === 'WHATSAPP'" class="w-3 h-3" />
-                        <Mail v-else class="w-3 h-3" />
-                        {{ channel === 'WHATSAPP' ? 'WA' : 'Email' }}
-                      </span>
-                    </div>
-                  </td>
-                  <td class="px-4 py-4">
-                    <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest" :class="stateClass(row.state)">
-                      <span class="w-2 h-2 rounded-full" :class="stateDotClass(row.state)"></span>
-                      {{ stateLabel(row.state) }}
+                    <span v-if="selectedAuthorizer.channels.includes('WHATSAPP')" class="w-7 h-7 rounded-lg bg-white border border-white shadow-sm flex items-center justify-center text-casita-green-dark" title="WhatsApp">
+                      <MessageCircle class="w-3.5 h-3.5" />
                     </span>
-                  </td>
-                  <td class="px-4 py-4 text-right" @click.stop>
-                    <button @click="editRow(row)" class="px-3 py-2 bg-white/80 hover:bg-white text-brand-700 rounded-xl border border-white shadow-sm text-[10px] font-black uppercase tracking-widest transition-all">Editar</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div v-if="!rows.length" class="p-16 text-center">
-              <div class="w-16 h-16 rounded-2xl bg-white border border-white shadow-sm flex items-center justify-center mx-auto mb-4">
-                <Search class="w-7 h-7 text-slate-400" />
-              </div>
-              <p class="text-base font-black text-slate-700">Sin grupos visibles</p>
-              <p class="text-sm font-bold text-slate-500 mt-1">Ajusta la búsqueda o el filtro de estado.</p>
-            </div>
-          </div>
-        </section>
-
-        <aside class="w-full xl:w-[380px] 2xl:w-[420px] shrink-0 glass-panel rounded-[2.5rem] overflow-hidden shadow-sm flex flex-col min-h-[420px] xl:min-h-0">
-          <div class="p-6 border-b border-white/70 bg-white/50">
-            <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              <ClipboardCheck class="w-4 h-4 text-brand-500" /> Inspector
-            </h3>
-          </div>
-
-          <div v-if="selectedRow" class="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
-            <div>
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Grupo seleccionado</p>
-              <h4 class="text-xl font-black text-slate-900 leading-tight">{{ selectedRow.puesto }}</h4>
-              <p class="text-xs font-bold text-slate-500 mt-1">{{ selectedPlantel === 'ALL' ? 'Toda la institución' : selectedPlantel }} · {{ selectedRow.userCount }} usuarios</p>
-            </div>
-
-            <div class="p-5 bg-white/75 rounded-2xl border border-white shadow-sm">
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Regla activa</p>
-              <p class="text-sm font-black text-slate-900">Este pase solo puede ser autorizado por:</p>
-              <p class="text-sm font-bold text-brand-700 mt-2">{{ selectedRow.targets?.length ? targetLabel(selectedRow) : 'Sin autorizador configurado' }}</p>
-              <p v-if="selectedRow.targets?.length" class="text-[11px] font-bold text-slate-500 mt-1">{{ targetEmails(selectedRow) }}</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div class="p-4 bg-white/60 rounded-2xl border border-white">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Precedencia</p>
-                <p class="text-xs font-black text-slate-800">{{ selectedRow.sourceLabel }}</p>
-              </div>
-              <div class="p-4 bg-white/60 rounded-2xl border border-white">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Estado</p>
-                <p class="text-xs font-black text-slate-800">{{ stateLabel(selectedRow.state) }}</p>
-              </div>
-            </div>
-
-            <div v-if="selectedRow.targets?.length" class="space-y-3">
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contactos</p>
-              <div v-for="target in selectedRow.targets" :key="target.email" class="p-4 bg-white/70 rounded-2xl border border-white shadow-sm">
-                <div class="flex items-start gap-3">
-                  <PremiumAvatar :src="target.photoUrl" :name="target.name || target.email" size="sm" class="shrink-0 ring-2 ring-white shadow-sm bg-white" />
-                  <div class="min-w-0 flex-1">
-                    <p class="text-sm font-black text-slate-900 truncate">{{ target.name }}</p>
-                    <p class="text-[10px] font-bold text-slate-500 truncate">{{ target.email }}</p>
-                    <p class="text-[10px] font-bold mt-2 flex items-center gap-1.5" :class="target.phone ? 'text-slate-600' : 'text-casita-gold-dark'">
-                      <Smartphone class="w-3.5 h-3.5" /> {{ formatPhoneDisplay(target.phone) || 'Sin celular registrado' }}
-                    </p>
+                    <span v-if="selectedAuthorizer.phone" class="text-[10px] font-bold text-slate-400">{{ formatPhoneDisplay(selectedAuthorizer.phone) }}</span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div class="flex flex-col gap-3 pt-2">
-              <button @click="editRow(selectedRow)" class="w-full px-5 py-3 bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white text-xs font-black rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                <UserCheck class="w-4 h-4" /> Editar regla
-              </button>
-              <button v-if="selectedRow.ruleIds?.length" @click="clearEffectiveRule(selectedRow)" class="w-full px-5 py-3 bg-white text-casita-red text-xs font-black rounded-2xl shadow-sm border border-white hover:border-casita-red/30 transition-all flex items-center justify-center gap-2">
-                <Trash2 class="w-4 h-4" /> Eliminar regla activa
-              </button>
-            </div>
-          </div>
-
-          <div v-else class="p-10 flex-1 flex flex-col items-center justify-center text-center">
-            <div class="w-16 h-16 bg-white rounded-2xl border border-white shadow-sm flex items-center justify-center mb-4">
-              <ShieldCheck class="w-7 h-7 text-slate-400" />
-            </div>
-            <p class="text-base font-black text-slate-700">Selecciona un grupo</p>
-            <p class="text-sm font-bold text-slate-500 mt-1 max-w-sm">Verás el autorizador obligatorio, la precedencia y los teléfonos faltantes.</p>
-          </div>
-        </aside>
-      </main>
-    </div>
-
-    <div v-if="drawerOpen" class="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-sm" @click.self="closeDrawer">
-      <div class="w-full max-w-xl h-full bg-white/95 backdrop-blur-xl shadow-2xl border-l border-white flex flex-col">
-        <header class="p-8 border-b border-slate-100">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p class="text-[10px] font-black text-iedis-teal-dark uppercase tracking-widest mb-2">{{ drawerModeLabel }}</p>
-              <h3 class="text-2xl font-black text-slate-900 tracking-tight">Asignar autorizador obligatorio</h3>
-              <p class="text-sm font-bold text-slate-500 mt-2">Se reemplazarán las reglas existentes para el alcance seleccionado.</p>
-            </div>
-            <button @click="closeDrawer" class="p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-900 transition-all">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-        </header>
-
-        <div class="p-8 flex-1 overflow-y-auto custom-scrollbar space-y-8">
-          <section class="space-y-3">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alcance</p>
-            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-              <p class="text-sm font-black text-slate-900">{{ form.plantel === 'ALL' ? 'Toda la institución' : form.plantel }}</p>
-              <p class="text-xs font-bold text-slate-500 mt-1">{{ form.puestos.length === 1 && form.puestos[0] === 'ALL' ? 'Default general del plantel' : `${form.puestos.length} puesto(s) seleccionado(s)` }}</p>
-            </div>
-
-            <div v-if="drawerMode === 'CUSTOM'" class="space-y-2">
-              <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Agregar puestos manualmente</label>
-              <select v-model="manualPuesto" @change="addManualPuesto" class="w-full px-4 py-3 rounded-2xl bg-white border border-slate-200 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-700">
-                <option value="">Seleccionar puesto...</option>
-                <option v-for="puesto in availablePuestos" :key="puesto" :value="puesto">{{ puesto }}</option>
-              </select>
-            </div>
-
-            <div v-if="form.puestos.length && !(form.puestos.length === 1 && form.puestos[0] === 'ALL')" class="flex flex-wrap gap-2">
-              <span v-for="puesto in form.puestos" :key="puesto" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-[10px] font-black text-slate-700 shadow-sm">
-                {{ puesto }}
-                <button @click="removePuesto(puesto)" class="text-slate-400 hover:text-casita-red"><X class="w-3 h-3" /></button>
-              </span>
-            </div>
-          </section>
-
-          <section class="space-y-3">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Autorizador obligatorio</p>
-            <div v-if="!form.email" class="relative">
-              <Search class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input v-model="gwSearchQuery" @input="searchGw" placeholder="Buscar en Workspace por nombre o correo..." class="w-full pl-11 pr-4 py-4 rounded-2xl bg-white border border-slate-200 focus:border-iedis-teal focus:ring-2 focus:ring-iedis-teal/20 outline-none text-sm font-bold text-slate-800" />
-              <div v-if="gwResults.length" class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-dropdown overflow-hidden z-20 max-h-72 overflow-y-auto custom-scrollbar">
-                <button v-for="result in gwResults" :key="result.email" @click="selectGw(result)" class="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-slate-50 transition-colors">
-                  <PremiumAvatar :src="result.photoUrl" :name="result.name" size="sm" class="shrink-0 bg-white" />
-                  <div class="min-w-0">
-                    <p class="text-sm font-black text-slate-900 truncate">{{ result.name }}</p>
-                    <p class="text-[10px] font-bold text-slate-500 truncate">{{ result.email }}</p>
-                  </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button @click="openScopeAssignment(selectedAuthorizer)" class="px-4 py-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-xs font-black shadow-sm transition-all flex items-center gap-2 outline-none">
+                  <Plus class="w-4 h-4" /> Alcance
+                </button>
+                <button @click="removeAuthorizer(selectedAuthorizer)" class="w-11 h-11 rounded-xl bg-white/80 hover:bg-red-50 text-slate-400 hover:text-casita-red border border-white shadow-sm transition-all flex items-center justify-center outline-none" title="Retirar autorizador">
+                  <Trash2 class="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <div v-else class="p-5 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <PremiumAvatar :src="selectedGwPhoto" :name="selectedGwName || form.email" size="md" class="shrink-0 ring-2 ring-white shadow-sm bg-white" />
-              <div class="min-w-0 flex-1">
-                <p class="text-sm font-black text-slate-900 truncate">{{ selectedGwName || form.email }}</p>
-                <p class="text-[10px] font-bold text-slate-500 truncate">{{ form.email }}</p>
+            <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 sm:p-6 lg:p-7">
+              <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                <div v-for="group in selectedScopeGroups" :key="group.type" class="rounded-[1.6rem] bg-white/65 border border-white shadow-sm overflow-hidden">
+                  <div class="px-5 pt-5 pb-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center" :class="group.iconClass">
+                        <component :is="group.icon" class="w-4 h-4" />
+                      </div>
+                      <p class="text-xs font-black text-slate-800 uppercase tracking-widest">{{ group.label }}</p>
+                    </div>
+                    <span class="text-[10px] font-black text-slate-400">{{ group.scopes.length }}</span>
+                  </div>
+
+                  <div v-if="group.scopes.length" class="px-3 pb-3 space-y-1.5">
+                    <div v-for="scope in group.scopes" :key="scope.key" @click="editScope(selectedAuthorizer, scope)" class="group/scope flex items-center gap-3 p-3 rounded-xl hover:bg-white transition-all cursor-pointer">
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-black text-slate-900 truncate">{{ scope.label }}</p>
+                        <p v-if="scopeSubtitle(scope)" class="text-[10px] font-bold text-slate-400 truncate mt-0.5">{{ scopeSubtitle(scope) }}</p>
+                      </div>
+                      <div class="flex items-center gap-1 shrink-0">
+                        <Mail v-if="scope.channels.includes('EMAIL')" class="w-3.5 h-3.5 text-iedis-blue-dark/65" />
+                        <MessageCircle v-if="scope.channels.includes('WHATSAPP')" class="w-3.5 h-3.5 text-casita-green-dark/65" />
+                      </div>
+                      <button @click.stop="removeScope(selectedAuthorizer, scope)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-casita-red hover:bg-red-50 transition-all opacity-100 lg:opacity-0 lg:group-hover/scope:opacity-100 outline-none" title="Retirar">
+                        <X class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button v-else @click="openScopeAssignment(selectedAuthorizer, group.type)" class="w-full px-5 pb-5 pt-2 text-left text-xs font-black text-slate-400 hover:text-iedis-teal-dark transition-colors outline-none">
+                    +
+                  </button>
+                </div>
               </div>
-              <button @click="clearGw" class="p-2 rounded-xl text-slate-400 hover:text-casita-red hover:bg-slate-50 transition-all">
-                <X class="w-4 h-4" />
-              </button>
             </div>
-          </section>
+          </template>
 
-          <section class="space-y-3">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Canales autorizados</p>
-            <div class="grid grid-cols-2 gap-3">
-              <button @click="toggleChannel('EMAIL')" class="px-4 py-4 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2" :class="form.channels.includes('EMAIL') ? 'bg-iedis-blue/10 text-iedis-blue-dark border-iedis-blue/30' : 'bg-white text-slate-500 border-slate-200'">
-                <Mail class="w-4 h-4" /> Email
-              </button>
-              <button @click="toggleChannel('WHATSAPP')" class="px-4 py-4 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2" :class="form.channels.includes('WHATSAPP') ? 'bg-casita-green/10 text-casita-green-dark border-casita-green/30' : 'bg-white text-slate-500 border-slate-200'">
-                <MessageCircle class="w-4 h-4" /> WhatsApp
-              </button>
+          <div v-else class="flex-1 flex flex-col items-center justify-center p-10 text-center">
+            <div class="w-16 h-16 rounded-[1.5rem] bg-white border border-white shadow-sm flex items-center justify-center mb-4">
+              <ShieldCheck class="w-7 h-7 text-slate-300" />
             </div>
-          </section>
+            <p class="text-sm font-black text-slate-600">Selecciona un autorizador</p>
+          </div>
+        </section>
+      </section>
 
-          <section v-if="form.channels.includes('WHATSAPP')" class="space-y-3">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Celular WhatsApp</p>
-            <div class="flex rounded-2xl shadow-sm">
-              <span class="px-4 py-4 bg-slate-100 border border-r-0 border-slate-200 rounded-l-2xl text-sm font-black text-slate-500">+52</span>
-              <input v-model="form.phone" @input="enforcePhoneDigits" maxlength="10" placeholder="10 dígitos" class="flex-1 px-4 py-4 rounded-r-2xl bg-white border border-slate-200 focus:border-casita-green focus:ring-2 focus:ring-casita-green/20 outline-none text-sm font-black text-slate-900" />
+      <section v-show="activeTab === 'GROUPS'" class="h-full min-h-0 flex flex-col gap-4">
+        <div class="glass-panel rounded-[1.6rem] p-3 sm:p-4 shadow-sm shrink-0 flex flex-col lg:flex-row lg:items-center gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0 flex-1 lg:max-w-2xl">
+            <div class="relative min-w-0">
+              <Search class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input v-model="matrixSearch" type="search" placeholder="Buscar puesto o autorizador" class="w-full pl-10 pr-4 py-3 rounded-xl bg-white/85 border border-white text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-iedis-teal/20 shadow-sm" />
             </div>
-            <p class="text-[10px] font-bold" :class="form.phone.length === 10 ? 'text-casita-green-dark' : 'text-casita-gold-dark'">
-              {{ form.phone.length === 10 ? 'Número válido. Se sincronizará con Workspace.' : 'Requerido para habilitar WhatsApp.' }}
-            </p>
-          </section>
+            <div class="relative min-w-0">
+              <Building2 class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <select v-model="selectedPlantel" @change="loadMatrix" class="w-full appearance-none pl-10 pr-9 py-3 rounded-xl bg-white/85 border border-white text-xs font-black text-slate-700 outline-none shadow-sm cursor-pointer">
+                <option value="ALL">Toda la institución</option>
+                <option v-for="plantel in matrix.planteles" :key="plantel" :value="plantel">{{ plantel }}</option>
+              </select>
+              <ChevronDown class="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
 
-          <section class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Resumen antes de guardar</p>
-            <p class="text-sm font-bold text-slate-700">
-              Se actualizarán {{ form.puestos.length }} grupo(s). {{ affectedUsersForForm }} usuario(s) quedan cubiertos por esta asignación. Las reglas previas del mismo grupo serán reemplazadas.
-            </p>
-          </section>
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <button v-for="filter in matrixFilters" :key="filter.id" @click="matrixFilter = filter.id" class="px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all outline-none" :class="matrixFilter === filter.id ? 'bg-slate-950 text-white shadow-sm' : 'bg-white/70 text-slate-500 hover:text-slate-900'">
+              {{ filter.label }}
+            </button>
+            <button v-if="selectedPlantel !== 'ALL'" @click="openPlantelDefault" class="px-3.5 py-2.5 rounded-xl bg-white/80 text-iedis-teal-dark text-[10px] font-black uppercase tracking-widest border border-white shadow-sm whitespace-nowrap flex items-center gap-1.5 outline-none">
+              <Building2 class="w-3.5 h-3.5" /> Plantel
+            </button>
+            <button v-if="selectedMatrixKeys.length" @click="openBulkGroupAssignment" class="px-3.5 py-2.5 rounded-xl bg-iedis-teal-dark text-white text-[10px] font-black uppercase tracking-widest shadow-sm whitespace-nowrap flex items-center gap-1.5 outline-none">
+              <Plus class="w-3.5 h-3.5" /> {{ selectedMatrixKeys.length }}
+            </button>
+          </div>
         </div>
 
-        <footer class="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-white">
-          <button @click="closeDrawer" class="px-5 py-3 rounded-2xl bg-slate-100 text-slate-600 text-xs font-black hover:text-slate-900 transition-all">Cancelar</button>
-          <button @click="saveRules" :disabled="saving || !formValid" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-            <Loader2 v-if="saving" class="w-4 h-4 animate-spin" /> Guardar autorización
-          </button>
-        </footer>
+        <div class="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px] gap-4">
+          <div class="glass-panel rounded-[2rem] overflow-hidden min-h-0 flex flex-col shadow-sm">
+            <div v-if="matrixLoading" class="flex-1 flex items-center justify-center p-12">
+              <Loader2 class="w-8 h-8 animate-spin text-iedis-teal" />
+            </div>
+            <div v-else class="flex-1 overflow-auto custom-scrollbar">
+              <table class="w-full min-w-[860px] text-left">
+                <thead class="sticky top-0 z-10 bg-white/95 backdrop-blur-xl border-b border-slate-100">
+                  <tr class="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    <th class="px-5 py-4 w-12"><input type="checkbox" :checked="allVisibleMatrixSelected" @change="toggleAllMatrixRows" class="w-4 h-4 rounded border-slate-300 text-iedis-teal focus:ring-iedis-teal" /></th>
+                    <th class="px-3 py-4">Puesto</th>
+                    <th class="px-3 py-4">Autorizador</th>
+                    <th class="px-3 py-4">Alcance</th>
+                    <th class="px-3 py-4 text-right">Personas</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/80">
+                  <tr v-for="row in visibleMatrixRows" :key="row.key" @click="selectedMatrixRowKey = row.key" class="cursor-pointer transition-all" :class="selectedMatrixRowKey === row.key ? 'bg-iedis-teal/5' : 'hover:bg-white/55'">
+                    <td class="px-5 py-4" @click.stop><input type="checkbox" :checked="selectedMatrixKeys.includes(row.key)" @change="toggleMatrixRow(row)" class="w-4 h-4 rounded border-slate-300 text-iedis-teal focus:ring-iedis-teal" /></td>
+                    <td class="px-3 py-4">
+                      <p class="text-sm font-black text-slate-900">{{ row.puesto }}</p>
+                      <p class="text-[10px] font-bold text-slate-400 mt-1">{{ selectedPlantel === 'ALL' ? 'Institucional' : selectedPlantel }}</p>
+                    </td>
+                    <td class="px-3 py-4">
+                      <div v-if="row.targets?.length" class="flex items-center">
+                        <PremiumAvatar v-for="(target, index) in row.targets.slice(0, 3)" :key="target.email" :src="target.photoUrl" :name="target.name || target.email" size="xs" class="ring-2 ring-white shadow-sm bg-white" :class="index ? '-ml-2' : ''" />
+                        <span class="ml-2 text-xs font-black text-slate-700 max-w-[220px] truncate">{{ targetSummary(row.targets) }}</span>
+                      </div>
+                      <span v-else class="text-xs font-black text-slate-300">—</span>
+                    </td>
+                    <td class="px-3 py-4">
+                      <span class="inline-flex items-center px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border" :class="matrixSourceClass(row)">{{ matrixSourceLabel(row) }}</span>
+                    </td>
+                    <td class="px-3 py-4 text-right text-sm font-black text-slate-700 tabular-nums">{{ row.userCount }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div v-if="!visibleMatrixRows.length" class="h-full min-h-[260px] flex flex-col items-center justify-center p-10 text-center">
+                <Search class="w-6 h-6 text-slate-300 mb-3" />
+                <p class="text-sm font-black text-slate-500">Sin resultados</p>
+              </div>
+            </div>
+          </div>
+
+          <aside class="glass-panel rounded-[2rem] overflow-hidden min-h-[300px] xl:min-h-0 flex flex-col shadow-sm">
+            <template v-if="selectedMatrixRow">
+              <div class="p-5 border-b border-white/70 bg-white/45">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.18em] mb-2">{{ selectedMatrixRow.sourceLabel }}</p>
+                <h3 class="text-lg font-black text-slate-950 leading-tight">{{ selectedMatrixRow.puesto }}</h3>
+                <p class="text-xs font-bold text-slate-400 mt-1">{{ selectedPlantel === 'ALL' ? 'Toda la institución' : selectedPlantel }} · {{ selectedMatrixRow.userCount }}</p>
+              </div>
+
+              <div class="p-4 flex-1 overflow-y-auto custom-scrollbar">
+                <div v-if="selectedMatrixRow.targets?.length" class="space-y-2">
+                  <div v-for="target in selectedMatrixRow.targets" :key="target.email" class="p-3 rounded-2xl bg-white/70 border border-white shadow-sm flex items-center gap-3">
+                    <PremiumAvatar :src="target.photoUrl" :name="target.name || target.email" size="sm" class="ring-2 ring-white shadow-sm bg-white shrink-0" />
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-black text-slate-900 truncate">{{ target.name || target.email }}</p>
+                      <p class="text-[10px] font-bold text-slate-400 truncate">{{ target.email }}</p>
+                    </div>
+                    <button v-if="matrixTargetRemovableHere(selectedMatrixRow)" @click="removeMatrixTarget(selectedMatrixRow, target)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-casita-red hover:bg-red-50 transition-all outline-none" title="Retirar">
+                      <X class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="py-8 text-center"><Minus class="w-5 h-5 text-slate-300 mx-auto" /></div>
+              </div>
+
+              <div class="p-4 border-t border-white/70 bg-white/35">
+                <button @click="openMatrixRowAssignment(selectedMatrixRow)" class="w-full px-4 py-3 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-xs font-black shadow-sm transition-all flex items-center justify-center gap-2 outline-none">
+                  <Plus class="w-4 h-4" /> {{ matrixRowEditableHere(selectedMatrixRow) ? 'Autorizador' : 'Regla directa' }}
+                </button>
+              </div>
+            </template>
+
+            <div v-else class="flex-1 flex flex-col items-center justify-center p-10 text-center">
+              <Layers3 class="w-7 h-7 text-slate-300 mb-3" />
+              <p class="text-sm font-black text-slate-500">Selecciona un puesto</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <Transition name="fade">
+      <div v-if="assignmentOpen" class="fixed inset-0 z-[70] bg-slate-950/35 backdrop-blur-sm flex justify-end" @click.self="closeAssignment">
+        <div class="w-full max-w-xl h-full bg-slate-50/95 backdrop-blur-2xl shadow-2xl border-l border-white flex flex-col">
+          <header class="p-5 sm:p-6 border-b border-white bg-white/75 flex items-center justify-between gap-4 shrink-0">
+            <div class="min-w-0">
+              <p class="text-[9px] font-black uppercase tracking-[0.18em] text-iedis-teal-dark">Asignar</p>
+              <h3 class="text-xl font-black text-slate-950 truncate mt-1">{{ assignmentTitle }}</h3>
+            </div>
+            <button @click="closeAssignment" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-950 flex items-center justify-center outline-none"><X class="w-4 h-4" /></button>
+          </header>
+
+          <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5 sm:p-6 space-y-6">
+            <section>
+              <div v-if="assignment.authorizer" class="p-3.5 rounded-2xl bg-white border border-white shadow-sm flex items-center gap-3">
+                <PremiumAvatar :src="assignment.authorizer.photoUrl" :name="assignment.authorizer.name" size="sm" class="ring-2 ring-white shadow-sm bg-white shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-black text-slate-900 truncate">{{ assignment.authorizer.name }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 truncate">{{ assignment.authorizer.email }}</p>
+                </div>
+                <button v-if="!assignment.lockAuthorizer" @click="clearAssignmentAuthorizer" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-50 outline-none"><X class="w-3.5 h-3.5" /></button>
+              </div>
+
+              <div v-else class="relative">
+                <Search class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input v-model="workspaceQuery" @input="searchWorkspace" type="search" placeholder="Nombre o correo" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-white text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-iedis-teal/20 shadow-sm" autofocus />
+                <div v-if="workspaceLoading || workspaceResults.length" class="absolute z-20 left-0 right-0 top-full mt-2 p-2 rounded-2xl bg-white shadow-dropdown border border-slate-100 max-h-72 overflow-y-auto custom-scrollbar">
+                  <div v-if="workspaceLoading" class="p-6 flex justify-center"><Loader2 class="w-5 h-5 animate-spin text-iedis-teal" /></div>
+                  <button v-for="result in workspaceResults" :key="result.email" @click="selectAssignmentAuthorizer(result)" class="w-full p-3 rounded-xl flex items-center gap-3 text-left hover:bg-slate-50 transition-all outline-none">
+                    <PremiumAvatar :src="result.photoUrl" :name="result.name" size="sm" class="ring-2 ring-white shadow-sm bg-white shrink-0" />
+                    <div class="min-w-0 flex-1"><p class="text-sm font-black text-slate-900 truncate">{{ result.name }}</p><p class="text-[10px] font-bold text-slate-400 truncate">{{ result.email }}</p></div>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section v-if="!assignment.lockScopes" class="space-y-3">
+              <div class="p-1 rounded-2xl bg-white/70 border border-white shadow-sm grid grid-cols-4 gap-1">
+                <button v-for="type in scopeTypes" :key="type.id" @click="setAssignmentScopeType(type.id)" class="py-2.5 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1.5 outline-none" :class="assignment.scopeType === type.id ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-500 hover:bg-white'">
+                  <component :is="type.icon" class="w-3.5 h-3.5" />
+                  <span class="hidden sm:inline">{{ type.label }}</span>
+                </button>
+              </div>
+
+              <div v-if="['PUESTO','AREA'].includes(assignment.scopeType)" class="relative">
+                <Globe2 class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <select v-model="assignment.scopePlantel" @change="loadSubjects" class="w-full appearance-none pl-11 pr-10 py-3.5 rounded-2xl bg-white border border-white text-xs font-black text-slate-700 outline-none shadow-sm cursor-pointer">
+                  <option value="ALL">Toda la institución</option>
+                  <option v-for="plantel in catalogPlanteles" :key="plantel" :value="plantel">{{ plantel }}</option>
+                </select>
+                <ChevronDown class="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              <div class="relative">
+                <Search class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input v-model="subjectQuery" @input="scheduleSubjectLoad" type="search" :placeholder="subjectPlaceholder" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-white text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-iedis-teal/20 shadow-sm" />
+              </div>
+
+              <div class="rounded-2xl bg-white/65 border border-white shadow-sm overflow-hidden min-h-[160px] max-h-[310px] overflow-y-auto custom-scrollbar">
+                <div v-if="subjectsLoading" class="h-40 flex items-center justify-center"><Loader2 class="w-5 h-5 animate-spin text-iedis-teal" /></div>
+                <button v-for="subject in subjectResults" :key="subjectKey(subject)" @click="toggleSubject(subject)" class="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-white transition-all border-b border-slate-100/60 last:border-b-0 outline-none">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border" :class="isSubjectSelected(subject) ? 'bg-iedis-teal/10 border-iedis-teal/20 text-iedis-teal-dark' : 'bg-slate-50 border-slate-100 text-slate-400'">
+                    <Check v-if="isSubjectSelected(subject)" class="w-4 h-4" />
+                    <component v-else :is="currentScopeType.icon" class="w-4 h-4" />
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-black text-slate-900 truncate">{{ subject.label }}</p>
+                    <p v-if="subject.subtitle || subject.userCount !== undefined" class="text-[10px] font-bold text-slate-400 truncate mt-0.5">{{ subject.subtitle || `${subject.userCount} personas` }}</p>
+                  </div>
+                </button>
+                <div v-if="!subjectsLoading && !subjectResults.length" class="h-40 flex items-center justify-center text-center p-6"><p class="text-xs font-black text-slate-300">—</p></div>
+              </div>
+            </section>
+
+            <section v-if="assignment.scopes.length" class="space-y-2">
+              <div class="flex flex-wrap gap-2">
+                <span v-for="scope in assignment.scopes" :key="scope.key" class="inline-flex items-center gap-2 max-w-full px-3 py-2 rounded-xl bg-slate-950 text-white shadow-sm">
+                  <span class="text-[10px] font-black truncate max-w-[280px]">{{ scopeChipLabel(scope) }}</span>
+                  <button v-if="!assignment.lockScopes" @click="removeDraftScope(scope.key)" class="text-white/45 hover:text-white outline-none"><X class="w-3 h-3" /></button>
+                </span>
+              </div>
+            </section>
+
+            <section class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <button @click="toggleAssignmentChannel('EMAIL')" class="p-3.5 rounded-2xl border flex items-center gap-3 text-left transition-all outline-none" :class="assignment.channels.includes('EMAIL') ? 'bg-iedis-blue/10 border-iedis-blue/25 text-iedis-blue-dark' : 'bg-white border-white text-slate-400'">
+                  <Mail class="w-4 h-4" /><span class="text-xs font-black">Email</span><Check v-if="assignment.channels.includes('EMAIL')" class="w-4 h-4 ml-auto" />
+                </button>
+                <button @click="toggleAssignmentChannel('WHATSAPP')" class="p-3.5 rounded-2xl border flex items-center gap-3 text-left transition-all outline-none" :class="assignment.channels.includes('WHATSAPP') ? 'bg-casita-green/10 border-casita-green/25 text-casita-green-dark' : 'bg-white border-white text-slate-400'">
+                  <MessageCircle class="w-4 h-4" /><span class="text-xs font-black">WhatsApp</span><Check v-if="assignment.channels.includes('WHATSAPP')" class="w-4 h-4 ml-auto" />
+                </button>
+              </div>
+
+              <div v-if="assignment.channels.includes('WHATSAPP')" class="relative">
+                <Smartphone class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input v-model="assignment.phone" @input="assignment.phone = normalizePhone(assignment.phone)" inputmode="numeric" maxlength="10" placeholder="10 dígitos" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-white text-sm font-black tracking-wider text-slate-800 outline-none focus:ring-2 focus:ring-casita-green/20 shadow-sm" />
+              </div>
+            </section>
+          </div>
+
+          <footer class="p-5 sm:p-6 border-t border-white bg-white/75 shrink-0">
+            <button @click="saveAssignment" :disabled="!assignmentValid || assignmentSaving" class="w-full h-14 py-3.5 rounded-2xl bg-gradient-to-r from-iedis-teal to-iedis-teal-dark text-white text-sm font-black shadow-md hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 outline-none">
+              <Loader2 v-if="assignmentSaving" class="w-4 h-4 animate-spin" />
+              <Check v-else class="w-4 h-4" />
+              {{ assignmentButtonLabel }}
+            </button>
+          </footer>
+        </div>
       </div>
-    </div>
+    </Transition>
+
+    <Transition name="fade">
+      <div v-if="toast.visible" class="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-8 z-[90] max-w-[calc(100vw-2rem)] rounded-2xl bg-slate-950 text-white shadow-2xl px-4 py-3 flex items-center gap-4">
+        <p class="text-xs font-black whitespace-nowrap">{{ toast.message }}</p>
+        <button v-if="toast.action" @click="toast.action" class="text-xs font-black text-iedis-teal-light hover:text-white transition-colors outline-none">Deshacer</button>
+        <button @click="hideToast" class="text-white/40 hover:text-white outline-none"><X class="w-3.5 h-3.5" /></button>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { ShieldCheck, Building2, Globe, ChevronRight, Search, Loader2, Users, Mail, MessageCircle, Smartphone, CheckCircle2, AlertTriangle, Plus, Trash2, X, Layers, LockKeyhole, UserCheck, ClipboardCheck } from 'lucide-vue-next'
+import {
+  ShieldCheck, Plus, Search, Loader2, Mail, MessageCircle, ChevronRight, Trash2, X,
+  UserRoundCheck, Users, Building2, BriefcaseBusiness, Network, ChevronDown, Globe2,
+  Check, Smartphone, Layers3, Minus, UserRound, MapPinned
+} from 'lucide-vue-next'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
 
+const tabs = [
+  { id: 'AUTHORIZERS', label: 'Por autorizador', icon: UserRoundCheck },
+  { id: 'GROUPS', label: 'Por grupo', icon: Layers3 }
+]
+const scopeTypes = [
+  { id: 'PERSON', label: 'Personas', icon: UserRound },
+  { id: 'PLANTEL', label: 'Planteles', icon: Building2 },
+  { id: 'PUESTO', label: 'Puestos', icon: BriefcaseBusiness },
+  { id: 'AREA', label: 'Áreas', icon: Network }
+]
+const matrixFilters = [
+  { id: 'ALL', label: 'Todos' },
+  { id: 'PROTECTED', label: 'Protegidos' },
+  { id: 'OVERRIDES', label: 'Directos' },
+  { id: 'INCOMPLETE', label: 'Incompletos' }
+]
+
+const activeTab = ref('AUTHORIZERS')
+const authorizers = ref([])
+const authorizerSummary = ref({ authorizers: 0, scopes: 0, people: 0, groups: 0 })
+const authorizersLoading = ref(true)
+const authorizerSearch = ref('')
+const selectedAuthorizerEmail = ref('')
+const catalogPlanteles = ref([])
+
+const filteredAuthorizers = computed(() => {
+  const q = authorizerSearch.value.trim().toLowerCase()
+  if (!q) return authorizers.value
+  return authorizers.value.filter((authorizer) => [authorizer.name, authorizer.email, ...authorizer.scopes.map((scope) => `${scope.label} ${scope.plantel}`)].join(' ').toLowerCase().includes(q))
+})
+const selectedAuthorizer = computed(() => authorizers.value.find((authorizer) => authorizer.email === selectedAuthorizerEmail.value) || null)
+const selectedScopeGroups = computed(() => {
+  const scopes = selectedAuthorizer.value?.scopes || []
+  return [
+    { type: 'PERSON', label: 'Personas', icon: UserRound, iconClass: 'text-violet-600', scopes: scopes.filter((scope) => scope.type === 'PERSON') },
+    { type: 'PLANTEL', label: 'Planteles', icon: Building2, iconClass: 'text-iedis-teal-dark', scopes: scopes.filter((scope) => scope.type === 'PLANTEL') },
+    { type: 'PUESTO', label: 'Puestos', icon: BriefcaseBusiness, iconClass: 'text-iedis-blue-dark', scopes: scopes.filter((scope) => scope.type === 'PUESTO') },
+    { type: 'AREA', label: 'Áreas', icon: Network, iconClass: 'text-casita-gold', scopes: scopes.filter((scope) => scope.type === 'AREA') }
+  ]
+})
+
+const matrix = ref({ rows: [], planteles: [], catalogPuestos: [], summary: {} })
+const matrixLoading = ref(false)
 const selectedPlantel = ref('ALL')
-const searchQuery = ref('')
-const statusFilter = ref('ALL')
-const loading = ref(true)
-const saving = ref(false)
-const matrix = ref({ rows: [], planteles: [], catalogPuestos: [], summary: { protectedGroups: 0, affectedUsers: 0, incompleteRules: 0, activeOverrides: 0 } })
-const selectedRow = ref(null)
-const selectedKeys = ref([])
-let loadTimer = null
+const matrixSearch = ref('')
+const matrixFilter = ref('ALL')
+const selectedMatrixKeys = ref([])
+const selectedMatrixRowKey = ref('')
+let matrixTimer = null
+const visibleMatrixRows = computed(() => matrix.value.rows || [])
+const selectedMatrixRow = computed(() => visibleMatrixRows.value.find((row) => row.key === selectedMatrixRowKey.value) || null)
+const allVisibleMatrixSelected = computed(() => visibleMatrixRows.value.length > 0 && visibleMatrixRows.value.every((row) => selectedMatrixKeys.value.includes(row.key)))
 
-const drawerOpen = ref(false)
-const drawerMode = ref('CUSTOM')
-const manualPuesto = ref('')
-const gwSearchQuery = ref('')
-const gwResults = ref([])
-const selectedGwName = ref('')
-const selectedGwPhoto = ref('')
-let gwTimeout = null
+const assignmentOpen = ref(false)
+const assignmentSaving = ref(false)
+const workspaceQuery = ref('')
+const workspaceResults = ref([])
+const workspaceLoading = ref(false)
+let workspaceTimer = null
+const subjectQuery = ref('')
+const subjectResults = ref([])
+const subjectsLoading = ref(false)
+let subjectTimer = null
 
-const form = reactive({
-  plantel: 'ALL',
-  puestos: [],
-  email: '',
+const assignment = reactive({
+  authorizer: null,
+  lockAuthorizer: false,
+  scopes: [],
+  lockScopes: false,
+  scopeType: 'PUESTO',
+  scopePlantel: 'ALL',
   channels: ['EMAIL'],
   phone: ''
 })
 
-const planteles = computed(() => matrix.value.planteles || [])
-const rows = computed(() => matrix.value.rows || [])
-const availablePuestos = computed(() => (matrix.value.catalogPuestos || []).filter((puesto) => !form.puestos.includes(puesto)))
+const toast = reactive({ visible: false, message: '', action: null })
+let toastTimer = null
 
-const summaryCards = computed(() => [
-  { label: 'Grupos protegidos', value: matrix.value.summary.protectedGroups, icon: ShieldCheck },
-  { label: 'Colaboradores afectados', value: matrix.value.summary.affectedUsers, icon: Users },
-  { label: 'Reglas incompletas', value: matrix.value.summary.incompleteRules, icon: AlertTriangle },
-  { label: 'Overrides activos', value: matrix.value.summary.activeOverrides, icon: Layers }
-])
-
-const allVisibleSelected = computed(() => rows.value.length > 0 && rows.value.every((row) => selectedKeys.value.includes(row.key)))
-const drawerModeLabel = computed(() => {
-  if (drawerMode.value === 'PLANTEL_DEFAULT') return 'Regla de plantel'
-  if (drawerMode.value === 'ROW') return 'Override de puesto'
-  return 'Asignación masiva'
+const currentScopeType = computed(() => scopeTypes.find((type) => type.id === assignment.scopeType) || scopeTypes[0])
+const subjectPlaceholder = computed(() => ({ PERSON: 'Buscar persona', PLANTEL: 'Buscar plantel', PUESTO: 'Buscar puesto', AREA: 'Buscar área' }[assignment.scopeType]))
+const assignmentTitle = computed(() => {
+  if (assignment.lockScopes && assignment.scopes.length === 1) return scopeChipLabel(assignment.scopes[0])
+  if (assignment.lockScopes && assignment.scopes.length > 1) return `${assignment.scopes.length} puestos`
+  return assignment.authorizer?.name || 'Nuevo autorizador'
 })
-
-const formValid = computed(() => {
-  if (!form.plantel || !form.puestos.length || !form.email || !form.channels.length) return false
-  if (form.channels.includes('WHATSAPP') && form.phone.length !== 10) return false
+const assignmentValid = computed(() => {
+  if (!assignment.authorizer?.email || !assignment.scopes.length || !assignment.channels.length) return false
+  if (assignment.channels.includes('WHATSAPP') && normalizePhone(assignment.phone).length !== 10) return false
   return true
 })
+const assignmentButtonLabel = computed(() => assignment.scopes.length > 1 ? `Asignar ${assignment.scopes.length}` : 'Asignar')
 
-const affectedUsersForForm = computed(() => {
-  if (form.puestos.includes('ALL')) {
-    return rows.value.reduce((sum, row) => sum + row.userCount, 0)
-  }
-  return rows.value.filter((row) => form.puestos.includes(row.puesto)).reduce((sum, row) => sum + row.userCount, 0)
+watch([matrixSearch, matrixFilter], () => {
+  if (matrixTimer) clearTimeout(matrixTimer)
+  matrixTimer = setTimeout(loadMatrix, 220)
+})
+watch(activeTab, (value) => {
+  if (value === 'GROUPS' && !matrix.value.rows.length) loadMatrix()
 })
 
-const loadMatrix = async () => {
-  loading.value = true
+async function loadAuthorizers(preferredEmail = '') {
+  if (!authorizers.value.length) authorizersLoading.value = true
   try {
-    const data = await $fetch('/api/authorizations/matrix', {
-      query: {
-        plantel: selectedPlantel.value,
-        search: searchQuery.value,
-        status: statusFilter.value
-      }
-    })
-    matrix.value = data
-    selectedKeys.value = selectedKeys.value.filter((key) => data.rows.some((row) => row.key === key))
-    if (selectedRow.value) {
-      selectedRow.value = data.rows.find((row) => row.key === selectedRow.value.key) || null
-    }
+    const data = await $fetch('/api/authorizations/authorizers')
+    authorizers.value = data.authorizers || []
+    authorizerSummary.value = data.summary || { authorizers: 0, scopes: 0, people: 0, groups: 0 }
+    if (preferredEmail && authorizers.value.some((authorizer) => authorizer.email === preferredEmail)) selectedAuthorizerEmail.value = preferredEmail
+    else if (!authorizers.value.some((authorizer) => authorizer.email === selectedAuthorizerEmail.value)) selectedAuthorizerEmail.value = authorizers.value[0]?.email || ''
   } catch (error) {
-    alert(error?.data?.message || 'No se pudo cargar la matriz de autorizaciones.')
+    showToast(error?.data?.message || 'No se pudieron cargar las autorizaciones.')
   } finally {
-    loading.value = false
+    authorizersLoading.value = false
   }
 }
 
-const scheduleLoad = () => {
-  if (loadTimer) clearTimeout(loadTimer)
-  loadTimer = setTimeout(loadMatrix, 250)
-}
-
-watch([searchQuery, statusFilter], scheduleLoad)
-
-const setPlantel = (plantel) => {
-  selectedPlantel.value = plantel
-  selectedKeys.value = []
-  selectedRow.value = null
-  loadMatrix()
-}
-
-const toggleRow = (row) => {
-  if (selectedKeys.value.includes(row.key)) {
-    selectedKeys.value = selectedKeys.value.filter((key) => key !== row.key)
-  } else {
-    selectedKeys.value = [...selectedKeys.value, row.key]
+async function loadMatrix() {
+  matrixLoading.value = true
+  try {
+    const data = await $fetch('/api/authorizations/matrix', { query: { plantel: selectedPlantel.value, search: matrixSearch.value, status: matrixFilter.value } })
+    matrix.value = data
+    selectedMatrixKeys.value = selectedMatrixKeys.value.filter((key) => data.rows.some((row) => row.key === key))
+    if (!data.rows.some((row) => row.key === selectedMatrixRowKey.value)) selectedMatrixRowKey.value = data.rows[0]?.key || ''
+  } catch (error) {
+    showToast(error?.data?.message || 'No se pudo cargar la vista por grupo.')
+  } finally {
+    matrixLoading.value = false
   }
 }
 
-const toggleAllVisible = () => {
-  if (allVisibleSelected.value) {
-    selectedKeys.value = []
-  } else {
-    selectedKeys.value = rows.value.map((row) => row.key)
-  }
+function resetAssignment() {
+  assignment.authorizer = null
+  assignment.lockAuthorizer = false
+  assignment.scopes = []
+  assignment.lockScopes = false
+  assignment.scopeType = 'PUESTO'
+  assignment.scopePlantel = 'ALL'
+  assignment.channels = ['EMAIL']
+  assignment.phone = ''
+  workspaceQuery.value = ''
+  workspaceResults.value = []
+  subjectQuery.value = ''
+  subjectResults.value = []
 }
 
-const resetForm = () => {
-  form.plantel = selectedPlantel.value
-  form.puestos = []
-  form.email = ''
-  form.channels = ['EMAIL']
-  form.phone = ''
-  selectedGwName.value = ''
-  selectedGwPhoto.value = ''
-  gwSearchQuery.value = ''
-  gwResults.value = []
-  manualPuesto.value = ''
+function openNewAuthorizer() {
+  resetAssignment()
+  assignmentOpen.value = true
 }
 
-const openBulkAssignment = () => {
-  resetForm()
-  drawerMode.value = 'CUSTOM'
-  const selectedRows = rows.value.filter((row) => selectedKeys.value.includes(row.key))
-  form.puestos = selectedRows.map((row) => row.puesto)
-  drawerOpen.value = true
+function openScopeAssignment(authorizer, preferredType = 'PUESTO') {
+  resetAssignment()
+  assignment.authorizer = { ...authorizer }
+  assignment.lockAuthorizer = true
+  assignment.phone = normalizePhone(authorizer.phone)
+  assignment.scopeType = preferredType
+  assignmentOpen.value = true
+  loadSubjects()
 }
 
-const openPlantelDefault = () => {
-  resetForm()
-  drawerMode.value = 'PLANTEL_DEFAULT'
-  form.plantel = selectedPlantel.value
-  form.puestos = ['ALL']
-  drawerOpen.value = true
+function editScope(authorizer, scope) {
+  resetAssignment()
+  assignment.authorizer = { ...authorizer }
+  assignment.lockAuthorizer = true
+  assignment.lockScopes = true
+  assignment.scopes = [{ ...scope }]
+  assignment.channels = scope.channels?.length ? [...scope.channels] : ['EMAIL']
+  assignment.phone = normalizePhone(authorizer.phone)
+  assignmentOpen.value = true
 }
 
-const editRow = (row) => {
-  resetForm()
-  drawerMode.value = 'ROW'
-  form.plantel = selectedPlantel.value === 'ALL' ? 'ALL' : selectedPlantel.value
-  form.puestos = [row.puesto]
-  if (row.targets?.length) {
-    const target = row.targets[0]
-    form.email = target.email
-    form.channels = target.channels?.length ? [...target.channels] : ['EMAIL']
-    form.phone = target.phone ? target.phone.replace(/\D/g, '').slice(-10) : ''
-    selectedGwName.value = target.name
-    selectedGwPhoto.value = target.photoUrl || ''
-  }
-  drawerOpen.value = true
+function openMatrixRowAssignment(row) {
+  resetAssignment()
+  assignment.lockScopes = true
+  assignment.scopes = [{ key: `PUESTO|||${selectedPlantel.value}|||${row.puesto}`, type: 'PUESTO', value: row.puesto, label: row.puesto, plantel: selectedPlantel.value }]
+  assignmentOpen.value = true
 }
 
-const closeDrawer = () => {
-  drawerOpen.value = false
+function openBulkGroupAssignment() {
+  const scopes = visibleMatrixRows.value.filter((row) => selectedMatrixKeys.value.includes(row.key)).map((row) => ({ key: `PUESTO|||${selectedPlantel.value}|||${row.puesto}`, type: 'PUESTO', value: row.puesto, label: row.puesto, plantel: selectedPlantel.value }))
+  if (!scopes.length) return
+  resetAssignment()
+  assignment.lockScopes = true
+  assignment.scopes = scopes
+  assignmentOpen.value = true
 }
 
-const addManualPuesto = () => {
-  if (manualPuesto.value && !form.puestos.includes(manualPuesto.value)) {
-    form.puestos = [...form.puestos, manualPuesto.value]
-  }
-  manualPuesto.value = ''
+function openPlantelDefault() {
+  if (selectedPlantel.value === 'ALL') return
+  resetAssignment()
+  assignment.lockScopes = true
+  assignment.scopes = [{ key: `PLANTEL|||${selectedPlantel.value}|||${selectedPlantel.value}`, type: 'PLANTEL', value: selectedPlantel.value, label: selectedPlantel.value, plantel: selectedPlantel.value }]
+  assignmentOpen.value = true
 }
 
-const removePuesto = (puesto) => {
-  form.puestos = form.puestos.filter((item) => item !== puesto)
+function closeAssignment() {
+  assignmentOpen.value = false
+  workspaceResults.value = []
+  subjectResults.value = []
 }
 
-const searchGw = () => {
-  if (gwTimeout) clearTimeout(gwTimeout)
-  if (gwSearchQuery.value.length < 2) {
-    gwResults.value = []
+function clearAssignmentAuthorizer() {
+  assignment.authorizer = null
+  assignment.phone = ''
+}
+
+function searchWorkspace() {
+  if (workspaceTimer) clearTimeout(workspaceTimer)
+  const q = workspaceQuery.value.trim()
+  if (q.length < 2) {
+    workspaceResults.value = []
+    workspaceLoading.value = false
     return
   }
-  gwTimeout = setTimeout(async () => {
+  workspaceLoading.value = true
+  workspaceTimer = setTimeout(async () => {
     try {
-      const data = await $fetch('/api/workspace/search', { params: { q: gwSearchQuery.value } })
-      gwResults.value = data || []
+      workspaceResults.value = await $fetch('/api/workspace/search', { query: { q } })
     } catch {
-      gwResults.value = []
+      workspaceResults.value = []
+    } finally {
+      workspaceLoading.value = false
     }
-  }, 300)
+  }, 260)
 }
 
-const selectGw = (result) => {
-  form.email = result.email
-  selectedGwName.value = result.name
-  selectedGwPhoto.value = result.photoUrl
+function selectAssignmentAuthorizer(result) {
+  assignment.authorizer = result
+  assignment.phone = normalizePhone(result.phone)
+  workspaceQuery.value = ''
+  workspaceResults.value = []
+  if (!assignment.lockScopes && !subjectResults.value.length) loadSubjects()
+}
 
-  let cleanPhone = ''
-  if (result.phone) {
-    cleanPhone = result.phone.replace(/\D/g, '')
-    if (cleanPhone.startsWith('521') && cleanPhone.length >= 13) cleanPhone = cleanPhone.substring(3)
-    if (cleanPhone.length > 10) cleanPhone = cleanPhone.substring(cleanPhone.length - 10)
+function setAssignmentScopeType(type) {
+  assignment.scopeType = type
+  assignment.scopePlantel = 'ALL'
+  subjectQuery.value = ''
+  loadSubjects()
+}
+
+function scheduleSubjectLoad() {
+  if (subjectTimer) clearTimeout(subjectTimer)
+  subjectTimer = setTimeout(loadSubjects, 220)
+}
+
+async function loadSubjects() {
+  if (assignment.lockScopes) return
+  if (assignment.scopeType === 'PERSON' && subjectQuery.value.trim().length < 2) {
+    subjectResults.value = []
+    return
   }
-  form.phone = cleanPhone
-  gwSearchQuery.value = ''
-  gwResults.value = []
-}
-
-const clearGw = () => {
-  form.email = ''
-  selectedGwName.value = ''
-  selectedGwPhoto.value = ''
-  form.phone = ''
-}
-
-const toggleChannel = (channel) => {
-  if (form.channels.includes(channel)) {
-    form.channels = form.channels.filter((item) => item !== channel)
-  } else {
-    form.channels = [...form.channels, channel]
-  }
-}
-
-const enforcePhoneDigits = () => {
-  form.phone = form.phone.replace(/\D/g, '').substring(0, 10)
-}
-
-const saveRules = async () => {
-  if (saving.value || !formValid.value) return
-  saving.value = true
+  subjectsLoading.value = true
   try {
-    await $fetch('/api/authorizations/rules', {
+    subjectResults.value = await $fetch('/api/authorizations/subjects', { query: { type: assignment.scopeType, q: subjectQuery.value, plantel: assignment.scopePlantel } })
+  } catch (error) {
+    subjectResults.value = []
+    showToast(error?.data?.message || 'No se pudo cargar el alcance.')
+  } finally {
+    subjectsLoading.value = false
+  }
+}
+
+function subjectKey(subject) {
+  return `${subject.type}|||${subject.plantel || assignment.scopePlantel || 'ALL'}|||${subject.value}`
+}
+
+function isSubjectSelected(subject) {
+  return assignment.scopes.some((scope) => scope.key === subjectKey(subject))
+}
+
+function toggleSubject(subject) {
+  const key = subjectKey(subject)
+  const existing = assignment.scopes.find((scope) => scope.key === key)
+  if (existing) assignment.scopes = assignment.scopes.filter((scope) => scope.key !== key)
+  else assignment.scopes = [...assignment.scopes, { ...subject, key, plantel: subject.type === 'PERSON' ? 'ALL' : (subject.plantel || assignment.scopePlantel || 'ALL') }]
+}
+
+function removeDraftScope(key) {
+  assignment.scopes = assignment.scopes.filter((scope) => scope.key !== key)
+}
+
+function toggleAssignmentChannel(channel) {
+  if (assignment.channels.includes(channel)) {
+    if (assignment.channels.length === 1) return
+    assignment.channels = assignment.channels.filter((item) => item !== channel)
+  } else assignment.channels = [...assignment.channels, channel]
+}
+
+async function saveAssignment() {
+  if (!assignmentValid.value || assignmentSaving.value) return
+  assignmentSaving.value = true
+  const email = assignment.authorizer.email
+  try {
+    await $fetch('/api/authorizations/grants-batch', {
       method: 'POST',
       body: {
-        plantel: form.plantel,
-        puestos: form.puestos,
-        email: form.email,
-        channels: form.channels,
-        phone: form.phone,
-        replaceExisting: true
+        authorizerEmail: email,
+        assignments: assignment.scopes.map((scope) => ({
+          scopeType: scope.type,
+          scopeValue: scope.value,
+          plantel: scope.type === 'PERSON' || scope.type === 'PLANTEL' ? 'ALL' : (scope.plantel || 'ALL')
+        })),
+        channels: assignment.channels,
+        phone: assignment.phone
       }
     })
-    closeDrawer()
-    await loadMatrix()
+    closeAssignment()
+    selectedMatrixKeys.value = []
+    await Promise.all([loadAuthorizers(email), loadMatrix()])
+    activeTab.value = assignment.lockScopes && activeTab.value === 'GROUPS' ? 'GROUPS' : 'AUTHORIZERS'
+    showToast('Autorización actualizada')
   } catch (error) {
-    alert(error?.data?.message || 'No se pudo guardar la autorización.')
+    showToast(error?.data?.message || 'No se pudo guardar la autorización.')
   } finally {
-    saving.value = false
+    assignmentSaving.value = false
   }
 }
 
-const clearEffectiveRule = async (row) => {
-  const plantel = row.configuredPlantel || (selectedPlantel.value === 'ALL' ? 'ALL' : selectedPlantel.value)
-  const puesto = row.configuredPuesto || row.puesto
-  if (!confirm(`¿Eliminar la regla activa para ${puesto} en ${plantel}?`)) return
-
+async function removeScope(authorizer, scope) {
   try {
-    await $fetch('/api/authorizations/group', {
-      method: 'DELETE',
-      query: { plantel, puesto }
+    await deleteScopeRequest(authorizer.email, scope)
+    await Promise.all([loadAuthorizers(authorizer.email), activeTab.value === 'GROUPS' ? loadMatrix() : Promise.resolve()])
+    showToast('Autorización retirada', async () => {
+      try {
+        await $fetch('/api/authorizations/grants', { method: 'POST', body: { authorizerEmail: authorizer.email, scopeType: scope.type, scopeValue: scope.value, plantel: scope.plantel, channels: scope.channels, phone: normalizePhone(authorizer.phone) } })
+        await Promise.all([loadAuthorizers(authorizer.email), activeTab.value === 'GROUPS' ? loadMatrix() : Promise.resolve()])
+        showToast('Autorización restaurada')
+      } catch (error) {
+        showToast(error?.data?.message || 'No se pudo restaurar.')
+      }
     })
-    await loadMatrix()
   } catch (error) {
-    alert(error?.data?.message || 'No se pudo eliminar la regla.')
+    showToast(error?.data?.message || 'No se pudo retirar la autorización.')
   }
 }
 
-const targetLabel = (row) => row.targets.map((target) => target.name || target.email).join(', ')
-const targetEmails = (row) => row.targets.map((target) => target.email).join(', ')
-const rowChannels = (row) => Array.from(new Set((row.targets || []).flatMap((target) => target.channels || [])))
-
-const stateLabel = (state) => ({
-  STANDARD: 'Normal',
-  OVERRIDE: 'Override',
-  GLOBAL_OVERRIDE: 'Override global',
-  INHERITED: 'Heredado',
-  INCOMPLETE: 'Incompleto',
-  UNCONFIGURED: 'Sin destino'
-}[state] || state)
-
-const stateClass = (state) => ({
-  STANDARD: 'bg-slate-50 text-slate-600 border-slate-200',
-  OVERRIDE: 'bg-purple-50 text-purple-700 border-purple-200',
-  GLOBAL_OVERRIDE: 'bg-purple-50 text-purple-700 border-purple-200',
-  INHERITED: 'bg-blue-50 text-blue-700 border-blue-200',
-  INCOMPLETE: 'bg-amber-50 text-amber-700 border-amber-200',
-  UNCONFIGURED: 'bg-red-50 text-red-700 border-red-200'
-}[state] || 'bg-slate-50 text-slate-600 border-slate-200')
-
-const stateDotClass = (state) => ({
-  STANDARD: 'bg-slate-400',
-  OVERRIDE: 'bg-purple-500',
-  GLOBAL_OVERRIDE: 'bg-purple-500',
-  INHERITED: 'bg-blue-500',
-  INCOMPLETE: 'bg-amber-500',
-  UNCONFIGURED: 'bg-red-500'
-}[state] || 'bg-slate-400')
-
-const formatPhoneDisplay = (phoneRaw) => {
-  if (!phoneRaw) return ''
-  const digits = phoneRaw.replace(/\D/g, '')
-  if (digits.length >= 10) {
-    const num = digits.slice(-10)
-    return `+52 1 ${num.slice(0, 2)} ${num.slice(2, 6)} ${num.slice(6)}`
-  }
-  return phoneRaw
+async function deleteScopeRequest(authorizerEmail, scope) {
+  return $fetch('/api/authorizations/grants', { method: 'DELETE', query: { authorizerEmail, scopeType: scope.type, scopeValue: scope.value, plantel: scope.plantel || 'ALL' } })
 }
 
-onMounted(loadMatrix)
+async function removeAuthorizer(authorizer) {
+  if (!confirm(`¿Retirar todos los alcances de ${authorizer.name}?`)) return
+  try {
+    await $fetch(`/api/authorizations/authorizers/${encodeURIComponent(authorizer.email)}`, { method: 'DELETE' })
+    await Promise.all([loadAuthorizers(), activeTab.value === 'GROUPS' ? loadMatrix() : Promise.resolve()])
+    showToast('Autorizador retirado')
+  } catch (error) {
+    showToast(error?.data?.message || 'No se pudo retirar al autorizador.')
+  }
+}
+
+function matrixRowEditableHere(row) {
+  if (!row?.isExclusive) return true
+  if (selectedPlantel.value === 'ALL') return row.source === 'GLOBAL_PUESTO'
+  return row.source === 'EXACT_PUESTO' && String(row.configuredPlantel || '') === String(selectedPlantel.value) && String(row.configuredPuesto || '') === String(row.puesto)
+}
+
+function matrixTargetRemovableHere(row) {
+  return Boolean(row?.isExclusive && matrixRowEditableHere(row))
+}
+
+async function removeMatrixTarget(row, target) {
+  if (!matrixTargetRemovableHere(row)) return
+  const scope = { type: 'PUESTO', value: row.puesto, label: row.puesto, plantel: selectedPlantel.value, channels: target.channels || ['EMAIL'] }
+  await removeScope({ email: target.email, name: target.name || target.email, phone: target.phone }, scope)
+}
+
+function toggleMatrixRow(row) {
+  if (selectedMatrixKeys.value.includes(row.key)) selectedMatrixKeys.value = selectedMatrixKeys.value.filter((key) => key !== row.key)
+  else selectedMatrixKeys.value = [...selectedMatrixKeys.value, row.key]
+}
+
+function toggleAllMatrixRows() {
+  selectedMatrixKeys.value = allVisibleMatrixSelected.value ? [] : visibleMatrixRows.value.map((row) => row.key)
+}
+
+function targetSummary(targets) {
+  const names = targets.map((target) => target.name || target.email)
+  if (names.length <= 2) return names.join(', ')
+  return `${names.slice(0, 2).join(', ')} +${names.length - 2}`
+}
+
+function matrixSourceLabel(row) {
+  if (!row.isExclusive) return row.targets?.length ? 'Estándar' : 'Sin regla'
+  if (row.source === 'EXACT_PUESTO') return 'Directo'
+  if (row.source === 'GLOBAL_PUESTO') return 'Global'
+  if (row.source === 'PLANTEL_DEFAULT') return 'Heredado'
+  return 'Protegido'
+}
+
+function matrixSourceClass(row) {
+  if (!row.isExclusive) return row.targets?.length ? 'bg-slate-50 text-slate-500 border-slate-200' : 'bg-red-50 text-red-600 border-red-100'
+  if (matrixRowEditableHere(row)) return 'bg-violet-50 text-violet-700 border-violet-200'
+  return 'bg-blue-50 text-blue-700 border-blue-200'
+}
+
+function scopeSubtitle(scope) {
+  if (scope.subtitle) return scope.subtitle
+  if (scope.type === 'PUESTO' || scope.type === 'AREA') return scope.plantel === 'ALL' ? 'Toda la institución' : scope.plantel
+  return ''
+}
+
+function scopeChipLabel(scope) {
+  const suffix = (scope.type === 'PUESTO' || scope.type === 'AREA') && scope.plantel && scope.plantel !== 'ALL' ? ` · ${scope.plantel}` : ''
+  return `${scope.label || scope.value}${suffix}`
+}
+
+function normalizePhone(value) {
+  let digits = String(value || '').replace(/\D/g, '')
+  if (digits.startsWith('521') && digits.length >= 13) digits = digits.slice(3)
+  if (digits.length > 10) digits = digits.slice(-10)
+  return digits.slice(0, 10)
+}
+
+function formatPhoneDisplay(value) {
+  const digits = normalizePhone(value)
+  if (digits.length !== 10) return value || ''
+  return `+52 ${digits.slice(0, 2)} ${digits.slice(2, 6)} ${digits.slice(6)}`
+}
+
+function showToast(message, action = null) {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.visible = true
+  toast.message = message
+  toast.action = action
+  toastTimer = setTimeout(hideToast, action ? 7000 : 3200)
+}
+
+function hideToast() {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.visible = false
+  toast.action = null
+}
+
+onMounted(async () => {
+  const [, planteles] = await Promise.all([
+    loadAuthorizers(),
+    $fetch('/api/catalogs/planteles').catch(() => [])
+  ])
+  catalogPlanteles.value = planteles || []
+})
 </script>

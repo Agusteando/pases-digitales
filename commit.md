@@ -1,1 +1,1 @@
-fix: corregir la validación de fechas en pases de un solo día
+Rediseña autorizaciones con gestión por usuario y alcances seguros

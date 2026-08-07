@@ -42,13 +42,13 @@
           </div>
           <div class="text-left">
             <h2 class="text-sm font-black" :class="pass._viewerAuthorized ? 'text-iedis-teal-dark' : 'text-casita-red-dark'">
-              {{ pass._viewerAuthorized ? 'Autorización exclusiva activa' : 'Acceso no autorizado' }}
+              {{ pass._viewerAuthorized ? (pass.authorization_policy.isExclusive ? 'Autorización exclusiva' : 'Enlace autorizado') : 'Acceso no autorizado' }}
             </h2>
             <p class="text-xs font-bold text-slate-700 mt-1 leading-relaxed">
-              Este pase solo puede ser autorizado por {{ pass.authorization_policy.requiredText }}.
+              {{ pass.authorization_policy.isExclusive ? 'Autoriza' : 'Destinatarios' }}: {{ pass.authorization_policy.requiredText }}.
             </p>
             <p v-if="!pass._viewerAuthorized" class="text-xs font-bold text-casita-red-dark mt-2 leading-relaxed">
-              Tu enlace no corresponde al autorizador obligatorio de este grupo. No se realizó ningún cambio al pase.
+              Tu enlace no está habilitado para resolver este pase.
             </p>
           </div>
         </div>

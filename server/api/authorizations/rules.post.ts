@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError } from '#imports'
 import { requireAdmin } from '~/server/utils/access'
-import { useDB } from '~/server/utils/db'
+import { withDBTransaction } from '~/server/utils/db'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
 import { updateWorkspaceUserPhone } from '~/server/utils/googleWorkspace'
 import { normalizePhoneDigits, normalizeRuleValue } from '~/server/utils/authorizationRules'
@@ -35,24 +35,29 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const db = useDB()
-
   try {
-    for (const puesto of puestos) {
-      if (replaceExisting) {
-        await db.execute(
-          "DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ? AND target_type = 'AUTHORIZATION'",
-          [plantel, puesto]
-        )
-      }
+    await withDBTransaction(async (db) => {
+      for (const puesto of puestos) {
+        if (replaceExisting) {
+          await db.execute(
+            "DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ? AND target_type = 'AUTHORIZATION'",
+            [plantel, puesto]
+          )
+        } else {
+          await db.execute(
+            "DELETE FROM notification_rules WHERE condition_plantel = ? AND condition_puesto = ? AND target_type = 'AUTHORIZATION' AND LOWER(target_val) = ?",
+            [plantel, puesto, email]
+          )
+        }
 
-      for (const channel of finalChannels) {
-        await db.execute(
-          'INSERT INTO notification_rules (condition_plantel, condition_puesto, target_type, target_val, channel) VALUES (?, ?, ?, ?, ?)',
-          [plantel, puesto, 'AUTHORIZATION', email, channel]
-        )
+        for (const channel of finalChannels) {
+          await db.execute(
+            'INSERT INTO notification_rules (condition_plantel, condition_puesto, target_type, target_val, channel) VALUES (?, ?, ?, ?, ?)',
+            [plantel, puesto, 'AUTHORIZATION', email, channel]
+          )
+        }
       }
-    }
+    })
 
     return { success: true, updatedGroups: puestos.length }
   } catch (error: any) {
