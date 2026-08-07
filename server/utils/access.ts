@@ -2,6 +2,19 @@ import jwt from 'jsonwebtoken'
 import { getCookie, createError } from '#imports'
 import { useDB } from '~/server/utils/db'
 
+
+export function requireAuthenticated(event: any) {
+  const token = getCookie(event, 'auth-token')
+  if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida.' })
+
+  const decoded: any = jwt.decode(token)
+  const email = String(decoded?.email || '').trim().toLowerCase()
+  const name = String(decoded?.name || '').trim()
+  if (!email) throw createError({ statusCode: 401, message: 'Sesión inválida o expirada.' })
+
+  return { email, name }
+}
+
 export async function requireAdmin(event: any) {
   const token = getCookie(event, 'auth-token')
   if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida.' })

@@ -1,6 +1,7 @@
 import { useDB } from '~/server/utils/db'
 import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { cleanPlantelName } from '~/server/utils/employee-engine'
+import { isPersonRuleValue } from '~/server/utils/authorizationRules'
 import { defineEventHandler, createError } from '#imports'
 
 export default defineEventHandler(async () => {
@@ -8,7 +9,8 @@ export default defineEventHandler(async () => {
     const db = useDB()
     const [rows]: any = await db.execute('SELECT * FROM notification_rules ORDER BY id DESC')
     
-    const enriched = await Promise.all(rows.map(async (r: any) => {
+    const visibleRows = rows.filter((r: any) => !isPersonRuleValue(r.condition_plantel))
+    const enriched = await Promise.all(visibleRows.map(async (r: any) => {
       let finalRule = { ...r, condition_plantel: cleanPlantelName(r.condition_plantel) || 'ALL' }
       if (r.target_type === 'CONTACT') {
          const gw = await getCachedWorkspaceUser(r.target_val)

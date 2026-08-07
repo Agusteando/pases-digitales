@@ -2,7 +2,7 @@ import { defineEventHandler, getQuery, createError } from '#imports'
 import { requireAdmin } from '~/server/utils/access'
 import {
   getEmployeeGroupCounts,
-  getNotificationRules,
+  getGroupAuthorizationRules,
   getPlantelDirectoryTargets,
   enrichTargets,
   selectEffectiveRules,
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
     const [{ counts, planteles, puestos }, rules] = await Promise.all([
       getEmployeeGroupCounts(),
-      getNotificationRules()
+      getGroupAuthorizationRules()
     ])
 
     const directoryTargets = selectedPlantel !== 'ALL' ? await getPlantelDirectoryTargets(selectedPlantel) : []

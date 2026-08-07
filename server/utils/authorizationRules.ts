@@ -24,7 +24,7 @@ export type AuthorizationTarget = {
 export type AuthorizationResolution = {
   employeePlantel: string
   employeePuesto: string
-  source: 'PERSON_OVERRIDE' | 'EXACT_PUESTO' | 'GLOBAL_PUESTO' | 'PLANTEL_DEFAULT' | 'STANDARD_DIRECTORY' | 'LEGACY_NOTIFICATION' | 'UNCONFIGURED'
+  source: 'PERSON' | 'EXACT_PUESTO' | 'GLOBAL_PUESTO' | 'PLANTEL_DEFAULT' | 'STANDARD_DIRECTORY' | 'LEGACY_NOTIFICATION' | 'UNCONFIGURED'
   sourceLabel: string
   isExclusive: boolean
   hasTargets: boolean
@@ -36,6 +36,23 @@ export type AuthorizationResolution = {
 export const normalizeRuleValue = (value: any) => String(value || '').trim()
 export const normalizeComparable = (value: any) => normalizeRuleValue(value).toLowerCase()
 export const isAllRuleValue = (value: any) => normalizeComparable(value) === 'all' || normalizeComparable(value) === 'toda la institución'
+
+export const PERSON_RULE_PREFIX = '__PERSON__:'
+
+export function personRuleValue(curp: any) {
+  const key = normalizeRuleValue(curp).toUpperCase()
+  return key ? `${PERSON_RULE_PREFIX}${key}` : ''
+}
+
+export function isPersonRuleValue(value: any) {
+  return normalizeRuleValue(value).toUpperCase().startsWith(PERSON_RULE_PREFIX)
+}
+
+export function parsePersonRuleCurp(value: any) {
+  const normalized = normalizeRuleValue(value)
+  if (!isPersonRuleValue(normalized)) return ''
+  return normalized.slice(PERSON_RULE_PREFIX.length).trim().toUpperCase()
+}
 
 export function normalizePhoneDigits(phone: any) {
   let digits = String(phone || '').replace(/\D/g, '')
@@ -144,49 +161,13 @@ export async function getNotificationRules() {
   return getRulesByKind('AUTHORIZATION')
 }
 
+export async function getGroupAuthorizationRules() {
+  const rules = await getNotificationRules()
+  return rules.filter((rule: any) => !isPersonRuleValue(rule.condition_plantel))
+}
+
 export async function getLegacyNotificationRules() {
   return getRulesByKind('LEGACY')
-}
-
-async function queryPersonAuthorizationRules(curp?: string) {
-  const db = useDB()
-  const normalizedCurp = normalizeRuleValue(curp).toUpperCase()
-
-  try {
-    const params: any[] = []
-    const where = normalizedCurp ? 'WHERE UPPER(employee_curp) = ?' : ''
-    if (normalizedCurp) params.push(normalizedCurp)
-
-    const [rows]: any = await db.execute(
-      `SELECT id, employee_curp, employee_name, employee_plantel, target_val, channel
-       FROM authorization_person_rules
-       ${where}
-       ORDER BY id ASC`,
-      params
-    )
-
-    return rows.map((row: any) => ({
-      ...row,
-      employee_curp: normalizeRuleValue(row.employee_curp).toUpperCase(),
-      employee_name: normalizeRuleValue(row.employee_name),
-      employee_plantel: cleanPlantelName(row.employee_plantel) || '',
-      target_val: normalizeRuleValue(row.target_val).toLowerCase(),
-      channel: normalizeRuleValue(row.channel || 'EMAIL').toUpperCase()
-    }))
-  } catch (error: any) {
-    if (error?.code === 'ER_NO_SUCH_TABLE' || error?.errno === 1146) return []
-    throw error
-  }
-}
-
-export async function getPersonAuthorizationRules(curp: string) {
-  const normalizedCurp = normalizeRuleValue(curp).toUpperCase()
-  if (!normalizedCurp) return []
-  return queryPersonAuthorizationRules(normalizedCurp)
-}
-
-export async function getAllPersonAuthorizationRules() {
-  return queryPersonAuthorizationRules()
 }
 
 export async function enrichTargets(rows: TargetRow[]): Promise<AuthorizationTarget[]> {
@@ -251,24 +232,25 @@ function rulesToTargetRows(rows: any[]): TargetRow[] {
 }
 
 export function selectEffectiveRules(rules: any[], plantel: string, puesto: string) {
+  const groupRules = rules.filter((rule) => !isPersonRuleValue(rule.condition_plantel))
   const plantelKey = normalizeComparable(plantel)
   const puestoKey = normalizeComparable(puesto)
 
-  const exact = isAllRuleValue(plantel) ? [] : rules.filter((rule) => {
+  const exact = isAllRuleValue(plantel) ? [] : groupRules.filter((rule) => {
     return normalizeComparable(rule.condition_plantel) === plantelKey &&
       normalizeComparable(rule.condition_puesto) === puestoKey &&
       !isAllRuleValue(rule.condition_puesto)
   })
   if (exact.length) return { source: 'EXACT_PUESTO' as const, rows: exact }
 
-  const globalPuesto = rules.filter((rule) => {
+  const globalPuesto = groupRules.filter((rule) => {
     return isAllRuleValue(rule.condition_plantel) &&
       normalizeComparable(rule.condition_puesto) === puestoKey &&
       !isAllRuleValue(rule.condition_puesto)
   })
   if (globalPuesto.length) return { source: 'GLOBAL_PUESTO' as const, rows: globalPuesto }
 
-  const plantelDefault = rules.filter((rule) => {
+  const plantelDefault = groupRules.filter((rule) => {
     return normalizeComparable(rule.condition_plantel) === plantelKey && isAllRuleValue(rule.condition_puesto)
   })
   if (plantelDefault.length) return { source: 'PLANTEL_DEFAULT' as const, rows: plantelDefault }
@@ -290,7 +272,7 @@ function selectLegacyNotificationRules(rules: any[], plantel: string, puesto: st
 
 export function getSourceLabel(source: AuthorizationResolution['source']) {
   const labels = {
-    PERSON_OVERRIDE: 'Regla individual',
+    PERSON: 'Regla individual',
     EXACT_PUESTO: 'Override de puesto por plantel',
     GLOBAL_PUESTO: 'Override global de puesto',
     PLANTEL_DEFAULT: 'Regla general del plantel',
@@ -301,42 +283,30 @@ export function getSourceLabel(source: AuthorizationResolution['source']) {
   return labels[source]
 }
 
-export async function resolveExclusiveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
-  const employeePlantel = cleanPlantelName(pass?.plantel) || ''
-  let personCurp = normalizeRuleValue(pass?.curp).toUpperCase()
+export async function resolveEmployeeCurp(pass: any) {
+  const direct = normalizeRuleValue(pass?.curp).toUpperCase()
+  if (direct) return direct
 
-  if (!personCurp && pass?.employee_name) {
+  const passName = normalizeName(pass?.employee_name || pass?.name)
+  if (!passName) return ''
+
+  try {
     const soapEmployees = await getFastSoapEmployees()
-    const soapMatch = soapEmployees.find((employee: any) => normalizeName(employee.name) === normalizeName(pass.employee_name))
-    personCurp = normalizeRuleValue(soapMatch?.curp).toUpperCase()
+    const match = soapEmployees.find((employee: any) => normalizeName(employee.name) === passName)
+    return normalizeRuleValue(match?.curp).toUpperCase()
+  } catch (error: any) {
+    logAuthorizationDebug('No se pudo resolver identidad individual; se conserva la resolución de grupo existente.', {
+      employee: pass?.employee_name || pass?.name,
+      error: error?.message || String(error)
+    }, 'warn')
+    return ''
   }
+}
 
-  const personRules = personCurp ? await getPersonAuthorizationRules(personCurp) : []
-
-  if (personRules.length) {
-    const employeePuesto = normalizeRuleValue(pass?.puesto)
-    const targets = await enrichTargets(personRules.map((row: any) => ({
-      id: row.id,
-      email: row.target_val,
-      channel: row.channel || 'EMAIL',
-      source: 'PERSON_RULE'
-    })))
-
-    return {
-      employeePlantel,
-      employeePuesto,
-      source: 'PERSON_OVERRIDE',
-      sourceLabel: getSourceLabel('PERSON_OVERRIDE'),
-      isExclusive: true,
-      hasTargets: targets.length > 0,
-      targets,
-      authorizedEmails: targets.map((target) => target.email.toLowerCase()),
-      requiredText: formatAuthorizationTargetList(targets)
-    }
-  }
-
+export async function resolveGroupExclusiveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
+  const employeePlantel = cleanPlantelName(pass?.plantel) || ''
   const employeePuesto = await resolveEmployeePuesto(pass)
-  const rules = await getNotificationRules()
+  const rules = await getGroupAuthorizationRules()
   const selected = selectEffectiveRules(rules, employeePlantel, employeePuesto)
 
   if (selected.rows.length) {
@@ -365,6 +335,35 @@ export async function resolveExclusiveAuthorizationForPass(pass: any): Promise<A
     authorizedEmails: [],
     requiredText: ''
   }
+}
+
+export async function resolveExclusiveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {
+  const employeeCurp = await resolveEmployeeCurp(pass)
+
+  if (employeeCurp) {
+    const rules = await getNotificationRules()
+    const personKey = normalizeComparable(personRuleValue(employeeCurp))
+    const personRows = rules.filter((rule: any) => normalizeComparable(rule.condition_plantel) === personKey)
+
+    if (personRows.length) {
+      const employeePlantel = cleanPlantelName(pass?.plantel) || ''
+      const employeePuesto = await resolveEmployeePuesto(pass)
+      const targets = await enrichTargets(rulesToTargetRows(personRows))
+      return {
+        employeePlantel,
+        employeePuesto,
+        source: 'PERSON',
+        sourceLabel: getSourceLabel('PERSON'),
+        isExclusive: true,
+        hasTargets: targets.length > 0,
+        targets,
+        authorizedEmails: targets.map((target) => target.email.toLowerCase()),
+        requiredText: formatAuthorizationTargetList(targets)
+      }
+    }
+  }
+
+  return resolveGroupExclusiveAuthorizationForPass(employeeCurp ? { ...pass, curp: employeeCurp } : pass)
 }
 
 export async function resolveAuthorizationForPass(pass: any): Promise<AuthorizationResolution> {

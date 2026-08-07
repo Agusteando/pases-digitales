@@ -190,6 +190,22 @@
           <div class="flex-1 overflow-y-auto px-5 py-6 md:px-8 custom-scrollbar relative flex flex-col min-h-0 bg-transparent xl:shadow-[inset_0_10px_20px_rgba(0,0,0,0.01)]">
             
             <form @submit.prevent class="relative flex flex-col gap-8 py-2">
+
+              <div class="relative group">
+                <h3 class="text-[11px] font-black text-[#007F92] uppercase tracking-widest mb-4 block w-full">Autorización</h3>
+                <div class="grid gap-3">
+                  <div v-for="emp in selectedEmployees" :key="`auth-${getEmpKey(emp)}`" class="bg-white/75 backdrop-blur-md rounded-2xl border border-white shadow-sm p-3.5">
+                    <div class="flex items-center gap-3 px-1">
+                      <PremiumAvatar :src="emp.picture" :name="emp.name" size="sm" class="w-8 h-8 ring-2 ring-white shadow-sm" />
+                      <div class="min-w-0">
+                        <p class="text-xs font-black text-slate-800 truncate">{{ emp.name }}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 truncate">{{ emp.puesto || emp.plantelActual || emp.plantelBase || '' }}</p>
+                      </div>
+                    </div>
+                    <AuthorizationPolicyEditor v-if="!emp._enriching" :employee="emp" />
+                  </div>
+                </div>
+              </div>
               
               <!-- Quick Presets -->
               <div v-if="activeScenario.categoryId === 2" class="flex flex-wrap items-center gap-2.5 pb-6 border-b border-white/60">
@@ -454,17 +470,6 @@
                  </label>
               </div>
               
-              <div v-if="directAuthorizationBlocked" class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/70 shadow-sm flex items-start gap-3">
-                <div class="w-9 h-9 rounded-xl bg-white text-amber-600 flex items-center justify-center shrink-0 border border-amber-100">
-                  <KeyRound class="w-4 h-4" />
-                </div>
-                <div class="min-w-0">
-                  <p v-for="restriction in blockedAuthorizationPreviews" :key="restriction.key" class="text-xs font-black text-slate-800 leading-snug">
-                    {{ restriction.employeeName }} · Solo {{ restriction.requiredText }} puede autorizar.
-                  </p>
-                </div>
-              </div>
-
               <div class="flex flex-col gap-4">
                 <button 
                   type="button" 
@@ -482,7 +487,7 @@
                 <button 
                   type="button" 
                   @click="submitPass(true)" 
-                  :disabled="isSubmitting || !isFormComplete || directAuthorizationBlocked" 
+                  :disabled="isSubmitting || !isFormComplete" 
                   class="w-full relative group overflow-hidden bg-gradient-to-b from-[#007F92] to-[#006575] text-white font-black text-base sm:text-sm rounded-[1.25rem] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-14 outline-none border border-[#00497B]/50"
                 >
                   <div class="absolute inset-0 w-full h-full bg-gradient-to-tr from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>
@@ -611,6 +616,7 @@ import EmployeeContextPanel from '~/components/EmployeeContextPanel.vue'
 import RecentActivityPanel from '~/components/RecentActivityPanel.vue'
 import PlantelSetupModal from '~/components/PlantelSetupModal.vue'
 import PremiumAvatar from '~/components/PremiumAvatar.vue'
+import AuthorizationPolicyEditor from '~/components/AuthorizationPolicyEditor.vue'
 
 const { data: plantelesList } = useFetch('/api/catalogs/planteles', { default: () => [] })
 const { data: myProfile, refresh: refreshProfile } = useFetch('/api/auth/profile')
@@ -677,44 +683,6 @@ const isAuthorizerForCurrent = computed(() => {
   const targetPlantel = selectedEmployees.value[0]?.plantelActual || selectedEmployees.value[0]?.plantelBase;
   return myProfile.value.authorizedPlanteles.includes(targetPlantel);
 })
-
-const authorizationPreview = ref([])
-let authorizationPreviewTimer = null
-
-const blockedAuthorizationPreviews = computed(() => authorizationPreview.value.filter((item) => item.isExclusive && !item.canAuthorize))
-const directAuthorizationBlocked = computed(() => blockedAuthorizationPreviews.value.length > 0)
-
-const loadAuthorizationPreview = async () => {
-  const employees = (selectedEmployees.value || []).filter((employee) => !employee._enriching)
-  if (!employees.length) {
-    authorizationPreview.value = []
-    return
-  }
-
-  try {
-    const data = await $fetch('/api/authorizations/preview', {
-      method: 'POST',
-      body: {
-        employees: employees.map((employee) => ({
-          key: getEmpKey(employee),
-          name: employee.name,
-          curp: employee.curp || null,
-          plantel: employee.plantelActual || employee.plantelBase || null,
-          puesto: employee.puesto || null
-        }))
-      }
-    })
-    authorizationPreview.value = data?.results || []
-  } catch (error) {
-    console.warn('Authorization preview unavailable', error)
-    authorizationPreview.value = []
-  }
-}
-
-watch(selectedEmployees, () => {
-  if (authorizationPreviewTimer) clearTimeout(authorizationPreviewTimer)
-  authorizationPreviewTimer = setTimeout(loadAuthorizationPreview, 250)
-}, { deep: true })
 
 const hasSelfPass = computed(() => {
   return myProfile.value && (selectedEmployees.value || []).some(e => e.name === myProfile.value.name)

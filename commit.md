@@ -1,1 +1,1 @@
-Rediseña autorizaciones con vista por autorizador y reglas individuales
+Rediseña autorizaciones con gestión persistente por persona y vista por autorizador

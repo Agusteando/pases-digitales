@@ -4,7 +4,7 @@ import { useDB } from '~/server/utils/db'
 import { cleanPlantelName, getFastSoapEmployees } from '~/server/utils/employee-engine'
 import { resolveExclusiveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
 import jwt from 'jsonwebtoken'
-import { defineEventHandler, getRouterParam, getCookie, createError } from '#imports'
+import { defineEventHandler, getRouterParam, createError, getCookie } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -20,7 +20,6 @@ export default defineEventHandler(async (event) => {
     if (!passRows.length) throw createError({ statusCode: 404, message: 'Pase no encontrado.' })
 
     const pass = passRows[0]
-    const storedCurp = pass.curp
 
     // Fetch curp deterministically from SOAP by exact name string
     const dataset = await getFastSoapEmployees()
@@ -29,34 +28,25 @@ export default defineEventHandler(async (event) => {
 
     const [logRows]: any = await db.execute('SELECT chat_id, status, error_text, created_at FROM notification_logs WHERE pass_id = ? ORDER BY id DESC', [id])
 
-    const token = getCookie(event, 'auth-token')
-    const decoded: any = token ? jwt.decode(token) : null
-    const actingEmail = String(decoded?.email || '').trim().toLowerCase()
-    let authorizationPolicy: any = {
-      isExclusive: false,
-      canAuthorize: true,
-      source: 'UNAVAILABLE',
-      requiredText: '',
-      targets: []
-    }
-
+    let authorizationPolicy: any = null
     try {
-      const authorization = await resolveExclusiveAuthorizationForPass({ ...pass, curp: storedCurp || soapEmp?.curp || null })
+      const authorization = await resolveExclusiveAuthorizationForPass(pass)
+      const token = getCookie(event, 'auth-token')
+      const decoded: any = token ? jwt.decode(token) : null
+      const viewerEmail = String(decoded?.email || '').trim().toLowerCase()
       authorizationPolicy = {
-        isExclusive: authorization.isExclusive,
-        canAuthorize: !authorization.isExclusive || (actingEmail ? isAuthorizedEmail(authorization, actingEmail) : false),
         source: authorization.source,
-        requiredText: actingEmail && authorization.isExclusive ? authorization.requiredText : '',
-        targets: actingEmail && authorization.isExclusive
-          ? authorization.targets.map((target) => ({
-              name: target.name,
-              email: target.email,
-              photoUrl: target.photoUrl || null
-            }))
-          : []
+        sourceLabel: authorization.sourceLabel,
+        isExclusive: authorization.isExclusive,
+        viewerAuthorized: !authorization.isExclusive || isAuthorizedEmail(authorization, viewerEmail),
+        requiredText: viewerEmail ? authorization.requiredText : '',
+        targets: viewerEmail ? authorization.targets.map((target) => ({
+          name: target.name,
+          photoUrl: target.photoUrl || null
+        })) : []
       }
-    } catch (authorizationError) {
-      console.warn('Authorization policy preview unavailable for pass detail:', authorizationError)
+    } catch (error) {
+      console.warn('Authorization visibility unavailable for pass detail.', error)
     }
 
     return {

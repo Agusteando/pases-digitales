@@ -1,39 +1,51 @@
-import jwt from 'jsonwebtoken'
-import { defineEventHandler, readBody, getCookie, createError } from '#imports'
-import { resolveExclusiveAuthorizationForPass, isAuthorizedEmail } from '~/server/utils/authorizationRules'
+import { defineEventHandler, readBody, createError } from '#imports'
+import { requireAuthenticated } from '~/server/utils/access'
+import {
+  resolveExclusiveAuthorizationForPass,
+  resolveGroupExclusiveAuthorizationForPass,
+  normalizeRuleValue
+} from '~/server/utils/authorizationRules'
+
+function serialize(resolution: any) {
+  return {
+    source: resolution.source,
+    sourceLabel: resolution.sourceLabel,
+    isExclusive: resolution.isExclusive,
+    employeePlantel: resolution.employeePlantel,
+    employeePuesto: resolution.employeePuesto,
+    requiredText: resolution.requiredText,
+    targets: resolution.targets.map((target: any) => ({
+      email: target.email,
+      name: target.name,
+      photoUrl: target.photoUrl || null,
+      phone: target.phone || '',
+      channels: target.channels || []
+    }))
+  }
+}
 
 export default defineEventHandler(async (event) => {
-  const token = getCookie(event, 'auth-token')
-  if (!token) throw createError({ statusCode: 401, message: 'Autenticación requerida.' })
-  const decoded: any = jwt.decode(token)
-  const actingEmail = String(decoded?.email || '').trim().toLowerCase()
-  if (!actingEmail) throw createError({ statusCode: 401, message: 'Sesión inválida o expirada.' })
-
+  requireAuthenticated(event)
   const body = await readBody(event)
-  const employees = Array.isArray(body?.employees) ? body.employees.slice(0, 30) : []
 
-  const results = await Promise.all(employees.map(async (employee: any) => {
-    const authorization = await resolveExclusiveAuthorizationForPass({
-      employee_name: employee.name || employee.employeeName,
-      curp: employee.curp,
-      plantel: employee.plantel,
-      puesto: employee.puesto
-    })
+  const passLike = {
+    employee_name: normalizeRuleValue(body.employeeName || body.name),
+    curp: normalizeRuleValue(body.curp),
+    plantel: normalizeRuleValue(body.plantel),
+    puesto: normalizeRuleValue(body.puesto)
+  }
 
-    return {
-      key: employee.key || employee.curp || employee.name,
-      employeeName: employee.name || employee.employeeName,
-      isExclusive: authorization.isExclusive,
-      canAuthorize: !authorization.isExclusive || isAuthorizedEmail(authorization, actingEmail),
-      requiredText: authorization.requiredText,
-      source: authorization.source,
-      targets: authorization.targets.map((target) => ({
-        name: target.name,
-        email: target.email,
-        photoUrl: target.photoUrl || null
-      }))
-    }
-  }))
+  if (!passLike.employee_name && !passLike.curp) {
+    throw createError({ statusCode: 400, message: 'Falta el colaborador.' })
+  }
 
-  return { results }
+  const [effective, group] = await Promise.all([
+    resolveExclusiveAuthorizationForPass(passLike),
+    resolveGroupExclusiveAuthorizationForPass(passLike)
+  ])
+
+  return {
+    effective: serialize(effective),
+    group: serialize(group)
+  }
 })
