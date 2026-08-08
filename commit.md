@@ -1,1 +1,1 @@
-Rediseña autorizaciones con gestión persistente por persona y vista por autorizador
+Corrige la resolución de nombre y foto de autorizadores individuales desde Workspace

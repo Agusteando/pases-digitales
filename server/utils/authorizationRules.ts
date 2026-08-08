@@ -1,6 +1,6 @@
 import { useDB } from '~/server/utils/db'
 import { cleanPlantelName, getFastSoapEmployees, getSigniaData, normalizeName } from '~/server/utils/employee-engine'
-import { getCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
+import { getCachedWorkspaceUser, refreshCachedWorkspaceUser } from '~/server/utils/googleWorkspace'
 import { useRuntimeConfig } from '#imports'
 
 type TargetRow = {
@@ -179,10 +179,15 @@ export async function enrichTargets(rows: TargetRow[]): Promise<AuthorizationTar
 
     let current = byEmail.get(email)
     if (!current) {
-      const gw = await getCachedWorkspaceUser(email)
+      let gw = await getCachedWorkspaceUser(email)
+      const fallbackName = email.split('@')[0]
+      const resolvedName = normalizeRuleValue(gw?.name)
+      if (!gw?.photoUrl && (!resolvedName || normalizeComparable(resolvedName) === normalizeComparable(email) || normalizeComparable(resolvedName) === normalizeComparable(fallbackName))) {
+        gw = await refreshCachedWorkspaceUser(email)
+      }
       current = {
         email,
-        name: gw?.name || email.split('@')[0],
+        name: gw?.name || fallbackName,
         phone: gw?.phone || '',
         photoUrl: gw?.photoUrl || null,
         channels: [],

@@ -137,6 +137,12 @@ export async function getCachedWorkspaceUser(email: string) {
   return user
 }
 
+export async function refreshCachedWorkspaceUser(email: string) {
+  const user = await getWorkspaceUser(email)
+  userCache.set(email, user)
+  return user
+}
+
 export async function updateWorkspaceUserPhone(email: string, newPhone: string) {
   try {
     const admin = getAdminClient()

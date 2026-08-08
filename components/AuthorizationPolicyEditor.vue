@@ -109,11 +109,13 @@
                   :key="person.email"
                   type="button"
                   class="w-full flex items-center gap-3 p-3 text-left hover:bg-slate-50 transition-colors"
+                  :disabled="resolvingProfiles.has(person.email)"
                   @click="togglePerson(person)"
                 >
                   <PremiumAvatar :src="person.photoUrl" :name="person.name" size="sm" class="shrink-0" />
                   <span class="text-sm font-black text-slate-800 truncate flex-1">{{ person.name }}</span>
-                  <Check v-if="isSelected(person)" class="w-4 h-4 text-[#007F92] shrink-0" />
+                  <Loader2 v-if="resolvingProfiles.has(person.email)" class="w-4 h-4 animate-spin text-slate-400 shrink-0" />
+                  <Check v-else-if="isSelected(person)" class="w-4 h-4 text-[#007F92] shrink-0" />
                   <span v-else class="w-5 h-5 rounded-full border border-slate-200 shrink-0"></span>
                 </button>
               </div>
@@ -159,6 +161,7 @@ const selected = ref([])
 const query = ref('')
 const results = ref([])
 const searching = ref(false)
+const resolvingProfiles = ref(new Set())
 let timer = null
 
 const ready = computed(() => Boolean(props.employee?.curp || props.employee?.name) && !props.employee?._enriching)
@@ -212,6 +215,7 @@ function openEditor() {
   query.value = ''
   results.value = []
   open.value = true
+  if (selected.value.length) hydrateSelectedProfiles()
 }
 
 function closeEditor() {
@@ -223,18 +227,59 @@ function isSelected(person) {
   return selected.value.some((item) => item.email === person.email)
 }
 
-function togglePerson(person) {
+function isGenericWorkspaceName(person) {
+  const email = String(person?.email || '').trim().toLowerCase()
+  const name = String(person?.name || '').trim().toLowerCase()
+  const localPart = email.split('@')[0]
+  return !name || name === email || name === localPart
+}
+
+async function resolveWorkspaceProfile(person) {
+  const email = String(person?.email || '').trim().toLowerCase()
+  if (!email) return person
+  try {
+    const profile = await $fetch('/api/workspace/profile', { query: { email } })
+    const currentIsGeneric = isGenericWorkspaceName(person)
+    const profileIsGeneric = isGenericWorkspaceName(profile)
+    return {
+      ...person,
+      ...profile,
+      name: !profileIsGeneric ? profile.name : (!currentIsGeneric ? person.name : 'Usuario de Workspace'),
+      photoUrl: profile.photoUrl || person.photoUrl || null,
+      phone: profile.phone || person.phone || '',
+      channels: person.channels?.length ? person.channels : ['EMAIL']
+    }
+  } catch {
+    return {
+      ...person,
+      name: isGenericWorkspaceName(person) ? 'Usuario de Workspace' : person.name,
+      channels: person.channels?.length ? person.channels : ['EMAIL']
+    }
+  }
+}
+
+async function hydrateSelectedProfiles() {
+  const emails = selected.value.map((person) => person.email).filter(Boolean)
+  if (!emails.length) return
+  resolvingProfiles.value = new Set(emails)
+  const hydrated = await Promise.all(selected.value.map(resolveWorkspaceProfile))
+  selected.value = hydrated
+  resolvingProfiles.value = new Set()
+}
+
+async function togglePerson(person) {
   if (isSelected(person)) {
     selected.value = selected.value.filter((item) => item.email !== person.email)
-  } else {
-    selected.value = [...selected.value, {
-      email: person.email,
-      name: person.name,
-      photoUrl: person.photoUrl || null,
-      phone: person.phone || '',
-      channels: person.channels?.length ? person.channels : ['EMAIL']
-    }]
+    return
   }
+
+  const email = String(person?.email || '').trim().toLowerCase()
+  resolvingProfiles.value = new Set([...resolvingProfiles.value, email])
+  const resolved = await resolveWorkspaceProfile(person)
+  selected.value = [...selected.value, resolved]
+  const next = new Set(resolvingProfiles.value)
+  next.delete(email)
+  resolvingProfiles.value = next
 }
 
 watch(query, (value) => {
